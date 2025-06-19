@@ -20,6 +20,7 @@
             --text-color-primary: #222222;
             --text-color-secondary: #888888;
             --border-color: #F0F0F0;
+            --danger-color: #d33a2c;
             --font-family-sans: 'Poppins', sans-serif;
             --font-family-serif: 'Playfair Display', serif;
             --header-height: 60px;
@@ -32,7 +33,7 @@
         
         body {
             font-family: var(--font-family-sans);
-            background-color: var(--secondary-bg-color); /* Alterado para combinar com a página de perfil */
+            background-color: var(--secondary-bg-color);
             color: var(--text-color-primary);
             -webkit-tap-highlight-color: transparent;
             -webkit-font-smoothing: antialiased;
@@ -55,30 +56,16 @@
             padding: 1rem;
             min-height: calc(100vh - var(--footer-height));
             overflow-x: hidden;
-            padding-top: var(--header-height);
         }
         .section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; padding: 0 0.5rem; }
         .section-header h2 { font-size: 1.5rem; font-weight: 600; font-family: var(--font-family-sans); }
         .section-header .see-all { font-size: 0.9rem; font-weight: 500; color: var(--primary-color); text-decoration: none; }
         
-        /* --- Tela Inicial --- */
         .home-page { padding: 0; padding-top: 0; background-color: var(--white-color); }
-        .home-header {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 0 1rem;
-            height: var(--header-height);
-            z-index: 1000;
-        }
+        .home-header { position: absolute; top: 0; left: 0; width: 100%; display: flex; justify-content: space-between; align-items: center; padding: 0 1rem; height: var(--header-height); z-index: 1000; }
         .header-icon { background: rgba(255,255,255,0.7); backdrop-filter: blur(5px); border-radius: 50%; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; color: var(--text-color-primary); }
         .header-icon svg { width: 24px; height: 24px; }
         
-        /* --- Hero Carousel --- */
         .hero-carousel-container { position: relative; width: 100%; height: 60vh; overflow: hidden; }
         .hero-carousel-wrapper { display: flex; height: 100%; transition: transform 0.8s cubic-bezier(0.77, 0, 0.175, 1); }
         .hero-banner-slide { flex: 0 0 100%; position: relative; background-size: cover; background-position: center 30%; color: var(--white-color); display: flex; flex-direction: column; justify-content: flex-end; padding: 2rem 1.5rem; }
@@ -90,7 +77,7 @@
         .carousel-dots { position: absolute; bottom: 1rem; left: 50%; transform: translateX(-50%); display: flex; gap: 0.5rem; z-index: 3; }
         .dot { width: 8px; height: 8px; border-radius: 50%; background-color: rgba(255,255,255,0.5); cursor: pointer; transition: background-color 0.3s, transform 0.3s; }
         .dot.active { background-color: var(--white-color); transform: scale(1.2); }
-        .home-content { padding: 2rem 1rem; background-color: var(--white-color); }
+        .home-content { padding: 1.5rem 1rem; background-color: var(--white-color); }
         .categories-list { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; }
         .category-item { position: relative; cursor: pointer; border-radius: 12px; overflow: hidden; aspect-ratio: 4 / 5; transition: transform 0.3s ease; }
         .category-item:active { transform: scale(0.97); }
@@ -108,7 +95,6 @@
         .product-info p { font-size: 1rem; font-weight: 600; color: var(--text-color-primary); }
         .product-card .wishlist-icon {  position: absolute;  top: 10px; right: 10px;  z-index: 5;  width: 36px; height: 36px;  background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; border-radius: 50%; }
         
-        /* --- Navegação Inferior --- */
         .bottom-nav { position: fixed; bottom: 0; left: 0; width: 100%; height: var(--footer-height); background-color: rgba(255, 255, 255, 0.9); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); display: flex; justify-content: space-around; align-items: center; border-top: 1px solid var(--border-color); z-index: 500; }
         .nav-item { display: flex; flex-direction: column; align-items: center; cursor: pointer; color: var(--text-color-secondary); transition: color 0.3s, transform 0.2s ease; padding: 5px; }
         .nav-item:active { transform: scale(0.95); }
@@ -117,7 +103,6 @@
         .nav-item.active { color: var(--primary-color); }
         .cart-badge { position: absolute; top: -2px; right: -5px; background-color: var(--primary-color); color: white; border-radius: 50%; width: 16px; height: 16px; font-size: 9px; display: flex; justify-content: center; align-items: center; font-weight: 600; border: 1px solid var(--white-color); }
 
-        /* --- Página de Detalhes do Produto --- */
         .product-detail-page { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: var(--white-color); z-index: 1500; overflow-y: auto; }
         .detail-header { position: absolute; top: 1rem; left: 1rem; z-index: 210; }
         .back-button { background-color: rgba(255, 255, 255, 0.6); backdrop-filter: blur(5px); border: none; width: 44px; height: 44px; border-radius: 50%; display: flex; justify-content: center; align-items: center; cursor: pointer; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
@@ -142,11 +127,9 @@
         .add-to-cart-button { flex-grow: 1; padding: 1rem; border: none; background-color: var(--primary-color); color: var(--white-color); border-radius: 12px; font-size: 1rem; font-weight: 600; cursor: pointer; transition: background-color 0.3s; }
         .add-to-cart-button:disabled { background-color: #cccccc; cursor: not-allowed; }
 
-        /* --- Modal de Zoom --- */
         .zoom-modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.85); z-index: 1600; display: flex; justify-content: center; align-items: center; backdrop-filter: blur(5px); }
         .zoom-modal img { max-width: 95%; max-height: 80%; object-fit: contain; }
 
-        /* --- Carrinho --- */
         .cart-page { background-color: var(--secondary-bg-color); }
         .cart-page-header { display: flex; align-items: center; padding: 1rem 1rem 1rem 1rem; }
         .cart-page-header .back-button-cart { background: none; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; margin-right: 1rem; }
@@ -176,7 +159,6 @@
         .checkout-button { width: 100%; padding: 1rem; margin-top: 1rem; border: none; background-color: var(--primary-color); color: var(--white-color); border-radius: 12px; font-size: 1rem; font-weight: 600; cursor: pointer; }
         .empty-cart { text-align: center; color: var(--text-color-secondary); margin-top: 3rem; padding: 2rem; }
 
-        /* --- Carrossel "Para Você" --- */
         .related-products-section { padding: 2rem 0 1rem 1rem; }
         .related-products-carousel { display: flex; overflow-x: auto; gap: 1rem; padding-bottom: 1rem; scrollbar-width: none; -ms-overflow-style: none; scroll-snap-type: x mandatory; }
         .related-products-carousel::-webkit-scrollbar { display: none; }
@@ -186,22 +168,40 @@
         .related-product-info h3 { font-size: 0.9rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .related-product-info p { font-size: 0.85rem; color: var(--text-color-secondary); margin-top: 0.25rem; }
 
-        /* --- Wishlist --- */
         .wishlist-icon svg { width: 24px; height: 24px; transition: fill 0.3s, transform 0.3s, stroke 0.3s; stroke: var(--text-color-primary); stroke-width: 1.5px; fill: transparent; }
         .wishlist-icon.active svg { fill: #e74c3c; stroke: #e74c3c; transform: scale(1.1); }
         .wishlist-page { padding: 1rem; min-height: calc(100vh - var(--footer-height)); }
         .wishlist-empty { text-align: center; color: var(--text-color-secondary); margin-top: 3rem; }
         .wishlist-list { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; }
         
-        /* --- [NOVO] Página de Perfil --- */
-        .profile-page { padding: 0; padding-top: 1rem; background-color: var(--secondary-bg-color); }
-        .profile-header-card {
+        /* --- Página de Perfil (Layout Refatorado) --- */
+        .profile-page { padding: 0; background-color: var(--secondary-bg-color); }
+        
+        .page-header {
+            display: flex;
+            align-items: center;
+            padding: 1rem;
             background-color: var(--white-color);
-            margin: 1rem;
-            padding: 2rem 1rem;
-            border-radius: 16px;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .page-header h2 {
+            font-size: 1.2rem;
+            font-weight: 600;
             text-align: center;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            flex-grow: 1;
+        }
+        .page-header .back-button-profile {
+            background: none;
+            border: none;
+            cursor: pointer;
+        }
+
+        .profile-header-card {
+            background-color: var(--primary-color);
+            margin: 0;
+            padding: 2.5rem 1rem 2rem 1rem;
+            text-align: center;
+            color: var(--white-color);
         }
         .profile-picture-wrapper {
             position: relative;
@@ -209,8 +209,8 @@
             margin-bottom: 1rem;
         }
         .profile-picture {
-            width: 120px;
-            height: 120px;
+            width: 110px;
+            height: 110px;
             border-radius: 50%;
             object-fit: cover;
             border: 4px solid var(--white-color);
@@ -220,38 +220,55 @@
             position: absolute;
             bottom: 5px;
             right: 5px;
-            width: 36px;
-            height: 36px;
-            background-color: var(--primary-color);
-            color: var(--white-color);
+            width: 32px;
+            height: 32px;
+            background-color: var(--white-color);
+            color: var(--primary-color);
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
             cursor: pointer;
-            border: 2px solid var(--white-color);
             box-shadow: 0 2px 5px rgba(0,0,0,0.2);
         }
+        .upload-button svg { width: 18px; height: 18px; }
         .profile-name { font-size: 1.5rem; font-weight: 600; margin-bottom: 0.25rem; }
-        .profile-email { font-size: 1rem; color: var(--text-color-secondary); }
-        .profile-form {
-            background-color: var(--white-color);
-            margin: 0 1rem 1rem 1rem;
-            padding: 1.5rem;
-            border-radius: 16px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+        .profile-email {
+            font-size: 1rem;
+            color: var(--white-color);
+            opacity: 0.8;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            max-width: 90%;
+            margin: 0 auto;
+            display: block;
         }
 
-        .profile-email {
-    font-size: 1rem;
-    color: var(--text-color-secondary);
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    max-width: 90%;
-    margin: 0 auto;
-    display: block;
-}
+        .profile-menu-list { padding: 1.5rem 1rem; }
+        .profile-menu-item {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 1rem;
+            background-color: var(--white-color);
+            border-radius: 12px;
+            margin-bottom: 1rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .profile-menu-item:active { transform: scale(0.98); }
+        .menu-item-icon { color: var(--primary-color); }
+        .menu-item-icon svg { width: 24px; height: 24px; }
+        .menu-item-label { flex-grow: 1; font-weight: 600; }
+        .menu-item-chevron { color: var(--text-color-secondary); }
+        .menu-item-icon.logout { color: var(--danger-color); }
+        
+        .profile-form {
+            background-color: var(--secondary-bg-color);
+            padding: 1.5rem 1rem;
+        }
         .form-group { margin-bottom: 1.25rem; }
         .form-group label {
             display: block;
@@ -268,6 +285,7 @@
             font-size: 1rem;
             font-family: var(--font-family-sans);
             transition: border-color 0.3s;
+            background-color: var(--white-color);
         }
         .form-group input:focus {
             outline: none;
@@ -301,6 +319,32 @@
         }
         .profile-notification.error { background-color: #e74c3c; }
 
+        /* --- [NOVO] Saudação na Home --- */
+        .greeting-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+            padding: 0 0.5rem;
+        }
+        .greeting-text h2 {
+            font-size: 1.6rem;
+            font-weight: 600;
+        }
+        .greeting-text p {
+            font-size: 1rem;
+            color: var(--text-color-secondary);
+            font-weight: 500;
+        }
+        .greeting-profile-pic {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid var(--border-color);
+            cursor: pointer;
+        }
+
     </style>
 </head>
 <body>
@@ -325,8 +369,7 @@
 
         <transition name="fade" mode="out-in">
             <div v-if="currentView === 'home'" class="home-page">
-                
-                <header class="home-header">
+                <header class="home-header" v-if="personalizacao.heroAtivo && personalizacao.heroBanners && personalizacao.heroBanners.length > 0">
                      <div class="header-icon" @click="changeView('profile')">
                          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a5 5 0 1 1 0 10 5 5 0 0 1 0-10zm0 12c-3.31 0-10 1.67-10 5v1h20v-1c0-3.33-6.69-5-10-5z"></path></svg>
                      </div>
@@ -348,7 +391,19 @@
                     </div>
                 </section>
                 
-                <div class="home-content" :style="{ paddingTop: !(personalizacao.heroAtivo && personalizacao.heroBanners && personalizacao.heroBanners.length > 0) ? 'var(--header-height)' : '2rem' }">
+                <div class="home-content" :style="{ paddingTop: (personalizacao.heroAtivo && personalizacao.heroBanners && personalizacao.heroBanners.length > 0) ? '2rem' : '0' }">
+                    
+                    <div class="greeting-header">
+                        <div class="greeting-text">
+                            <h2>Olá, {{ userFirstName }} 👋</h2>
+                            <p>{{ timeBasedGreeting.text }} {{ timeBasedGreeting.emoji }}</p>
+                        </div>
+                        <img :src="userProfile.fotoUrl || 'https://i.ibb.co/6y4g0k3/user-placeholder.png'" 
+                             alt="Foto do Perfil" 
+                             class="greeting-profile-pic" 
+                             @click="changeView('profile')">
+                    </div>
+
                     <section style="margin-bottom: 2.5rem;">
                         <div class="section-header">
                             <h2>Coleções</h2>
@@ -450,49 +505,101 @@
             </div>
 
             <div v-else-if="currentView === 'profile'" class="page profile-page">
-                <div class="profile-header-card">
-                    <div class="profile-picture-wrapper">
-                        <input type="file" ref="fileInput" @change="handlePictureUpload" accept="image/*" style="display: none;">
-                        <img :src="userProfile.fotoUrl || 'https://cdn.shopify.com/s/files/1/0927/1286/1998/files/266033.png?v=1750354671'" alt="Foto do Perfil" class="profile-picture">
-                        <div class="upload-button" @click="triggerFileUpload">
-                             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg>
+                <div v-if="profileSubView === 'main'">
+                    <div class="profile-header-card">
+                        <div class="profile-picture-wrapper">
+                            <img :src="userProfile.fotoUrl || 'https://i.ibb.co/6y4g0k3/user-placeholder.png'" alt="Foto do Perfil" class="profile-picture">
+                             <div class="upload-button" @click="profileSubView = 'edit'">
+                                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path d="M17.414 2.586a2 2 0 00-2.828 0L7 10.172V13h2.828l7.586-7.586a2 2 0 000-2.828z"></path><path fill-rule="evenodd" d="M2 6a2 2 0 012-2h4a1 1 0 010 2H4v10h10v-4a1 1 0 112 0v4a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" clip-rule="evenodd"></path></svg>
+                            </div>
+                        </div>
+                        <h2 class="profile-name">{{ userProfile.nome || 'Nome do Usuário' }}</h2>
+                        <p class="profile-email">{{ userProfile.email || 'email@exemplo.com' }}</p>
+                    </div>
+
+                    <div class="profile-menu-list">
+                        <div class="profile-menu-item" @click="profileSubView = 'edit'">
+                            <div class="menu-item-icon">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M12 4a4 4 0 100 8 4 4 0 000-8zM6 8a6 6 0 1112 0A6 6 0 016 8zm2 12a1 1 0 011-1h6a1 1 0 110 2H9a1 1 0 01-1-1zm-5 3h14a3 3 0 003-3v-2.035a3.987 3.987 0 00-2.323-3.665c-1.443-.721-3.235-1.302-5.12-1.667a5.55 5.55 0 00-1.113 0c-1.885.365-3.677.946-5.12 1.667A3.987 3.987 0 001 17.965V21a3 3 0 003 3z"></path></svg>
+                            </div>
+                            <span class="menu-item-label">Editar Perfil</span>
+                            <div class="menu-item-chevron"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M9.29 15.88L13.17 12 9.29 8.12a.996.996 0 111.41-1.41l4.59 4.59c.39.39.39 1.02 0 1.41L10.7 17.3a.996.996 0 01-1.41 0c-.38-.39-.39-1.03 0-1.42z"></path></svg></div>
+                        </div>
+
+                        <div class="profile-menu-item" @click="showWipAlert">
+                            <div class="menu-item-icon">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M12 1.5a5.25 5.25 0 00-5.25 5.25v3a3 3 0 00-3 3v6.75a3 3 0 003 3h10.5a3 3 0 003-3V12.75a3 3 0 00-3-3v-3A5.25 5.25 0 0012 1.5zm3.75 8.25v-3a3.75 3.75 0 10-7.5 0v3h7.5z"></path></svg>
+                            </div>
+                            <span class="menu-item-label">Alterar Senha</span>
+                             <div class="menu-item-chevron"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M9.29 15.88L13.17 12 9.29 8.12a.996.996 0 111.41-1.41l4.59 4.59c.39.39.39 1.02 0 1.41L10.7 17.3a.996.996 0 01-1.41 0c-.38-.39-.39-1.03 0-1.42z"></path></svg></div>
+                        </div>
+
+                        <div class="profile-menu-item" @click="showWipAlert">
+                            <div class="menu-item-icon">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M10.5 6a4.5 4.5 0 119 0 4.5 4.5 0 01-9 0zm0 12.75a1.5 1.5 0 113 0 1.5 1.5 0 01-3 0zm-2.126-7.126a2.25 2.25 0 00-2.25 2.25v.255a.75.75 0 001.5 0v-.255a.75.75 0 01.75-.75h.001a.75.75 0 000-1.5h-.001zM4.5 6a1.5 1.5 0 113 0 1.5 1.5 0 01-3 0zm-2.25 6.75a2.25 2.25 0 00-2.25 2.25v.255a.75.75 0 001.5 0v-.255a.75.75 0 01.75-.75h.001a.75.75 0 000-1.5h-.001zM10.5 18a1.5 1.5 0 113 0 1.5 1.5 0 01-3 0z"></path></svg>
+                            </div>
+                            <span class="menu-item-label">Notificações</span>
+                             <div class="menu-item-chevron"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M9.29 15.88L13.17 12 9.29 8.12a.996.996 0 111.41-1.41l4.59 4.59c.39.39.39 1.02 0 1.41L10.7 17.3a.996.996 0 01-1.41 0c-.38-.39-.39-1.03 0-1.42z"></path></svg></div>
+                        </div>
+
+                        <div class="profile-menu-item" @click="logout">
+                            <div class="menu-item-icon logout">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M10.75 4.75a.75.75 0 000 1.5h2.5a.75.75 0 000-1.5h-2.5z"></path><path fill-rule="evenodd" d="M9.25 2.75a.75.75 0 00-1.5 0V7.5h3V2.75a.75.75 0 00-1.5 0zM5.056 6.024a.75.75 0 10-1.06 1.06L5.06 8.15a.75.75 0 001.06-1.06L5.056 6.024zM17.879 7.084a.75.75 0 10-1.06-1.06l-1.061 1.06a.75.75 0 101.06 1.06l1.06-1.06zM3 13.75a.75.75 0 01.75-.75h16.5a.75.75 0 010 1.5H3.75a.75.75 0 01-.75-.75zM15 15.25a.75.75 0 00-1.5 0v3.086l-1.97-1.97a.75.75 0 10-1.06 1.06l3.25 3.25a.75.75 0 001.06 0l3.25-3.25a.75.75 0 10-1.06-1.06l-1.97 1.97V15.25z"></path></svg>
+                            </div>
+                            <span class="menu-item-label">Sair</span>
+                             <div class="menu-item-chevron"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M9.29 15.88L13.17 12 9.29 8.12a.996.996 0 111.41-1.41l4.59 4.59c.39.39.39 1.02 0 1.41L10.7 17.3a.996.996 0 01-1.41 0c-.38-.39-.39-1.03 0-1.42z"></path></svg></div>
                         </div>
                     </div>
-                    <h2 class="profile-name">{{ userProfile.nome || 'Nome do Usuário' }}</h2>
-                    <p class="profile-email">{{ userProfile.email || 'email@exemplo.com' }}</p>
                 </div>
 
-                <form class="profile-form" @submit.prevent="saveProfile">
-                    <div class="form-group">
-                        <label for="nome">Nome Completo</label>
-                        <input type="text" id="nome" v-model="userProfile.nome" placeholder="Digite seu nome completo">
+                <div v-else-if="profileSubView === 'edit'">
+                    <div class="page-header">
+                        <button @click="profileSubView = 'main'" class="back-button-profile">
+                             <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="currentColor"><path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12l4.58-4.59z"></path></svg>
+                        </button>
+                        <h2>Editar Perfil</h2>
                     </div>
-                    <div class="form-group">
-                        <label for="email">E-mail</label>
-                        <input type="email" id="email" v-model="userProfile.email" placeholder="seu.email@provedor.com">
-                    </div>
-                    <div class="form-group">
-                        <label for="telefone">Telefone / WhatsApp</label>
-                        <input type="tel" id="telefone" v-model="userProfile.telefone" placeholder="(99) 99999-9999">
-                    </div>
-                    <div class="form-group">
-                        <label for="atuacao">Área de Atuação</label>
-                        <input type="text" id="atuacao" v-model="userProfile.atuacao" placeholder="Ex: Varejo, Moda, etc.">
-                    </div>
-                    <div class="form-group">
-                        <label for="endereco">Endereço Completo</label>
-                        <input type="text" id="endereco" v-model="userProfile.endereco" placeholder="Rua, Número, Bairro, Cidade - Estado, CEP">
-                    </div>
-                    <div class="form-group">
-                        <label for="empresa">Empresa (Opcional)</label>
-                        <input type="text" id="empresa" v-model="userProfile.empresa" placeholder="Nome da sua empresa">
-                    </div>
-                    <div class="form-group">
-                        <label for="cnpj">CNPJ (Opcional)</label>
-                        <input type="text" id="cnpj" v-model="userProfile.cnpj" placeholder="00.000.000/0000-00">
-                    </div>
-                    <button type="submit" class="save-button">Salvar Alterações</button>
-                </form>
+
+                    <form class="profile-form" @submit.prevent="saveProfile">
+                        <div class="form-group">
+                            <label for="foto">Foto de Perfil</label>
+                            <input type="file" ref="fileInput" @change="handlePictureUpload" accept="image/*" style="display: none;">
+                            <div style="display:flex; align-items:center; gap: 1rem;">
+                                <img :src="userProfile.fotoUrl || 'https://i.ibb.co/6y4g0k3/user-placeholder.png'" alt="Foto do Perfil" class="profile-picture" style="width: 70px; height: 70px;">
+                                <button type="button" @click="triggerFileUpload" class="save-button" style="width: auto; padding: 0.7rem 1rem;">Alterar Foto</button>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="nome">Nome Completo</label>
+                            <input type="text" id="nome" v-model="userProfile.nome" placeholder="Digite seu nome completo">
+                        </div>
+                        <div class="form-group">
+                            <label for="email">E-mail</label>
+                            <input type="email" id="email" v-model="userProfile.email" placeholder="seu.email@provedor.com">
+                        </div>
+                        <div class="form-group">
+                            <label for="telefone">Telefone / WhatsApp</label>
+                            <input type="tel" id="telefone" v-model="userProfile.telefone" placeholder="(99) 99999-9999">
+                        </div>
+                        <div class="form-group">
+                            <label for="atuacao">Área de Atuação</label>
+                            <input type="text" id="atuacao" v-model="userProfile.atuacao" placeholder="Ex: Varejo, Moda, etc.">
+                        </div>
+                        <div class="form-group">
+                            <label for="endereco">Endereço Completo</label>
+                            <input type="text" id="endereco" v-model="userProfile.endereco" placeholder="Rua, Número, Bairro, Cidade - Estado, CEP">
+                        </div>
+                        <div class="form-group">
+                            <label for="empresa">Empresa (Opcional)</label>
+                            <input type="text" id="empresa" v-model="userProfile.empresa" placeholder="Nome da sua empresa">
+                        </div>
+                        <div class="form-group">
+                            <label for="cnpj">CNPJ (Opcional)</label>
+                            <input type="text" id="cnpj" v-model="userProfile.cnpj" placeholder="00.000.000/0000-00">
+                        </div>
+                        <button type="submit" class="save-button">Salvar Alterações</button>
+                    </form>
+                </div>
             </div>
             
             <div v-else-if="currentView === 'wishlist'" class="page wishlist-page">
@@ -601,41 +708,10 @@
 </div>
 
 <script>
-    const { createApp, ref, onMounted, onBeforeUnmount } = Vue;
+    const { createApp } = Vue;
 
     createApp({
-        setup() {
-            const currentSlide = ref(0);
-            const autoPlayInterval = ref(null);
-            
-            const startAutoPlay = (bannerCount) => {
-                if (bannerCount <= 1) return;
-                stopAutoPlay();
-                autoPlayInterval.value = setInterval(() => {
-                    currentSlide.value = (currentSlide.value + 1) % bannerCount;
-                }, 5000);
-            };
-
-            const stopAutoPlay = () => {
-                clearInterval(autoPlayInterval.value);
-                autoPlayInterval.value = null;
-            };
-
-            const goToSlide = (index) => {
-                currentSlide.value = index;
-                const bannerCount = this.personalizacao.heroBanners.length; // 'this' não funciona aqui, precisa ser acessado de outra forma
-                stopAutoPlay(); // Parar e reiniciar garante que o tempo seja resetado
-                startAutoPlay(bannerCount);
-            };
-
-            onBeforeUnmount(stopAutoPlay);
-
-            return {
-                currentSlide,
-                startAutoPlay,
-                goToSlide
-            };
-        },
+        // O setup() foi removido pois a lógica foi movida para data() e methods()
         data() {
             return {
                 isLoading: true,
@@ -653,29 +729,17 @@
                 isZoomModalVisible: false,
                 selectedCategoryId: null,
                 swipeState: {},
-                // --- [NOVO] Dados do Perfil do Usuário ---
-                userProfile: {
-                    fotoUrl: '',
-                    nome: '',
-                    email: '',
-                    telefone: '',
-                    empresa: '',
-                    cnpj: '',
-                    atuacao: '',
-                    endereco: '',
-                },
-                profileNotification: {
-                    show: false,
-                    message: '',
-                    type: 'success' // 'success' ou 'error'
-                }
+                userProfile: { fotoUrl: '', nome: '', email: '', telefone: '', empresa: '', cnpj: '', atuacao: '', endereco: '' },
+                profileNotification: { show: false, message: '', type: 'success' },
+                profileSubView: 'main', 
+                // Lógica do Carrossel movida para aqui
+                currentSlide: 0,
+                autoPlayInterval: null,
             };
         },
         computed: {
             filteredProducts() {
-                if (!this.selectedCategoryId) {
-                    return this.products;
-                }
+                if (!this.selectedCategoryId) return this.products;
                 return this.products.filter(p => p.categoriaId === this.selectedCategoryId);
             },
             cartItemCount() { return this.cart.reduce((total, item) => total + item.quantity, 0); },
@@ -704,34 +768,40 @@
                 const cartProductIds = this.cart.map(item => item.productId);
                 const availableProducts = this.products.filter(p => !cartProductIds.includes(p.id));
                 return availableProducts.sort(() => 0.5 - Math.random()).slice(0, 6);
+            },
+            userFirstName() {
+                if (!this.userProfile.nome) return 'Visitante';
+                return this.userProfile.nome.split(' ')[0];
+            },
+            timeBasedGreeting() {
+                const hour = new Date().getHours();
+                if (hour >= 5 && hour < 12) {
+                    return { text: 'Bom dia', emoji: '☀️' };
+                } else if (hour >= 12 && hour < 18) {
+                    return { text: 'Boa tarde', emoji: '🌤️' };
+                } else {
+                    return { text: 'Boa noite', emoji: '🌙' };
+                }
             }
         },
         watch: {
             cart: { handler(newCart) { localStorage.setItem('cajuia-cart', JSON.stringify(newCart)); }, deep: true },
             wishlist: { handler(newWishlist) { localStorage.setItem('cajuia-wishlist', JSON.stringify(newWishlist)); }, deep: true },
-            // --- [NOVO] Salva o perfil do usuário automaticamente ---
             userProfile: {
-                handler(newProfile) {
-                    localStorage.setItem('cajuia-user-profile', JSON.stringify(newProfile));
-                },
+                handler(newProfile) { localStorage.setItem('cajuia-user-profile', JSON.stringify(newProfile)); },
                 deep: true
             }
         },
         async mounted() {
-            // Carregar dados salvos do localStorage
             const savedCart = localStorage.getItem('cajuia-cart');
             if (savedCart) { this.cart = JSON.parse(savedCart); }
             
             const savedWishlist = localStorage.getItem('cajuia-wishlist');
             if (savedWishlist) { this.wishlist = JSON.parse(savedWishlist); }
 
-            // --- [NOVO] Carrega o perfil do usuário salvo ---
             const savedProfile = localStorage.getItem('cajuia-user-profile');
-            if (savedProfile) {
-                this.userProfile = JSON.parse(savedProfile);
-            }
+            if (savedProfile) { this.userProfile = JSON.parse(savedProfile); }
 
-            // Fetch dos dados da loja
             try {
                 const response = await fetch(this.apiUrl + '?t=' + new Date().getTime());
                 if (!response.ok) throw new Error('Network response was not ok.');
@@ -742,9 +812,8 @@
                 this.products = data.produtos.map(p => ({ ...p, tipo: p.tipo || 'T-Shirt' }));
 
                 if (this.personalizacao.heroAtivo && this.personalizacao.heroBanners) {
-                   this.startAutoPlay(this.personalizacao.heroBanners.length);
+                   this.startAutoPlay();
                 }
-
             } catch (error) { 
                 this.errorOnLoad = true; 
                 console.error("Falha ao carregar dados:", error); 
@@ -752,11 +821,37 @@
                 setTimeout(() => { this.isLoading = false; }, 2000); 
             }
         },
+        beforeUnmount() {
+            this.stopAutoPlay();
+        },
         methods: {
+            // Lógica do Carrossel movida para os methods
+            startAutoPlay() {
+                const bannerCount = this.personalizacao.heroBanners.length;
+                if (bannerCount <= 1) return;
+                this.stopAutoPlay();
+                this.autoPlayInterval = setInterval(() => {
+                    this.currentSlide = (this.currentSlide + 1) % bannerCount;
+                }, 5000);
+            },
+            stopAutoPlay() {
+                clearInterval(this.autoPlayInterval);
+                this.autoPlayInterval = null;
+            },
+            goToSlide(index) {
+                this.currentSlide = index;
+                this.stopAutoPlay();
+                this.startAutoPlay();
+            },
+
+            // Demais métodos
             formatCurrency(value) { return typeof value !== 'number' ? '' : value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }); },
             changeView(view) {
                 this.currentView = view;
                 this.selectedProduct = null;
+                if (view === 'profile') {
+                    this.profileSubView = 'main';
+                }
                 window.scrollTo(0, 0);
             },
             showProductDetail(product) {
@@ -785,14 +880,7 @@
                 if (existingItem) {
                     existingItem.quantity += this.selection.quantity;
                 } else {
-                    this.cart.push({ 
-                        cartItemId: Date.now(), 
-                        productId: this.selectedProduct.id, 
-                        quantity: this.selection.quantity, 
-                        size: this.selection.size, 
-                        color: this.selection.color,
-                        selected: true
-                    });
+                    this.cart.push({ cartItemId: Date.now(), productId: this.selectedProduct.id, quantity: this.selection.quantity, size: this.selection.size, color: this.selection.color, selected: true });
                 }
                 this.closeProductDetail();
                 this.changeView('cart');
@@ -804,7 +892,6 @@
                     return;
                 }
 
-                // --- [NOVO] Monta o cabeçalho com os dados do cliente ---
                 let clientDataMessage = "👤 *DADOS DO CLIENTE*\n";
                 clientDataMessage += `*Nome:* ${this.userProfile.nome || 'Não informado'}\n`;
                 clientDataMessage += `*E-mail:* ${this.userProfile.email || 'Não informado'}\n`;
@@ -830,9 +917,7 @@
                 orderMessage += "-----------------------------------\n";
                 orderMessage += `*Valor Total: ${this.formatCurrency(this.cartTotalPrice)}*\n\n`;
                 orderMessage += "Aguardo seu contato para finalizar. Obrigada!";
-
                 const finalMessage = clientDataMessage + orderMessage;
-
                 window.location.href = `https://wa.me/${this.phoneNumber}?text=${encodeURIComponent(finalMessage)}`;
             },
             isInWishlist(productId) { return this.wishlist.includes(productId); },
@@ -898,10 +983,9 @@
                 }
                 return {};
             },
-            // --- [NOVO] Métodos para o Perfil do Usuário ---
             saveProfile() {
-                // Apenas exibe a notificação, pois os dados já são salvos pelo 'watch'
                 this.showProfileNotification('Perfil salvo com sucesso!');
+                this.profileSubView = 'main';
             },
             triggerFileUpload() {
                 this.$refs.fileInput.click();
@@ -909,10 +993,9 @@
             handlePictureUpload(event) {
                 const file = event.target.files[0];
                 if (!file) return;
-
                 const reader = new FileReader();
                 reader.onload = (e) => {
-                    this.userProfile.fotoUrl = e.target.result; // Salva a imagem como Base64
+                    this.userProfile.fotoUrl = e.target.result;
                 };
                 reader.readAsDataURL(file);
             },
@@ -923,6 +1006,17 @@
                 setTimeout(() => {
                     this.profileNotification.show = false;
                 }, duration);
+            },
+            logout() {
+                if (confirm('Você tem certeza que deseja sair? Seus dados (carrinho, favoritos e perfil) serão apagados deste navegador.')) {
+                    localStorage.removeItem('cajuia-user-profile');
+                    localStorage.removeItem('cajuia-cart');
+                    localStorage.removeItem('cajuia-wishlist');
+                    window.location.reload();
+                }
+            },
+            showWipAlert() {
+                alert('Funcionalidade em desenvolvimento.');
             }
         }
     }).mount('#app');
