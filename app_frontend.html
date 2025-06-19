@@ -1,0 +1,932 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Cajuia</title>
+    
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --bg-color: #FFFFFF;
+            --secondary-bg-color: #F8F8F8;
+            --primary-color: #7A4E2D;
+            --text-color-primary: #222222;
+            --text-color-secondary: #888888;
+            --border-color: #F0F0F0;
+            --font-family-sans: 'Poppins', sans-serif;
+            --font-family-serif: 'Playfair Display', serif;
+            --header-height: 60px;
+            --footer-height: 70px;
+            --white-color: #FFFFFF;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html { font-size: 16px; scroll-behavior: smooth; }
+        
+        body {
+            font-family: var(--font-family-sans);
+            background-color: var(--secondary-bg-color); /* Alterado para combinar com a página de perfil */
+            color: var(--text-color-primary);
+            -webkit-tap-highlight-color: transparent;
+            -webkit-font-smoothing: antialiased;
+            text-rendering: optimizeLegibility;
+        }
+        
+        .fade-enter-active, .fade-leave-active { transition: opacity 0.3s ease-in-out; }
+        .fade-enter-from, .fade-leave-to { opacity: 0; }
+        .slide-up-enter-active, .slide-up-leave-active { transition: transform 0.4s cubic-bezier(0.25, 0.8, 0.25, 1); }
+        .slide-up-enter-from, .slide-up-leave-to { transform: translateY(100%); }
+        @keyframes fill-bar { from { width: 0%; } to { width: 100%; } }
+
+        .splash-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: var(--secondary-bg-color); display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 2000; }
+        .splash-screen .logo { width: 160px; margin-bottom: 25px; }
+        .loading-bar-container { width: 180px; height: 6px; background-color: #EFEAE2; border-radius: 3px; overflow: hidden; }
+        .loading-bar { height: 100%; width: 0%; background-color: var(--primary-color); border-radius: 3px; animation: fill-bar 5s ease-out forwards; }
+        
+        #app { padding-bottom: var(--footer-height); overflow-x: hidden; }
+        .page {
+            padding: 1rem;
+            min-height: calc(100vh - var(--footer-height));
+            overflow-x: hidden;
+            padding-top: var(--header-height);
+        }
+        .section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; padding: 0 0.5rem; }
+        .section-header h2 { font-size: 1.5rem; font-weight: 600; font-family: var(--font-family-sans); }
+        .section-header .see-all { font-size: 0.9rem; font-weight: 500; color: var(--primary-color); text-decoration: none; }
+        
+        /* --- Tela Inicial --- */
+        .home-page { padding: 0; padding-top: 0; background-color: var(--white-color); }
+        .home-header {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 1rem;
+            height: var(--header-height);
+            z-index: 1000;
+        }
+        .header-icon { background: rgba(255,255,255,0.7); backdrop-filter: blur(5px); border-radius: 50%; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; color: var(--text-color-primary); }
+        .header-icon svg { width: 24px; height: 24px; }
+        
+        /* --- Hero Carousel --- */
+        .hero-carousel-container { position: relative; width: 100%; height: 60vh; overflow: hidden; }
+        .hero-carousel-wrapper { display: flex; height: 100%; transition: transform 0.8s cubic-bezier(0.77, 0, 0.175, 1); }
+        .hero-banner-slide { flex: 0 0 100%; position: relative; background-size: cover; background-position: center 30%; color: var(--white-color); display: flex; flex-direction: column; justify-content: flex-end; padding: 2rem 1.5rem; }
+        .hero-banner-slide::before { content: ''; position: absolute; inset: 0; background: linear-gradient(to top, rgba(0,0,0,0.4), transparent 50%); z-index: 1; }
+        .hero-banner-slide > div { position: relative; z-index: 2; }
+        .hero-banner-slide h1 { font-family: var(--font-family-serif); font-size: 2.5rem; font-weight: 700; line-height: 1.2; text-shadow: 1px 1px 3px rgba(0,0,0,0.4); }
+        .hero-banner-slide p { font-size: 1rem; font-weight: 500; margin-top: 0.5rem; text-shadow: 1px 1px 2px rgba(0,0,0,0.3); }
+        .hero-banner-slide span { font-size: 3.5rem; font-weight: 700; font-family: var(--font-family-serif); text-shadow: 1px 1px 3px rgba(0,0,0,0.4); }
+        .carousel-dots { position: absolute; bottom: 1rem; left: 50%; transform: translateX(-50%); display: flex; gap: 0.5rem; z-index: 3; }
+        .dot { width: 8px; height: 8px; border-radius: 50%; background-color: rgba(255,255,255,0.5); cursor: pointer; transition: background-color 0.3s, transform 0.3s; }
+        .dot.active { background-color: var(--white-color); transform: scale(1.2); }
+        .home-content { padding: 2rem 1rem; background-color: var(--white-color); }
+        .categories-list { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; }
+        .category-item { position: relative; cursor: pointer; border-radius: 12px; overflow: hidden; aspect-ratio: 4 / 5; transition: transform 0.3s ease; }
+        .category-item:active { transform: scale(0.97); }
+        .category-icon { width: 100%; height: 100%; }
+        .category-icon img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.4s ease; }
+        .category-item:hover .category-icon img { transform: scale(1.05); }
+        .category-item::after { content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: linear-gradient(to top, rgba(0,0,0,0.6), transparent 60%); }
+        .category-item span { position: absolute; bottom: 1rem; left: 1rem; right: 1rem; color: var(--white-color); font-size: 1.1rem; font-weight: 600; z-index: 2; }
+        .product-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; }
+        .product-card { background-color: transparent; border-radius: 12px; cursor: pointer; position: relative; }
+        .product-card-image-wrapper { width: 100%; padding-top: 135%; position: relative; border-radius: 12px; overflow: hidden; background-color: #f0f0f0; }
+        .product-card-image-wrapper img { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; }
+        .product-info { padding: 0.8rem 0.1rem; text-align: left; }
+        .product-info h3 { font-size: 1rem; font-weight: 500; margin-bottom: 0.25rem; color: var(--text-color-primary); }
+        .product-info p { font-size: 1rem; font-weight: 600; color: var(--text-color-primary); }
+        .product-card .wishlist-icon {  position: absolute;  top: 10px; right: 10px;  z-index: 5;  width: 36px; height: 36px;  background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; border-radius: 50%; }
+        
+        /* --- Navegação Inferior --- */
+        .bottom-nav { position: fixed; bottom: 0; left: 0; width: 100%; height: var(--footer-height); background-color: rgba(255, 255, 255, 0.9); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); display: flex; justify-content: space-around; align-items: center; border-top: 1px solid var(--border-color); z-index: 500; }
+        .nav-item { display: flex; flex-direction: column; align-items: center; cursor: pointer; color: var(--text-color-secondary); transition: color 0.3s, transform 0.2s ease; padding: 5px; }
+        .nav-item:active { transform: scale(0.95); }
+        .nav-item svg { width: 28px; height: 28px; }
+        .nav-item span { font-size: 0.7rem; font-weight: 500; margin-top: 2px; }
+        .nav-item.active { color: var(--primary-color); }
+        .cart-badge { position: absolute; top: -2px; right: -5px; background-color: var(--primary-color); color: white; border-radius: 50%; width: 16px; height: 16px; font-size: 9px; display: flex; justify-content: center; align-items: center; font-weight: 600; border: 1px solid var(--white-color); }
+
+        /* --- Página de Detalhes do Produto --- */
+        .product-detail-page { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: var(--white-color); z-index: 1500; overflow-y: auto; }
+        .detail-header { position: absolute; top: 1rem; left: 1rem; z-index: 210; }
+        .back-button { background-color: rgba(255, 255, 255, 0.6); backdrop-filter: blur(5px); border: none; width: 44px; height: 44px; border-radius: 50%; display: flex; justify-content: center; align-items: center; cursor: pointer; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .product-detail-image { width: 100%; height: 60vh; object-fit: cover; cursor: pointer; }
+        .product-detail-content { padding: 1.5rem; margin-top: -2rem; background: var(--white-color); border-radius: 16px 16px 0 0; position: relative; z-index: 10;}
+        .detail-title-row { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.5rem; position: relative; }
+        .detail-title-row h1 { font-size: 1.5rem; font-weight: 600; flex-grow: 1; margin-right: 2.5rem; }
+        .detail-title-row .wishlist-icon { position: absolute; top: -2.5rem; right: 0rem; width: 48px; height: 48px; background: var(--white-color); border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 220; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+        .product-price-highlight { color: var(--primary-color); font-size: 1.5rem; font-weight: 700; margin: 0.3rem 0 1rem 0; display: block; }
+        .product-detail-content .description { line-height: 1.7; margin: 1rem 0; color: var(--text-color-secondary); font-size: 0.95rem; }
+        .variation-group { margin-bottom: 1.5rem; }
+        .variation-group h3 { font-size: 1rem; font-weight: 600; margin-bottom: 1rem; }
+        .options-container { display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: center; }
+        .size-button { padding: 0.6rem 1rem; border: 1.5px solid var(--border-color); border-radius: 8px; cursor: pointer; background-color: var(--white-color); color: var(--text-color-primary); font-weight: 600; transition: all 0.2s ease; }
+        .size-button.active { border-color: var(--primary-color); background-color: var(--primary-color); color: var(--white-color); }
+        .color-button { width: 36px; height: 36px; border: 2px solid var(--border-color); border-radius: 50%; cursor: pointer; transition: all 0.2s ease; }
+        .color-button.active { border-color: var(--primary-color); transform: scale(1.15); box-shadow: 0 0 0 2px var(--primary-color) inset; }
+        .add-to-cart-wrapper { padding: 1rem 1.5rem 1.5rem; background-color: rgba(255, 255, 255, 0.9); backdrop-filter: blur(10px); position: sticky; bottom: 0; left: 0; width: 100%; border-top: 1px solid var(--border-color); display: flex; align-items: center; gap: 1rem; }
+        .quantity-selector { display: flex; align-items: center; gap: 1rem; }
+        .quantity-selector button { width: 44px; height: 44px; border-radius: 50%; border: 1px solid var(--border-color); background-color: var(--white-color); font-size: 1.5rem; font-weight: 400; cursor: pointer; color: var(--text-color-primary); }
+        .quantity-selector span { font-size: 1.2rem; font-weight: 600; min-width: 20px; text-align: center;}
+        .add-to-cart-button { flex-grow: 1; padding: 1rem; border: none; background-color: var(--primary-color); color: var(--white-color); border-radius: 12px; font-size: 1rem; font-weight: 600; cursor: pointer; transition: background-color 0.3s; }
+        .add-to-cart-button:disabled { background-color: #cccccc; cursor: not-allowed; }
+
+        /* --- Modal de Zoom --- */
+        .zoom-modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.85); z-index: 1600; display: flex; justify-content: center; align-items: center; backdrop-filter: blur(5px); }
+        .zoom-modal img { max-width: 95%; max-height: 80%; object-fit: contain; }
+
+        /* --- Carrinho --- */
+        .cart-page { background-color: var(--secondary-bg-color); }
+        .cart-page-header { display: flex; align-items: center; padding: 1rem 1rem 1rem 1rem; }
+        .cart-page-header .back-button-cart { background: none; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; margin-right: 1rem; }
+        .cart-page-header h2 { font-size: 1.5rem; font-weight: 600; }
+        .cart-list-container { position: relative; overflow: hidden; padding: 0 1rem; }
+        .cart-item-wrapper { position: relative; margin-bottom: 1rem; background-color: var(--white-color); border-radius: 12px; overflow:hidden; }
+        .delete-action { position: absolute; top: 0; right: 0; bottom: 0; width: 90px; background-color: #e74c3c; color: white; display: flex; justify-content: center; align-items: center; transform: translateX(100%); transition: transform 0.3s ease; }
+        .delete-action svg { width: 28px; height: 28px; }
+        .cart-item-wrapper.swiped .delete-action { transform: translateX(0); }
+        .cart-item-content { display: flex; align-items: center; padding: 1rem; background-color: var(--white-color); transition: transform 0.3s ease; }
+        .cart-item-checkbox { display: flex; align-items: center; justify-content: center; width: 24px; height: 24px; border: 2px solid var(--border-color); border-radius: 6px; margin-right: 1rem; cursor: pointer; flex-shrink: 0; }
+        .cart-item-checkbox.checked { background-color: var(--primary-color); border-color: var(--primary-color); }
+        .cart-item-checkbox.checked svg { display: block; }
+        .cart-item-checkbox svg { color: white; width: 16px; height: 16px; display: none; }
+        .cart-item-image { width: 80px; height: 100px; border-radius: 8px; object-fit: cover; margin-right: 1rem; background-color: #f0f0f0; }
+        .cart-item-details { flex-grow: 1; display: flex; flex-direction: column; justify-content: space-between; gap: 0.5rem; }
+        .cart-item-details h3 { font-size: 1rem; font-weight: 500; }
+        .cart-item-details p { font-size: 0.9rem; color: var(--text-color-secondary); }
+        .cart-item-price { font-size: 1rem; font-weight: 600; }
+        .cart-item-controls { display: flex; align-items: center; justify-content: flex-end; }
+        .cart-item-quantity-selector { display: flex; align-items: center; gap: 0.75rem; border: 1px solid var(--border-color); border-radius: 20px; padding: 4px; }
+        .cart-item-quantity-selector button { width: 28px; height: 28px; border-radius: 50%; border: none; background-color: var(--secondary-bg-color); font-size: 1.2rem; cursor: pointer; color: var(--text-color-primary); display: flex; align-items: center; justify-content: center; }
+        .cart-item-quantity-selector span { font-weight: 600; }
+        .cart-summary { padding: 1.5rem 1rem; border-top: 1px solid var(--border-color); background: var(--white-color); }
+        .summary-row { display: flex; justify-content: space-between; margin-bottom: 1rem; font-size: 1rem; }
+        .summary-row.total { font-weight: 700; font-size: 1.2rem; }
+        .checkout-button { width: 100%; padding: 1rem; margin-top: 1rem; border: none; background-color: var(--primary-color); color: var(--white-color); border-radius: 12px; font-size: 1rem; font-weight: 600; cursor: pointer; }
+        .empty-cart { text-align: center; color: var(--text-color-secondary); margin-top: 3rem; padding: 2rem; }
+
+        /* --- Carrossel "Para Você" --- */
+        .related-products-section { padding: 2rem 0 1rem 1rem; }
+        .related-products-carousel { display: flex; overflow-x: auto; gap: 1rem; padding-bottom: 1rem; scrollbar-width: none; -ms-overflow-style: none; scroll-snap-type: x mandatory; }
+        .related-products-carousel::-webkit-scrollbar { display: none; }
+        .related-product-card { flex: 0 0 160px; scroll-snap-align: start; background-color: var(--white-color); border-radius: 12px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+        .related-product-card img { width: 100%; height: 200px; object-fit: cover; }
+        .related-product-info { padding: 0.75rem; }
+        .related-product-info h3 { font-size: 0.9rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .related-product-info p { font-size: 0.85rem; color: var(--text-color-secondary); margin-top: 0.25rem; }
+
+        /* --- Wishlist --- */
+        .wishlist-icon svg { width: 24px; height: 24px; transition: fill 0.3s, transform 0.3s, stroke 0.3s; stroke: var(--text-color-primary); stroke-width: 1.5px; fill: transparent; }
+        .wishlist-icon.active svg { fill: #e74c3c; stroke: #e74c3c; transform: scale(1.1); }
+        .wishlist-page { padding: 1rem; min-height: calc(100vh - var(--footer-height)); }
+        .wishlist-empty { text-align: center; color: var(--text-color-secondary); margin-top: 3rem; }
+        .wishlist-list { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; }
+        
+        /* --- [NOVO] Página de Perfil --- */
+        .profile-page { padding: 0; padding-top: 1rem; background-color: var(--secondary-bg-color); }
+        .profile-header-card {
+            background-color: var(--white-color);
+            margin: 1rem;
+            padding: 2rem 1rem;
+            border-radius: 16px;
+            text-align: center;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+        }
+        .profile-picture-wrapper {
+            position: relative;
+            display: inline-block;
+            margin-bottom: 1rem;
+        }
+        .profile-picture {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 4px solid var(--white-color);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        .upload-button {
+            position: absolute;
+            bottom: 5px;
+            right: 5px;
+            width: 36px;
+            height: 36px;
+            background-color: var(--primary-color);
+            color: var(--white-color);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            border: 2px solid var(--white-color);
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+        .profile-name { font-size: 1.5rem; font-weight: 600; margin-bottom: 0.25rem; }
+        .profile-email { font-size: 1rem; color: var(--text-color-secondary); }
+        .profile-form {
+            background-color: var(--white-color);
+            margin: 0 1rem 1rem 1rem;
+            padding: 1.5rem;
+            border-radius: 16px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+        }
+
+        .profile-email {
+    font-size: 1rem;
+    color: var(--text-color-secondary);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 90%;
+    margin: 0 auto;
+    display: block;
+}
+        .form-group { margin-bottom: 1.25rem; }
+        .form-group label {
+            display: block;
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            color: var(--text-color-primary);
+        }
+        .form-group input {
+            width: 100%;
+            padding: 0.9rem;
+            border: 1.5px solid var(--border-color);
+            border-radius: 10px;
+            font-size: 1rem;
+            font-family: var(--font-family-sans);
+            transition: border-color 0.3s;
+        }
+        .form-group input:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 2px rgba(122, 78, 45, 0.2);
+        }
+        .save-button {
+             width: 100%; 
+             padding: 1rem; 
+             margin-top: 1rem;
+             border: none; 
+             background-color: var(--primary-color); 
+             color: var(--white-color);
+             border-radius: 12px;
+             font-size: 1rem;
+             font-weight: 600;
+             cursor: pointer;
+        }
+        .profile-notification {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 1rem 1.5rem;
+            border-radius: 10px;
+            color: var(--white-color);
+            background-color: #27ae60;
+            z-index: 2500;
+            font-weight: 500;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        .profile-notification.error { background-color: #e74c3c; }
+
+    </style>
+</head>
+<body>
+
+<div id="app">
+
+    <transition name="fade">
+        <div v-if="isLoading" class="splash-screen">
+            <img src="https://cdn.shopify.com/s/files/1/0927/1286/1998/files/Design_sem_nome_-_2025-06-13T102227.591.png?v=1750256134" alt="Logo da Loja" class="logo">
+            <div class="loading-bar-container"><div class="loading-bar"></div></div>
+            <div class="error-message" v-if="errorOnLoad"><p>Não foi possível carregar os produtos.</p></div>
+        </div>
+    </transition>
+
+    <main v-if="!isLoading && !errorOnLoad">
+        
+        <transition name="fade">
+            <div v-if="profileNotification.show" class="profile-notification" :class="profileNotification.type">
+                {{ profileNotification.message }}
+            </div>
+        </transition>
+
+        <transition name="fade" mode="out-in">
+            <div v-if="currentView === 'home'" class="home-page">
+                
+                <header class="home-header">
+                     <div class="header-icon" @click="changeView('profile')">
+                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a5 5 0 1 1 0 10 5 5 0 0 1 0-10zm0 12c-3.31 0-10 1.67-10 5v1h20v-1c0-3.33-6.69-5-10-5z"></path></svg>
+                     </div>
+                </header>
+                
+                <section v-if="personalizacao.heroAtivo && personalizacao.heroBanners && personalizacao.heroBanners.length > 0" class="hero-carousel-container">
+                    <div class="hero-carousel-wrapper" :style="{ transform: 'translateX(' + (-currentSlide * 100) + '%)' }">
+                        <div v-for="slide in personalizacao.heroBanners" :key="slide.id" class="hero-banner-slide" :style="{ backgroundImage: 'linear-gradient(to top, rgba(0,0,0,0.4), transparent 50%), url(' + slide.imagemFundo + ')' }">
+                            <div>
+                                <h1>{{ slide.titulo }}</h1>
+                                <span v-if="slide.desconto">{{ slide.desconto }}</span>
+                                <p v-if="slide.subtitulo">{{ slide.subtitulo }}</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="carousel-dots" v-if="personalizacao.heroBanners.length > 1">
+                        <span v-for="(slide, index) in personalizacao.heroBanners" :key="'dot-'+slide.id" 
+                              class="dot" :class="{ active: currentSlide === index }" @click="goToSlide(index)"></span>
+                    </div>
+                </section>
+                
+                <div class="home-content" :style="{ paddingTop: !(personalizacao.heroAtivo && personalizacao.heroBanners && personalizacao.heroBanners.length > 0) ? 'var(--header-height)' : '2rem' }">
+                    <section style="margin-bottom: 2.5rem;">
+                        <div class="section-header">
+                            <h2>Coleções</h2>
+                            <a href="#" @click.prevent="selectedCategoryId = null" class="see-all">Ver todas</a>
+                        </div>
+                        <div class="categories-list">
+                            <div v-for="category in categories" :key="category.id" class="category-item" @click="selectedCategoryId = category.id">
+                                <div class="category-icon"><img :src="category.icone" :alt="category.nome" loading="lazy"></div>
+                                <span>{{ category.nome }}</span>
+                            </div>
+                        </div>
+                    </section>
+                    
+                    <section>
+                        <div class="section-header">
+                            <h2>{{ selectedCategoryId ? getCategoryNameById(selectedCategoryId) : 'Destaques da Estação' }}</h2>
+                             <a href="#" @click.prevent="selectedCategoryId = null" class="see-all" v-if="selectedCategoryId">Ver todos</a>
+                        </div>
+                        <div class="product-grid">
+                            <div v-for="product in filteredProducts" :key="product.id" @click="showProductDetail(product)" class="product-card">
+                                <div class="wishlist-icon" :class="{active: isInWishlist(product.id)}" @click.stop="toggleWishlist(product)">
+                                    <svg viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41 0.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+                                </div>
+                                <div class="product-card-image-wrapper"><img :src="product.imagem" :alt="product.nome" loading="lazy"></div>
+                                <div class="product-info">
+                                    <h3>{{ product.nome }}</h3>
+                                    <p>{{ formatCurrency(product.preco) }}</p>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+                </div>
+            </div>
+            
+            <div v-else-if="currentView === 'cart'" class="page cart-page">
+                 <div class="cart-page-header">
+                     <button @click="changeView('home')" class="back-button-cart">
+                         <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="currentColor"><path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12l4.58-4.59z"></path></svg>
+                    </button>
+                    <h2>Carrinho</h2>
+                </div>
+                <div v-if="cart.length > 0">
+                    <div class="cart-list-container">
+                        <div v-for="item in cart" :key="item.cartItemId" class="cart-item-wrapper" :class="{ swiped: swipeState[item.cartItemId] && swipeState[item.cartItemId].isSwiped }">
+                            <div class="delete-action" @click="removeFromCart(item.cartItemId)">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"></path></svg>
+                            </div>
+                            <div class="cart-item-content" 
+                                 :style="getSwipeStyle(item.cartItemId)"
+                                 @touchstart="handleTouchStart(item.cartItemId, $event)"
+                                 @touchmove="handleTouchMove(item.cartItemId, $event)"
+                                 @touchend="handleTouchEnd(item.cartItemId)">
+                                <div class="cart-item-checkbox" :class="{ checked: item.selected }" @click.stop="toggleCartItemSelection(item.cartItemId)">
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"></path></svg>
+                                </div>
+                                <img :src="getProductById(item.productId).imagem" class="cart-item-image" loading="lazy">
+                                <div class="cart-item-details">
+                                    <div>
+                                        <h3>{{ getProductById(item.productId).nome }}</h3>
+                                        <p>{{ getProductById(item.productId).tipo }}</p>
+                                    </div>
+                                    <span class="cart-item-price">{{ formatCurrency(getProductById(item.productId).preco) }}</span>
+                                </div>
+                                <div class="cart-item-controls">
+                                    <div class="cart-item-quantity-selector">
+                                        <button @click.stop="updateCartQuantity(item.cartItemId, -1)">-</button>
+                                        <span>{{ item.quantity }}</span>
+                                        <button @click.stop="updateCartQuantity(item.cartItemId, 1)">+</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                     <section class="related-products-section" v-if="relatedProducts.length > 0">
+                         <div class="section-header" style="padding-right: 1rem;">
+                             <h2>Você também pode gostar</h2>
+                             <a href="#" @click.prevent="changeView('home')" class="see-all">Ver Todos</a>
+                         </div>
+                         <div class="related-products-carousel">
+                              <div v-for="product in relatedProducts" :key="'related-'+product.id" class="related-product-card" @click="showProductDetail(product)">
+                                 <img :src="product.imagem" :alt="product.nome" loading="lazy">
+                                 <div class="related-product-info">
+                                     <h3>{{ product.nome }}</h3>
+                                     <p>{{ formatCurrency(product.preco) }}</p>
+                                 </div>
+                             </div>
+                         </div>
+                     </section>
+                </div>
+                <div v-else class="empty-cart">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="48" height="48" style="color: #ccc; margin-bottom: 1rem;"><path d="M17,18C15.89,18 15,18.89 15,20A2,2 0 0,0 17,22A2,2 0 0,0 19,20C19,18.89 18.1,18 17,18M7,18C5.89,18 5,18.89 5,20A2,2 0 0,0 7,22A2,2 0 0,0 9,20C9,18.89 8.1,18 7,18M7.17,14.75L7.2,14.63L8.1,13H15.55C16.3,13 16.96,12.58 17.3,11.97L20.88,5.5L19.25,4.5L16,9H8.53L8.4,8.73L6.16,4H4V6H6L9.6,13.59L8.25,16.24C8.09,16.53 8,16.88 8,17.25A2,2 0 0,0 10,19H18V17H10.42C10.29,17 10.17,16.89 10.1,16.75L10.17,16.63L7.17,14.75Z"></path></svg>
+                    <p>Seu carrinho está vazio.</p>
+                </div>
+                <div class="cart-summary" v-if="cart.length > 0">
+                    <div class="summary-row"><span>Subtotal</span><span>{{ formatCurrency(cartTotalPrice) }}</span></div>
+                    <div class="summary-row total"><span>Total</span><span>{{ formatCurrency(cartTotalPrice) }}</span></div>
+                    <button @click="finalizePurchase" class="checkout-button">Finalizar Compra</button>
+                </div>
+            </div>
+
+            <div v-else-if="currentView === 'profile'" class="page profile-page">
+                <div class="profile-header-card">
+                    <div class="profile-picture-wrapper">
+                        <input type="file" ref="fileInput" @change="handlePictureUpload" accept="image/*" style="display: none;">
+                        <img :src="userProfile.fotoUrl || 'https://cdn.shopify.com/s/files/1/0927/1286/1998/files/266033.png?v=1750354671'" alt="Foto do Perfil" class="profile-picture">
+                        <div class="upload-button" @click="triggerFileUpload">
+                             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg>
+                        </div>
+                    </div>
+                    <h2 class="profile-name">{{ userProfile.nome || 'Nome do Usuário' }}</h2>
+                    <p class="profile-email">{{ userProfile.email || 'email@exemplo.com' }}</p>
+                </div>
+
+                <form class="profile-form" @submit.prevent="saveProfile">
+                    <div class="form-group">
+                        <label for="nome">Nome Completo</label>
+                        <input type="text" id="nome" v-model="userProfile.nome" placeholder="Digite seu nome completo">
+                    </div>
+                    <div class="form-group">
+                        <label for="email">E-mail</label>
+                        <input type="email" id="email" v-model="userProfile.email" placeholder="seu.email@provedor.com">
+                    </div>
+                    <div class="form-group">
+                        <label for="telefone">Telefone / WhatsApp</label>
+                        <input type="tel" id="telefone" v-model="userProfile.telefone" placeholder="(99) 99999-9999">
+                    </div>
+                    <div class="form-group">
+                        <label for="atuacao">Área de Atuação</label>
+                        <input type="text" id="atuacao" v-model="userProfile.atuacao" placeholder="Ex: Varejo, Moda, etc.">
+                    </div>
+                    <div class="form-group">
+                        <label for="endereco">Endereço Completo</label>
+                        <input type="text" id="endereco" v-model="userProfile.endereco" placeholder="Rua, Número, Bairro, Cidade - Estado, CEP">
+                    </div>
+                    <div class="form-group">
+                        <label for="empresa">Empresa (Opcional)</label>
+                        <input type="text" id="empresa" v-model="userProfile.empresa" placeholder="Nome da sua empresa">
+                    </div>
+                    <div class="form-group">
+                        <label for="cnpj">CNPJ (Opcional)</label>
+                        <input type="text" id="cnpj" v-model="userProfile.cnpj" placeholder="00.000.000/0000-00">
+                    </div>
+                    <button type="submit" class="save-button">Salvar Alterações</button>
+                </form>
+            </div>
+            
+            <div v-else-if="currentView === 'wishlist'" class="page wishlist-page">
+                 <div class="section-header"><h2>Favoritos</h2></div>
+                 <div v-if="wishlist.length > 0" class="wishlist-list">
+                     <div v-for="product in wishlistProducts" :key="product.id" class="product-card">
+                          <div class="wishlist-icon active" @click.stop="toggleWishlist(product)">
+                             <svg viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41 0.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+                         </div>
+                          <div class="product-card-image-wrapper" @click="showProductDetail(product)"><img :src="product.imagem" :alt="product.nome" loading="lazy"></div>
+                         <div class="product-info" @click="showProductDetail(product)">
+                             <h3>{{ product.nome }}</h3>
+                             <p>{{ formatCurrency(product.preco) }}</p>
+                         </div>
+                         <button class="add-to-cart-button" style="margin-top: 0.7rem; width: 100%;" @click="addWishlistToCart(product)">
+                            Adicionar ao Carrinho
+                         </button>
+                     </div>
+                 </div>
+                 <div v-else class="wishlist-empty">
+                     <svg viewBox="0 0 24 24" fill="#cccccc" width="48" height="48" style="margin-bottom: 1rem;"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41 0.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+                     <p>Sua lista de favoritos está vazia.</p>
+                 </div>
+            </div>
+
+            <div v-else class="page" style="text-align: center; padding-top: 100px;">
+                <h2 style="text-transform: capitalize;">{{ currentView }}</h2>
+                <p>Funcionalidade em desenvolvimento.</p>
+            </div>
+        </transition>
+        
+        <transition name="slide-up">
+            <div v-if="selectedProduct" class="product-detail-page">
+                <div class="detail-header">
+                    <button @click="closeProductDetail" class="back-button">
+                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M7.82843 10.9999H20V12.9999H7.82843L13.1924 18.3638L11.7782 19.778L4 11.9999L11.7782 4.22168L13.1924 5.63589L7.82843 10.9999Z"></path></svg>
+                    </button>
+                </div>
+                <img :src="selectedProduct.imagem" @click="isZoomModalVisible = true" class="product-detail-image">
+                 <div class="product-detail-content">
+                    <div class="detail-title-row">
+                        <h1>{{ selectedProduct.nome }}</h1>
+                        <div class="wishlist-icon" :class="{active: isInWishlist(selectedProduct.id)}" @click="toggleWishlist(selectedProduct)">
+                           <svg viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41 0.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+                        </div>
+                    </div>
+                    <span class="product-price-highlight">{{ formatCurrency(selectedProduct.preco) }}</span>
+                    <p class="description">{{ selectedProduct.descricao }}</p>
+                    <div style="display: flex; gap: 2rem;">
+                        <div class="variation-group" v-if="selectedProduct.variacoes.tamanhos && selectedProduct.variacoes.tamanhos.length">
+                            <h3>Tamanho</h3>
+                            <div class="options-container">
+                                <button v-for="size in selectedProduct.variacoes.tamanhos" :key="size" @click="selection.size = size" class="size-button" :class="{ active: selection.size === size }">{{ size }}</button>
+                            </div>
+                        </div>
+                        <div class="variation-group" v-if="selectedProduct.variacoes.cores && selectedProduct.variacoes.cores.length">
+                            <h3>Cor</h3>
+                            <div class="options-container">
+                                <button v-for="color in selectedProduct.variacoes.cores" :key="color" @click="selection.color = color" class="color-button" :style="{ backgroundColor: color.toLowerCase() }" :class="{ active: selection.color === color }"></button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="add-to-cart-wrapper">
+                    <div class="quantity-selector">
+                        <button @click="selection.quantity > 1 ? selection.quantity-- : 1">-</button>
+                        <span>{{ selection.quantity }}</span>
+                        <button @click="selection.quantity++">+</button>
+                    </div>
+                    <button @click="addToCart" :disabled="!isSelectionValid" class="add-to-cart-button">Adicionar ao Carrinho</button>
+                </div>
+            </div>
+        </transition>
+
+        <transition name="fade">
+             <div v-if="isZoomModalVisible" class="zoom-modal" @click="isZoomModalVisible = false">
+                <img :src="selectedProduct.imagem" alt="Zoomed product image">
+            </div>
+        </transition>
+        
+        <nav class="bottom-nav">
+             <div class="nav-item" :class="{ active: currentView === 'home' }" @click="changeView('home')">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M10 20V14H14V20H19V12H22L12 3L2 12H5V20H10Z"></path></svg>
+                <span>Início</span>
+            </div>
+             <div class="nav-item" :class="{ active: currentView === 'search' }" @click="changeView('search')">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M9.5,3A6.5,6.5 0 0,1 16,9.5C16,11.11 15.41,12.59 14.44,13.73L14.71,14H15.5L20.5,19L19,20.5L14,15.5V14.71L13.73,14.44C12.59,15.41 11.11,16 9.5,16A6.5,6.5 0 0,1 3,9.5A6.5,6.5 0 0,1 9.5,3M9.5,5C7,5 5,7 5,9.5C5,12 7,14 9.5,14C12,14 14,12 14,9.5C14,7 12,5 9.5,5Z"></path></svg>
+                <span>Pesquisar</span>
+            </div>
+             <div class="nav-item" :class="{ active: currentView === 'cart' }" @click="changeView('cart')" style="position: relative;">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M17,18C15.89,18 15,18.89 15,20A2,2 0 0,0 17,22A2,2 0 0,0 19,20C19,18.89 18.1,18 17,18M7,18C5.89,18 5,18.89 5,20A2,2 0 0,0 7,22A2,2 0 0,0 9,20C9,18.89 8.1,18 7,18M7.17,14.75L7.2,14.63L8.1,13H15.55C16.3,13 16.96,12.58 17.3,11.97L20.88,5.5L19.25,4.5L16,9H8.53L8.4,8.73L6.16,4H4V6H6L9.6,13.59L8.25,16.24C8.09,16.53 8,16.88 8,17.25A2,2 0 0,0 10,19H18V17H10.42C10.29,17 10.17,16.89 10.1,16.75L10.17,16.63L7.17,14.75Z"></path></svg>
+                <span v-if="cartItemCount > 0" class="cart-badge">{{ cartItemCount }}</span>
+                <span>Carrinho</span>
+            </div>
+             <div class="nav-item" :class="{ active: currentView === 'wishlist' }" @click="changeView('wishlist')">
+                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41 0.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+                <span>Favoritos</span>
+            </div>
+             <div class="nav-item" :class="{ active: currentView === 'profile' }" @click="changeView('profile')">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M12,4A4,4 0 0,1 16,8A4,4 0 0,1 12,12A4,4 0 0,1 8,8A4,4 0 0,1 12,4M12,14C16.42,14 20,15.79 20,18V20H4V18C4,15.79 7.58,14 12,14Z"></path></svg>
+                <span>Perfil</span>
+            </div>
+        </nav>
+
+    </main>
+</div>
+
+<script>
+    const { createApp, ref, onMounted, onBeforeUnmount } = Vue;
+
+    createApp({
+        setup() {
+            const currentSlide = ref(0);
+            const autoPlayInterval = ref(null);
+            
+            const startAutoPlay = (bannerCount) => {
+                if (bannerCount <= 1) return;
+                stopAutoPlay();
+                autoPlayInterval.value = setInterval(() => {
+                    currentSlide.value = (currentSlide.value + 1) % bannerCount;
+                }, 5000);
+            };
+
+            const stopAutoPlay = () => {
+                clearInterval(autoPlayInterval.value);
+                autoPlayInterval.value = null;
+            };
+
+            const goToSlide = (index) => {
+                currentSlide.value = index;
+                const bannerCount = this.personalizacao.heroBanners.length; // 'this' não funciona aqui, precisa ser acessado de outra forma
+                stopAutoPlay(); // Parar e reiniciar garante que o tempo seja resetado
+                startAutoPlay(bannerCount);
+            };
+
+            onBeforeUnmount(stopAutoPlay);
+
+            return {
+                currentSlide,
+                startAutoPlay,
+                goToSlide
+            };
+        },
+        data() {
+            return {
+                isLoading: true,
+                errorOnLoad: false,
+                currentView: 'home',
+                apiUrl: 'https://cajuia.onrender.com/backend_cajuia.json',
+                phoneNumber: '5515997637941',
+                personalizacao: { heroAtivo: false, heroBanners: [] },
+                categories: [],
+                products: [],
+                cart: [],
+                wishlist: [],
+                selectedProduct: null,
+                selection: { size: null, color: null, quantity: 1 },
+                isZoomModalVisible: false,
+                selectedCategoryId: null,
+                swipeState: {},
+                // --- [NOVO] Dados do Perfil do Usuário ---
+                userProfile: {
+                    fotoUrl: '',
+                    nome: '',
+                    email: '',
+                    telefone: '',
+                    empresa: '',
+                    cnpj: '',
+                    atuacao: '',
+                    endereco: '',
+                },
+                profileNotification: {
+                    show: false,
+                    message: '',
+                    type: 'success' // 'success' ou 'error'
+                }
+            };
+        },
+        computed: {
+            filteredProducts() {
+                if (!this.selectedCategoryId) {
+                    return this.products;
+                }
+                return this.products.filter(p => p.categoriaId === this.selectedCategoryId);
+            },
+            cartItemCount() { return this.cart.reduce((total, item) => total + item.quantity, 0); },
+            cartTotalPrice() {
+                return this.cart.reduce((total, item) => {
+                    if (item.selected) {
+                        const product = this.getProductById(item.productId);
+                        return product ? total + (product.preco * item.quantity) : total;
+                    }
+                    return total;
+                }, 0);
+            },
+            isSelectionValid() {
+                if (!this.selectedProduct) return false;
+                const hasSizes = this.selectedProduct.variacoes.tamanhos && this.selectedProduct.variacoes.tamanhos.length > 0;
+                const hasColors = this.selectedProduct.variacoes.cores && this.selectedProduct.variacoes.cores.length > 0;
+                const sizeIsValid = !hasSizes || this.selection.size !== null;
+                const colorIsValid = !hasColors || this.selection.color !== null;
+                return sizeIsValid && colorIsValid;
+            },
+            wishlistProducts() {
+                return this.products.filter(p => this.wishlist.includes(p.id));
+            },
+            relatedProducts() {
+                if (this.products.length === 0) return [];
+                const cartProductIds = this.cart.map(item => item.productId);
+                const availableProducts = this.products.filter(p => !cartProductIds.includes(p.id));
+                return availableProducts.sort(() => 0.5 - Math.random()).slice(0, 6);
+            }
+        },
+        watch: {
+            cart: { handler(newCart) { localStorage.setItem('cajuia-cart', JSON.stringify(newCart)); }, deep: true },
+            wishlist: { handler(newWishlist) { localStorage.setItem('cajuia-wishlist', JSON.stringify(newWishlist)); }, deep: true },
+            // --- [NOVO] Salva o perfil do usuário automaticamente ---
+            userProfile: {
+                handler(newProfile) {
+                    localStorage.setItem('cajuia-user-profile', JSON.stringify(newProfile));
+                },
+                deep: true
+            }
+        },
+        async mounted() {
+            // Carregar dados salvos do localStorage
+            const savedCart = localStorage.getItem('cajuia-cart');
+            if (savedCart) { this.cart = JSON.parse(savedCart); }
+            
+            const savedWishlist = localStorage.getItem('cajuia-wishlist');
+            if (savedWishlist) { this.wishlist = JSON.parse(savedWishlist); }
+
+            // --- [NOVO] Carrega o perfil do usuário salvo ---
+            const savedProfile = localStorage.getItem('cajuia-user-profile');
+            if (savedProfile) {
+                this.userProfile = JSON.parse(savedProfile);
+            }
+
+            // Fetch dos dados da loja
+            try {
+                const response = await fetch(this.apiUrl + '?t=' + new Date().getTime());
+                if (!response.ok) throw new Error('Network response was not ok.');
+                const data = await response.json();
+                
+                this.personalizacao = data.personalizacao || { heroAtivo: false, heroBanners: [] };
+                this.categories = data.categorias;
+                this.products = data.produtos.map(p => ({ ...p, tipo: p.tipo || 'T-Shirt' }));
+
+                if (this.personalizacao.heroAtivo && this.personalizacao.heroBanners) {
+                   this.startAutoPlay(this.personalizacao.heroBanners.length);
+                }
+
+            } catch (error) { 
+                this.errorOnLoad = true; 
+                console.error("Falha ao carregar dados:", error); 
+            } finally { 
+                setTimeout(() => { this.isLoading = false; }, 2000); 
+            }
+        },
+        methods: {
+            formatCurrency(value) { return typeof value !== 'number' ? '' : value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }); },
+            changeView(view) {
+                this.currentView = view;
+                this.selectedProduct = null;
+                window.scrollTo(0, 0);
+            },
+            showProductDetail(product) {
+                this.selectedProduct = product;
+                this.selection = { size: null, color: null, quantity: 1 };
+            },
+            closeProductDetail() { this.selectedProduct = null; },
+            getProductById(id) { return this.products.find(p => p.id === id) || { preco: 0, nome: 'Produto não encontrado', imagem: '', tipo: '' }; },
+            getCategoryNameById(id) {
+                const category = this.categories.find(c => c.id === id);
+                return category ? category.nome : '';
+            },
+            updateCartQuantity(cartItemId, change) {
+                const item = this.cart.find(i => i.cartItemId === cartItemId);
+                if (item) {
+                    item.quantity += change;
+                    if (item.quantity <= 0) this.removeFromCart(cartItemId);
+                }
+            },
+            removeFromCart(cartItemId) {
+                this.cart = this.cart.filter(i => i.cartItemId !== cartItemId);
+            },
+            addToCart() {
+                if (!this.isSelectionValid) return;
+                const existingItem = this.cart.find(item => item.productId === this.selectedProduct.id && item.size === this.selection.size && item.color === this.selection.color);
+                if (existingItem) {
+                    existingItem.quantity += this.selection.quantity;
+                } else {
+                    this.cart.push({ 
+                        cartItemId: Date.now(), 
+                        productId: this.selectedProduct.id, 
+                        quantity: this.selection.quantity, 
+                        size: this.selection.size, 
+                        color: this.selection.color,
+                        selected: true
+                    });
+                }
+                this.closeProductDetail();
+                this.changeView('cart');
+            },
+            finalizePurchase() {
+                const selectedItems = this.cart.filter(item => item.selected);
+                if (selectedItems.length === 0) {
+                    alert("Por favor, selecione ao menos um item para finalizar a compra.");
+                    return;
+                }
+
+                // --- [NOVO] Monta o cabeçalho com os dados do cliente ---
+                let clientDataMessage = "👤 *DADOS DO CLIENTE*\n";
+                clientDataMessage += `*Nome:* ${this.userProfile.nome || 'Não informado'}\n`;
+                clientDataMessage += `*E-mail:* ${this.userProfile.email || 'Não informado'}\n`;
+                clientDataMessage += `*Telefone:* ${this.userProfile.telefone || 'Não informado'}\n`;
+                if(this.userProfile.empresa) clientDataMessage += `*Empresa:* ${this.userProfile.empresa}\n`;
+                if(this.userProfile.cnpj) clientDataMessage += `*CNPJ:* ${this.userProfile.cnpj}\n`;
+                if(this.userProfile.atuacao) clientDataMessage += `*Área de Atuação:* ${this.userProfile.atuacao}\n`;
+                if(this.userProfile.endereco) clientDataMessage += `*Endereço:* ${this.userProfile.endereco}\n`;
+                clientDataMessage += "-----------------------------------\n\n";
+
+                let orderMessage = "🛍️ *RESUMO DO PEDIDO*\nOlá! ✨ Gostaria de fazer um pedido com os seguintes itens:\n\n";
+                selectedItems.forEach(item => {
+                    const product = this.getProductById(item.productId);
+                    if (product) {
+                        const subtotal = product.preco * item.quantity;
+                        orderMessage += `▪️ *${product.nome}*\n`;
+                        if (item.size) orderMessage += `   Tamanho: ${item.size}\n`;
+                        if (item.color) orderMessage += `   Cor: ${item.color}\n`;
+                        orderMessage += `   Qtd: ${item.quantity}\n`;
+                        orderMessage += `   Subtotal: ${this.formatCurrency(subtotal)}\n\n`;
+                    }
+                });
+                orderMessage += "-----------------------------------\n";
+                orderMessage += `*Valor Total: ${this.formatCurrency(this.cartTotalPrice)}*\n\n`;
+                orderMessage += "Aguardo seu contato para finalizar. Obrigada!";
+
+                const finalMessage = clientDataMessage + orderMessage;
+
+                window.location.href = `https://wa.me/${this.phoneNumber}?text=${encodeURIComponent(finalMessage)}`;
+            },
+            isInWishlist(productId) { return this.wishlist.includes(productId); },
+            toggleWishlist(product) {
+                const idx = this.wishlist.indexOf(product.id);
+                if (idx > -1) {
+                    this.wishlist.splice(idx, 1);
+                } else {
+                    this.wishlist.push(product.id);
+                }
+            },
+            addWishlistToCart(product) {
+                const existingItem = this.cart.find(item => item.productId === product.id);
+                if (existingItem) {
+                    existingItem.quantity += 1;
+                } else {
+                    this.cart.push({ cartItemId: Date.now(), productId: product.id, quantity: 1, size: null, color: null, selected: true });
+                }
+                this.toggleWishlist(product);
+                this.changeView('cart');
+            },
+            toggleCartItemSelection(cartItemId) {
+                const item = this.cart.find(i => i.cartItemId === cartItemId);
+                if (item) item.selected = !item.selected;
+            },
+            handleTouchStart(cartItemId, event) {
+                Object.keys(this.swipeState).forEach(id => {
+                    if (id != cartItemId) {
+                         this.swipeState[id].translateX = 0;
+                         this.swipeState[id].isSwiped = false;
+                    }
+                });
+                this.swipeState[cartItemId] = { startX: event.touches[0].clientX, currentX: event.touches[0].clientX, translateX: 0, isSwiping: false, isSwiped: false };
+            },
+            handleTouchMove(cartItemId, event) {
+                if (!this.swipeState[cartItemId]) return;
+                const state = this.swipeState[cartItemId];
+                state.currentX = event.touches[0].clientX;
+                let deltaX = state.currentX - state.startX;
+                if (deltaX > 0) deltaX = 0;
+                if (deltaX < -95) deltaX = -95;
+                state.translateX = deltaX;
+                state.isSwiping = true;
+            },
+            handleTouchEnd(cartItemId) {
+                 if (!this.swipeState[cartItemId]) return;
+                 const state = this.swipeState[cartItemId];
+                 const threshold = -50;
+                 if (state.translateX < threshold) {
+                     state.translateX = -90;
+                     state.isSwiped = true;
+                 } else {
+                     state.translateX = 0;
+                     state.isSwiped = false;
+                 }
+                 state.isSwiping = false;
+            },
+            getSwipeStyle(cartItemId) {
+                const state = this.swipeState[cartItemId];
+                if (state) {
+                    const transition = state.isSwiping ? 'none' : 'transform 0.3s ease';
+                    return { transform: `translateX(${state.translateX}px)`, transition: transition, };
+                }
+                return {};
+            },
+            // --- [NOVO] Métodos para o Perfil do Usuário ---
+            saveProfile() {
+                // Apenas exibe a notificação, pois os dados já são salvos pelo 'watch'
+                this.showProfileNotification('Perfil salvo com sucesso!');
+            },
+            triggerFileUpload() {
+                this.$refs.fileInput.click();
+            },
+            handlePictureUpload(event) {
+                const file = event.target.files[0];
+                if (!file) return;
+
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    this.userProfile.fotoUrl = e.target.result; // Salva a imagem como Base64
+                };
+                reader.readAsDataURL(file);
+            },
+            showProfileNotification(message, type = 'success', duration = 3000) {
+                this.profileNotification.message = message;
+                this.profileNotification.type = type;
+                this.profileNotification.show = true;
+                setTimeout(() => {
+                    this.profileNotification.show = false;
+                }, duration);
+            }
+        }
+    }).mount('#app');
+</script>
+
+</body>
+</html>
