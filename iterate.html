@@ -15,110 +15,31 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
     <style>
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: #111111; /* Fundo base um pouco mais claro que preto */
-            color: #E5E7EB;
-        }
-
-        :root {
-            --accent-color: #3B82F6;
-            --accent-color-hover: #2563EB;
-            --danger-color: #EF4444;
-            --danger-color-hover: #DC2626;
-        }
-        
+        body { font-family: 'Inter', sans-serif; background-color: #111111; color: #E5E7EB; }
+        :root { --accent-color: #3B82F6; --accent-color-hover: #2563EB; --danger-color: #EF4444; --danger-color-hover: #DC2626; }
         .fade-in { animation: fadeIn 0.5s ease-in-out forwards; }
-        .fade-out { animation: fadeOut 0.5s ease-in-out forwards; }
-        
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        @keyframes fadeOut { from { opacity: 1; } to { opacity: 0; } }
-
-        .btn-primary {
-            background-color: var(--accent-color);
-            transition: background-color 0.2s;
-            color: white;
-            font-weight: 600;
-            border-radius: 0.5rem;
-            padding: 0.75rem 1.5rem;
-        }
+        .btn-primary { background-color: var(--accent-color); transition: background-color 0.2s; color: white; font-weight: 600; border-radius: 0.5rem; padding: 0.75rem 1.5rem; }
         .btn-primary:hover { background-color: var(--accent-color-hover); }
-
         .canvas-container { width: 100% !important; height: 100% !important; }
-
-        /* --- [NOVO] Estilos para o Post-Login Loader --- */
-        .post-login-loader {
-            position: fixed;
-            inset: 0;
-            z-index: 100;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            background-color: #1a1a1a; /* Cinza escuro moderno */
-            overflow: hidden;
-        }
-
-        /* Partículas de fundo */
+        .post-login-loader { position: fixed; inset: 0; z-index: 100; display: flex; flex-direction: column; align-items: center; justify-content: center; background-color: #1a1a1a; overflow: hidden; }
         .particles { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
-        .particle {
-            position: absolute;
-            background-color: rgba(59, 130, 246, 0.2);
-            border-radius: 50%;
-            animation: move-particle 25s linear infinite;
-        }
-        @keyframes move-particle {
-            0% { transform: translate(0, 0); }
-            100% { transform: translate(100vw, 100vh); }
-        }
-
-        /* Loading Bar */
-        .loading-bar-container {
-            width: 250px;
-            height: 8px;
-            background-color: #333;
-            border-radius: 4px;
-            overflow: hidden;
-            margin-top: 2rem;
-        }
-        .loading-bar {
-            height: 100%;
-            width: 0%;
-            background: linear-gradient(90deg, #3B82F6, #9333ea, #EC4899);
-            border-radius: 4px;
-            animation: fill-bar 7s ease-out forwards;
-        }
+        .particle { position: absolute; background-color: rgba(59, 130, 246, 0.2); border-radius: 50%; animation: move-particle 25s linear infinite; }
+        @keyframes move-particle { 0% { transform: translate(0, 0); } 100% { transform: translate(100vw, 100vh); } }
+        .loading-bar-container { width: 250px; height: 8px; background-color: #333; border-radius: 4px; overflow: hidden; margin-top: 2rem; }
+        .loading-bar { height: 100%; width: 0%; background: linear-gradient(90deg, #3B82F6, #9333ea, #EC4899); border-radius: 4px; animation: fill-bar 7s ease-out forwards; }
         @keyframes fill-bar { from { width: 0%; } to { width: 100%; } }
-
-        /* Textos Animados */
-        .animated-texts {
-            margin-top: 1.5rem;
-            height: 30px; /* Altura para uma linha de texto */
-            position: relative;
-            width: 250px;
-            margin-left: 80px;
-        }
-        .animated-text {
-            position: absolute;
-            width: 100%;
-            opacity: 0;
-            font-weight: 500;
-            color: #a0a0a0;
-            animation: fade-up-down 2s ease-in-out;
-        }
-        @keyframes fade-up-down {
-            0% { opacity: 0; transform: translateY(20px); }
-            20% { opacity: 1; transform: translateY(0); }
-            80% { opacity: 1; transform: translateY(0); }
-            100% { opacity: 0; transform: translateY(-20px); }
-        }
-        /* Atraso para cada texto aparecer em sequência */
-        .animated-text:nth-child(1) { animation-delay: 0s; }
-        .animated-text:nth-child(2) { animation-delay: 2s; }
-        .animated-text:nth-child(3) { animation-delay: 4s; }
-        .animated-text:nth-child(4) { animation-delay: 6s; font-weight: 700; color: #fff; }
-
-    </style>
+        .animated-texts { margin-top: 1.5rem; height: 30px; position: relative; width: 250px; text-align: center; }
+        .animated-text { position: absolute; width: 100%; opacity: 0; font-weight: 500; color: #a0a0a0; animation: fade-up-down 2s ease-in-out; }
+        @keyframes fade-up-down { 0% { opacity: 0; transform: translateY(20px); } 20% { opacity: 1; transform: translateY(0); } 80% { opacity: 1; transform: translateY(0); } 100% { opacity: 0; transform: translateY(-20px); } }
+        .animated-text:nth-child(1) { animation-delay: 0s; } .animated-text:nth-child(2) { animation-delay: 2s; } .animated-text:nth-child(3) { animation-delay: 4s; } .animated-text:nth-child(4) { animation-delay: 6s; font-weight: 700; color: #fff; }
+        
+        /* Estilos para a Árvore de Evolução */
+        .tree-node { position: relative; padding-left: 30px; }
+        .tree-node-content { border-radius: 12px; margin-bottom: 1rem; }
+        .tree-branch { position: absolute; top: 50px; left: 10px; width: 20px; height: calc(100% - 40px); border-left: 2px solid #4B5563; }
+        .tree-branch-entry { position: absolute; top: 50px; left: 10px; width: 20px; height: 2px; background-color: #4B5563; }
+    </style> 
 </head>
 <body class="antialiased">
 
@@ -126,50 +47,37 @@
 
         <template v-if="isConfigured">
             <notification-toast :message="notification.message" :type="notification.type" v-if="notification.visible"></notification-toast>
-
             <div v-if="isLoading" class="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50">
                 <div class="w-16 h-16 border-4 border-t-transparent border-[var(--accent-color)] rounded-full animate-spin"></div>
             </div>
-
-            <post-login-loader-component v-if="showPostLoginLoader"></post-login-loader-component>
-
+            <post-login-loader-component v-if="showPostLoginLoader"></post-login-loader-component> 
             <div v-else-if="!isLoading && !showPostLoginLoader">
                 <div v-if="!session" class="fade-in">
                     <auth-component @show-notification="showNotification"></auth-component>
                 </div>
                 <div v-else class="fade-in h-full">
                     <div v-if="currentView === 'feed'" class="h-full">
-                        <feed-component 
-                            @create-post="navigateToEditor(null)" 
-                            @iterate-post="navigateToEditor($event)"
-                            @view-tree="navigateToTree($event)"
-                            @show-notification="showNotification"
-                            @logout="handleLogout"
-                            :user="session.user"
-                        ></feed-component>
+                        <div v-if="currentView === 'feed'" class="h-full"> 
+    <feed-component 
+        :key="feedKey"  
+        @create-post="navigateToEditor(null)" 
+        @iterate-post="navigateToEditor($event)"
+        @view-tree="navigateToTree($event)" 
+        @show-notification="showNotification"
+        @logout="handleLogout" 
+        :user="session.user"
+    ></feed-component>
+</div>
                     </div>
-
                     <div v-if="currentView === 'editor'" class="h-full">
-                        <editor-component 
-                            :post-to-edit="activePost" 
-                            @back="navigateToFeed"
-                            @show-notification="showNotification"
-                        ></editor-component>
+                        <editor-component :post-to-edit="activePost" @back="navigateToFeed" @show-notification="showNotification"></editor-component>
                     </div>
-                    
                     <div v-if="currentView === 'tree'" class="h-full">
-                         <tree-view-component 
-                            :root-post="activePost"
-                            @back="navigateToFeed"
-                            @view-post="navigateToTree($event)"
-                            @iterate-post="navigateToEditor($event)"
-                            @show-notification="showNotification"
-                        ></tree-view-component>
+                         <tree-view-component :root-post-id="activePost.id" @back="navigateToFeed" @iterate-post="navigateToEditor($event)" @show-notification="showNotification"></tree-view-component>
                     </div>
                 </div>
             </div>
         </template>
-        
         <template v-else>
             <config-error-component></config-error-component>
         </template>
@@ -177,252 +85,11 @@
     </div>
 
     <script>
-        const { createApp, ref, reactive, onMounted, computed, watch } = Vue;
+        const { createApp, ref, reactive, onMounted, defineAsyncComponent } = Vue;
         const { createClient } = supabase;
 
         // =======================================================
-        // COMPONENTES DA APLICAÇÃO
-        // =======================================================
-
-        const NotificationToast = {
-            props: ['message', 'type'],
-            template: `
-                <div class="fixed bottom-5 right-5 z-50 fade-in">
-                    <div class="flex items-center px-4 py-3 rounded-lg shadow-lg text-white" :class="type === 'success' ? 'bg-green-500' : 'bg-red-500'">
-                        <span class="font-bold mr-2">{{ type === 'success' ? '✓' : '!' }}</span>
-                        <span>{{ message }}</span>
-                    </div>
-                </div>
-            `,
-        };
-        
-        const ConfigErrorComponent = {
-            template: `
-                <div class="h-screen w-screen flex flex-col items-center justify-center bg-red-900/50 p-8 text-center">
-                    <h1 class="text-3xl font-bold text-white mb-4">[!] Configuração Necessária</h1>
-                    <p class="max-w-xl text-lg text-yellow-100 mb-2">
-                        Parece que as credenciais do Supabase ainda não foram configuradas neste código.
-                    </p>
-                    <p class="max-w-xl text-lg text-yellow-100">
-                        Por favor, abra o código, procure por <code class="bg-black/50 px-2 py-1 rounded-md font-mono text-white">SEU_SUPABASE_URL</code> e <code class="bg-black/50 px-2 py-1 rounded-md font-mono text-white">SUA_SUPABASE_ANON_KEY</code> e substitua-os com suas chaves reais do painel do Supabase.
-                    </p>
-                </div>
-            `,
-        };
-
-        const AuthComponent = {
-            emits: ['show-notification'],
-            setup(props, { emit }) {
-                const isLogin = ref(true);
-                const email = ref('');
-                const password = ref('');
-                const loading = ref(false);
-
-                const handleAuth = async () => {
-                    if (!email.value || !password.value) {
-                        emit('show-notification', 'Por favor, preencha e-mail e senha.', 'error');
-                        return;
-                    }
-                    loading.value = true;
-                    try {
-                        const { data, error } = isLogin.value
-                            ? await window.app.supabase.auth.signInWithPassword({ email: email.value, password: password.value })
-                            : await window.app.supabase.auth.signUp({ email: email.value, password: password.value });
-
-                        if (error) throw error;
-                        
-                        if (!isLogin.value) {
-                             emit('show-notification', 'Cadastro realizado! Verifique seu e-mail para confirmação.', 'success');
-                        }
-                    } catch (error) {
-                        emit('show-notification', error.message || 'Ocorreu um erro.', 'error');
-                    } finally {
-                        loading.value = false;
-                    }
-                };
-
-                return { isLogin, email, password, loading, handleAuth };
-            },
-            // [MODIFICADO] Template da tela de autenticação com a logo
-            template: `
-                <div class="min-h-screen flex flex-col items-center justify-center bg-[#111111] p-4">
-                    <div class="w-full max-w-md space-y-8">
-                        <div>
-                            <img src="https://res.cloudinary.com/dsqpboeky/image/upload/v1750453089/Gemini_Generated_Image_krs9u5krs9u5krs9_1_1_cxe3uo_c_crop_w_800_h_300_gnl2la.png" alt="Logo Iterate" class="w-60 h-30 mx-auto mb-4">
-                            <p class="mt-2 text-center text-lg text-gray-400">Semeie criações, colha possibilidades.</p>
-                        </div>
-                        <div class="bg-[#1C1C1C] border border-neutral-800 p-8 rounded-2xl shadow-2xl shadow-black/50">
-                            <form class="space-y-6" @submit.prevent="handleAuth">
-                                <div>
-                                    <input v-model="email" id="email" type="email" required
-                                        class="w-full px-4 py-3 bg-neutral-900 border border-neutral-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-[var(--accent-color)]"
-                                        placeholder="seu@email.com">
-                                </div>
-                                <div>
-                                    <input v-model="password" id="password" type="password" required
-                                        class="w-full px-4 py-3 bg-neutral-900 border border-neutral-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-[var(--accent-color)]"
-                                        placeholder="Sua senha">
-                                </div>
-                                <div>
-                                    <button type="submit" class="w-full btn-primary flex justify-center items-center gap-2" :disabled="loading">
-                                        <div v-if="loading" class="w-5 h-5 border-2 border-t-transparent rounded-full animate-spin"></div>
-                                        <span>{{ isLogin ? 'Entrar' : 'Cadastrar' }}</span>
-                                    </button>
-                                </div>
-                            </form>
-                            <p class="mt-6 text-center text-sm text-gray-400">
-                                {{ isLogin ? 'Não tem uma conta?' : 'Já tem uma conta?' }}
-                                <a href="#" @click.prevent="isLogin = !isLogin" class="font-medium text-[var(--accent-color)] hover:text-[var(--accent-color-hover)]">
-                                    {{ isLogin ? 'Cadastre-se' : 'Faça login' }}
-                                </a>
-                            </p>
-                        </div>
-                    </div>
-                </div>
-            `,
-        };
-
-        // [NOVO] Componente para a tela de loading Pós-Login
-        const PostLoginLoaderComponent = {
-            setup() {
-                 onMounted(() => {
-                    const particleContainer = document.querySelector('.particles');
-                    for (let i = 0; i < 30; i++) {
-                        const particle = document.createElement('div');
-                        particle.classList.add('particle');
-                        const size = Math.random() * 5 + 1;
-                        particle.style.width = `${size}px`;
-                        particle.style.height = `${size}px`;
-                        particle.style.top = `${Math.random() * 100}%`;
-                        particle.style.left = `${Math.random() * 100}%`;
-                        const duration = Math.random() * 15 + 10;
-                        particle.style.animationDuration = `${duration}s`;
-                        particle.style.animationDelay = `${Math.random() * 5}s`;
-                        particleContainer.appendChild(particle);
-                    }
-                });
-            },
-            template: `
-                <div class="post-login-loader">
-                    <div class="particles"></div>
-                    <img src="https://res.cloudinary.com/dsqpboeky/image/upload/v1750452925/Gemini_Generated_Image_krs9u5krs9u5krs9_1_1_lgjvon_c_crop_w_730_h_270_b6vbqm.png" alt="Logo Iterate" class="w-60 h-39 mb-4 fade-in">
-                    <div class="loading-bar-container">
-                        <div class="loading-bar"></div>
-                    </div>
-                    <div class="animated-texts">
-                        <span class="animated-text">carregando interface...</span>
-                        <span class="animated-text">carregando recursos...</span>
-                        <span class="animated-text">otimizando experiência...</span>
-                        <span class="animated-text">VAMOS CRIAR!</span>
-                    </div>
-                </div>
-            `
-        };
-
-
-        const FeedComponent = {
-            props: ['user'],
-            emits: ['create-post', 'iterate-post', 'view-tree', 'show-notification', 'logout'],
-            setup(props, { emit }) {
-                const posts = ref([]);
-                const loading = ref(true);
-
-                const fetchPosts = async () => {
-                    loading.value = true;
-                    try {
-                        const { data, error } = await app.supabase
-                            .from('posts')
-                            .select('*')
-                            .is('parent_post_id', null)
-                            .order('created_at', { ascending: false });
-                        
-                        if (error) throw error;
-                        posts.value = data;
-                    } catch (error) {
-                        emit('show-notification', 'Erro ao carregar os posts.', 'error');
-                    } finally {
-                        loading.value = false;
-                    }
-                };
-
-                const getInitials = (email) => {
-                    if (!email) return '??';
-                    const parts = email.split('@')[0].split('.').map(p => p[0]).join('');
-                    return parts.substring(0, 2).toUpperCase();
-                };
-
-                const formatDate = (dateString) => {
-                    if(!dateString) return '';
-                    const date = new Date(dateString);
-                    return date.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' });
-                };
-
-                onMounted(fetchPosts);
-
-                return { posts, loading, getInitials, formatDate, fetchPosts, emit };
-            },
-            template: `
-                <div class="h-full w-full flex flex-col bg-black">
-                    <header class="flex items-center justify-between p-4 border-b border-neutral-800 bg-[#111111]/80 backdrop-blur-sm sticky top-0 z-10">
-                         <div class="flex items-center gap-2">
-                             <img src="https://res.cloudinary.com/dsqpboeky/image/upload/v1750452925/Gemini_Generated_Image_krs9u5krs9u5krs9_1_1_lgjvon_c_crop_w_730_h_270_b6vbqm.png" alt="Logo Iterate" class="w-25 h-12 mb-0 fade-in">
-                         </div>
-                        <div class="flex items-center gap-4">
-                            <span class="text-sm text-gray-400 hidden sm:block">{{ user.email }}</span>
-                            <button @click="emit('logout')" class="p-2 rounded-full hover:bg-neutral-800 transition">
-                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
-                            </button>
-                        </div>
-                    </header>
-                    
-                    <main class="flex-1 overflow-y-auto p-2 sm:p-4 lg:p-6">
-                        <div v-if="loading" class="text-center py-10 text-gray-400">Carregando feed...</div>
-                        <div v-else-if="posts.length === 0" class="text-center py-20 px-4">
-                             <svg class="mx-auto h-12 w-12 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true"><path vector-effect="non-scaling-stroke" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 13h6m-3-3v6m-9 1V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z" /></svg>
-                            <h2 class="mt-4 text-2xl font-semibold text-white">O feed está vazio</h2>
-                            <p class="mt-2 text-neutral-400">Seja o primeiro a inspirar a comunidade! Crie um post.</p>
-                        </div>
-                        <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                            <div v-for="post in posts" :key="post.id" class="bg-[#111111] border border-neutral-800 rounded-2xl flex flex-col overflow-hidden transition hover:border-[var(--accent-color)] hover:shadow-2xl hover:shadow-blue-900/30">
-                                <div class="bg-neutral-900 aspect-video flex items-center justify-center p-4">
-                                    <p class="text-neutral-500 text-center text-sm">Visualização do Canvas</p>
-                                </div>
-                                <div class="p-4 flex flex-col flex-1">
-                                    <div class="flex items-center gap-3">
-                                        <div class="w-10 h-10 rounded-full bg-blue-900 flex items-center justify-center font-bold text-white">
-                                            {{ getInitials(post.user_email) }}
-                                        </div>
-                                        <div>
-                                            <p class="font-semibold text-white truncate">{{ post.user_email }}</p>
-                                            <p class="text-xs text-neutral-400">{{ formatDate(post.created_at) }}</p>
-                                        </div>
-                                    </div>
-                                    <div class="flex-1"></div>
-                                    <div class="mt-4 flex items-center justify-between gap-2">
-                                        <button @click="emit('iterate-post', post)" class="flex-1 text-sm bg-[var(--accent-color)] hover:bg-[var(--accent-color-hover)] text-white font-semibold py-2 px-4 rounded-lg transition">
-                                            Iterar
-                                        </button>
-                                         <button @click="emit('view-tree', post)" class="flex-1 text-sm bg-neutral-800 hover:bg-neutral-700 text-white font-semibold py-2 px-4 rounded-lg transition">
-                                            Ver {{ post.iteration_count || 0 }} iterações
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </main>
-
-                    <button @click="emit('create-post')" class="fixed bottom-6 right-6 btn-primary rounded-full p-4 shadow-lg hover:scale-110 transition-transform">
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg>
-                    </button>
-                </div>
-            `,
-        };
-
-        const EditorComponent = { /* ...código inalterado... */ };
-        const TreeViewComponent = { /* ...código inalterado... */ };
-
-        // =======================================================
-        // LÓGICA PRINCIPAL DA APLICAÇÃO VUE
+        // LÓGICA PRINCIPAL DA APLICAÇÃO VUE (SETUP)
         // =======================================================
         const app = createApp({
             setup() {
@@ -441,10 +108,12 @@
 
                 const session = ref(null);
                 const isLoading = ref(true);
-                const showPostLoginLoader = ref(false); // [NOVO] Estado para o novo loader
+                const showPostLoginLoader = ref(false);
                 const currentView = ref('feed');
                 const activePost = ref(null);
                 const notification = reactive({ visible: false, message: '', type: 'success' });
+
+                const feedKey = ref(0);
 
                 onMounted(() => {
                     if (!isConfigured.value) {
@@ -460,23 +129,20 @@
                         isLoading.value = false;
                     });
 
-                    // [MODIFICADO] Lógica de autenticação para incluir o novo loader
                     supabaseClient.auth.onAuthStateChange((_event, _session) => {
                         const wasLoggedIn = !!session.value;
                         session.value = _session;
 
-                        // Se o usuário ACABOU de fazer login
                         if (_session && !wasLoggedIn) {
                             showPostLoginLoader.value = true;
                             setTimeout(() => {
                                 showPostLoginLoader.value = false;
                                 currentView.value = 'feed';
-                            }, 7000); // Mostra o loader por 7 segundos
+                            }, 7000);
                         } 
-                        // Se o usuário fez logout ou não estava logado
                         else if (!_session) {
                             showPostLoginLoader.value = false;
-                            currentView.value = 'auth'; // Garante que a tela de auth seja exibida
+                            currentView.value = 'auth';
                         }
                     });
                 });
@@ -485,7 +151,10 @@
                     await supabaseClient.auth.signOut();
                 };
 
-                const navigateToFeed = () => { currentView.value = 'feed'; };
+                const navigateToFeed = () => { 
+            feedKey.value++; // <-- Adicione esta linha para incrementar a chave
+            currentView.value = 'feed';
+                };
                 const navigateToEditor = (post) => { activePost.value = post; currentView.value = 'editor'; };
                 const navigateToTree = (post) => { activePost.value = post; currentView.value = 'tree'; };
 
@@ -497,19 +166,293 @@
                 };
 
                 return {
-                    isConfigured, session, isLoading, showPostLoginLoader, currentView, 
-                    activePost, notification, supabase: supabaseClient, handleLogout, 
-                    navigateToFeed, navigateToEditor, navigateToTree, showNotification,
-                };
+            // ADICIONE "feedKey" AO RETORNO:
+            isConfigured, session, isLoading, showPostLoginLoader, currentView, 
+            activePost, notification, supabase: supabaseClient, handleLogout, 
+            navigateToFeed, navigateToEditor, navigateToTree, showNotification,
+            feedKey // <-- Adicione aqui
+        };
             },
-            components: {
-                ConfigErrorComponent, NotificationToast, AuthComponent,
-                PostLoginLoaderComponent, // [NOVO]
-                FeedComponent, EditorComponent, TreeViewComponent
-            }
+        });
+
+        // =======================================================
+        // COMPONENTES DA APLICAÇÃO
+        // =======================================================
+        
+        app.component('NotificationToast', {
+            props: ['message', 'type'],
+            template: `
+                <div class="fixed bottom-5 right-5 z-50 fade-in">
+                    <div class="flex items-center px-4 py-3 rounded-lg shadow-lg text-white" :class="type === 'success' ? 'bg-green-500' : 'bg-red-500'">
+                        <span class="font-bold mr-2">{{ type === 'success' ? '✓' : '!' }}</span>
+                        <span>{{ message }}</span>
+                    </div>
+                </div>
+            `,
         });
         
-        // Copie o conteúdo dos componentes EditorComponent e TreeViewComponent do código original para cá
+        app.component('ConfigErrorComponent', {
+            template: `
+                <div class="h-screen w-screen flex flex-col items-center justify-center bg-red-900/50 p-8 text-center">
+                    <h1 class="text-3xl font-bold text-white mb-4">[!] Configuração Necessária</h1>
+                    <p class="max-w-xl text-lg text-yellow-100">
+                        Por favor, abra o código, procure por <code class="bg-black/50 px-2 py-1 rounded-md font-mono text-white">SEU_SUPABASE_URL</code> e <code class="bg-black/50 px-2 py-1 rounded-md font-mono text-white">SUA_SUPABASE_ANON_KEY</code> e substitua-os com suas chaves reais do painel do Supabase.
+                    </p>
+                </div>
+            `,
+        });
+
+        app.component('AuthComponent', {
+            emits: ['show-notification'],
+            setup(props, { emit }) {
+                const isLogin = ref(true);
+                const email = ref('');
+                const password = ref('');
+                const loading = ref(false);
+
+                const handleAuth = async () => {
+                    if (!email.value || !password.value) {
+                        emit('show-notification', 'Por favor, preencha e-mail e senha.', 'error'); return;
+                    }
+                    loading.value = true;
+                    try {
+                        const { error } = isLogin.value
+                            ? await window.app.supabase.auth.signInWithPassword({ email: email.value, password: password.value })
+                            : await window.app.supabase.auth.signUp({ email: email.value, password: password.value });
+                        if (error) throw error;
+                        if (!isLogin.value) { emit('show-notification', 'Cadastro realizado! Verifique seu e-mail para confirmação.', 'success'); }
+                    } catch (error) {
+                        emit('show-notification', error.message || 'Ocorreu um erro.', 'error');
+                    } finally {
+                        loading.value = false;
+                    }
+                };
+                return { isLogin, email, password, loading, handleAuth };
+            },
+            template: `
+                <div class="min-h-screen flex flex-col items-center justify-center bg-[#111111] p-4">
+                    <div class="w-full max-w-md space-y-8">
+                        <div>
+                            <img src="https://res.cloudinary.com/dsqpboeky/image/upload/v1750453089/Gemini_Generated_Image_krs9u5krs9u5krs9_1_1_cxe3uo_c_crop_w_800_h_300_gnl2la.png" alt="Logo Iterate" class="w-60 h-30 mx-auto mb-4">
+                            <p class="mt-2 text-center text-lg text-gray-400">Semeie criações, colha possibilidades.</p>
+                        </div>
+                        <div class="bg-[#1C1C1C] border border-neutral-800 p-8 rounded-2xl shadow-2xl shadow-black/50">
+                            <form class="space-y-6" @submit.prevent="handleAuth">
+                                <input v-model="email" type="email" required class="w-full px-4 py-3 bg-neutral-900 border border-neutral-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-[var(--accent-color)]" placeholder="seu@email.com">
+                                <input v-model="password" type="password" required class="w-full px-4 py-3 bg-neutral-900 border border-neutral-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-[var(--accent-color)]" placeholder="Sua senha">
+                                <button type="submit" class="w-full btn-primary flex justify-center items-center gap-2" :disabled="loading">
+                                    <div v-if="loading" class="w-5 h-5 border-2 border-t-transparent rounded-full animate-spin"></div>
+                                    <span>{{ isLogin ? 'Entrar' : 'Cadastrar' }}</span>
+                                </button>
+                            </form>
+                            <p class="mt-6 text-center text-sm text-gray-400">
+                                {{ isLogin ? 'Não tem uma conta?' : 'Já tem uma conta?' }}
+                                <a href="#" @click.prevent="isLogin = !isLogin" class="font-medium text-[var(--accent-color)] hover:text-[var(--accent-color-hover)]">
+                                    {{ isLogin ? 'Cadastre-se' : 'Faça login' }}
+                                </a>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            `,
+        });
+
+        app.component('PostLoginLoaderComponent', {
+            setup() {
+                 onMounted(() => {
+                    const particleContainer = document.querySelector('.particles');
+                    if (!particleContainer) return;
+                    for (let i = 0; i < 30; i++) {
+                        const particle = document.createElement('div');
+                        particle.classList.add('particle');
+                        const size = Math.random() * 5 + 1;
+                        particle.style.width = `${size}px`; particle.style.height = `${size}px`;
+                        particle.style.top = `${Math.random() * 100}%`; particle.style.left = `${Math.random() * 100}%`;
+                        const duration = Math.random() * 15 + 10;
+                        particle.style.animationDuration = `${duration}s`; particle.style.animationDelay = `${Math.random() * 5}s`;
+                        particleContainer.appendChild(particle);
+                    }
+                });
+            },
+            template: `
+                <div class="post-login-loader">
+                    <div class="particles"></div>
+                    <img src="https://res.cloudinary.com/dsqpboeky/image/upload/v1750452925/Gemini_Generated_Image_krs9u5krs9u5krs9_1_1_lgjvon_c_crop_w_730_h_270_b6vbqm.png" alt="Logo Iterate" class="w-60 h-39 mb-4 fade-in">
+                    <div class="loading-bar-container"><div class="loading-bar"></div></div>
+                    <div class="animated-texts" style="margin-left:0; text-align:center;">
+                        <span class="animated-text">carregando interface...</span>
+                        <span class="animated-text">carregando recursos...</span>
+                        <span class="animated-text">otimizando experiência...</span>
+                        <span class="animated-text">VAMOS CRIAR!</span>
+                    </div>
+                </div>
+            `
+        });
+
+        const TreeNodeComponent = {
+            name: 'TreeNodeComponent',
+            props: ['node', 'isLast'],
+            emits: ['iterate-post'],
+            setup(props, { emit }) {
+                const formatDate = (dateString) => {
+                    if(!dateString) return '';
+                    return new Date(dateString).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' });
+                };
+                return { formatDate, emit };
+            },
+            template: `
+                <div class="tree-node">
+                    <div class="tree-branch-entry"></div>
+                    <div v-if="!isLast" class="tree-branch"></div>
+                    <div class="tree-node-content bg-[#1C1C1C] border border-transparent hover:border-blue-700 transition-colors p-3 flex items-center gap-4">
+                        <img v-if="node.canvas_thumbnail_url" :src="node.canvas_thumbnail_url" class="w-16 h-16 rounded-lg bg-neutral-900 object-cover flex-shrink-0"/>
+                        <div v-else class="w-16 h-16 rounded-lg bg-neutral-900 flex-shrink-0"></div>
+                        <div class="flex-grow">
+                            <p class="font-bold text-white">{{ node.user_email }}</p>
+                            <p class="text-sm text-neutral-400">Iterou em {{ formatDate(node.created_at) }}</p>
+                        </div>
+                        <button @click="emit('iterate-post', node)" class="btn-primary px-3 py-1 text-sm">Iterar</button>
+                    </div>
+                    <div v-if="node.children && node.children.length > 0" class="children-container">
+                        <tree-node-component 
+                            v-for="(child, index) in node.children" 
+                            :key="child.id" 
+                            :node="child"
+                            :is-last="index === node.children.length - 1"
+                            @iterate-post="$emit('iterate-post', $event)"
+                        ></tree-node-component>
+                    </div>
+                </div>
+            `
+        };
+        app.component('TreeNodeComponent', TreeNodeComponent);
+
+        app.component('TreeViewComponent', {
+            props: ['rootPostId'],
+            emits: ['back', 'iterate-post'],
+            setup(props, { emit }) {
+                const treeData = ref(null);
+                const isLoading = ref(true);
+                const fetchTree = async () => {
+                    isLoading.value = true;
+                    try {
+                        const { data, error } = await window.app.supabase.rpc('get_post_tree', { root_id: props.rootPostId });
+                        if (error) throw error;
+                        treeData.value = data;
+                    } catch (error) { console.error("Erro ao carregar a árvore:", error);
+                    } finally { isLoading.value = false; }
+                };
+                onMounted(fetchTree);
+                const formatDate = (dateString) => new Date(dateString).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year:'numeric' });
+                return { treeData, isLoading, formatDate, emit };
+            },
+            template: `
+                <div class="h-screen w-screen flex flex-col bg-black text-white">
+                    <header class="flex-shrink-0 flex items-center justify-between p-4 border-b border-neutral-800 bg-[#111111]/80 backdrop-blur-sm sticky top-0 z-10">
+                        <button @click="emit('back')" class="p-2 rounded-lg hover:bg-neutral-800 transition">&lt; Voltar ao Feed</button>
+                        <h2 class="text-lg font-semibold">Árvore de Evolução</h2>
+                        <div class="w-32"></div>
+                    </header>
+                    <main class="flex-1 overflow-y-auto p-4 md:p-8">
+                        <div v-if="isLoading" class="text-center py-10">
+                            <div class="w-8 h-8 border-2 border-t-transparent border-[var(--accent-color)] rounded-full animate-spin mx-auto"></div>
+                            <p class="mt-2 text-neutral-400">Carregando árvore...</p>
+                        </div>
+                        <div v-else-if="treeData">
+                            <div class="root-node-content bg-blue-900/20 border border-blue-500 rounded-2xl p-4 flex items-center gap-4 mb-4">
+                               <img v-if="treeData.canvas_thumbnail_url" :src="treeData.canvas_thumbnail_url" class="w-24 h-24 rounded-lg bg-neutral-900 object-cover flex-shrink-0"/>
+                                <div v-else class="w-24 h-24 rounded-lg bg-neutral-900 flex-shrink-0"></div>
+                                <div class="flex-grow">
+                                    <p class="text-xl font-bold text-white">{{ treeData.user_email }}</p>
+                                    <p class="text-sm text-blue-300">Post Semente (Criado em {{ formatDate(treeData.created_at) }})</p>
+                                </div>
+                                <button @click="emit('iterate-post', treeData)" class="btn-primary px-4 py-2">Iterar</button>
+                            </div>
+                             <div v-if="treeData.children && treeData.children.length > 0" class="children-container mt-8">
+                                <TreeNodeComponent 
+                                    v-for="(child, index) in treeData.children" 
+                                    :key="child.id" :node="child" :is-last="index === treeData.children.length - 1"
+                                    @iterate-post="$emit('iterate-post', $event)"
+                                />
+                            </div>
+                            <div v-else class="text-center text-neutral-500 py-8 border-2 border-dashed border-neutral-700 rounded-lg">
+                                <h3 class="font-semibold text-white">Nenhuma iteração ainda.</h3>
+                                <p>Seja o primeiro a evoluir esta ideia!</p>
+                            </div>
+                        </div>
+                    </main>
+                </div>
+            `
+        });
+
+        app.component('FeedComponent', {
+            props: ['user'],
+            emits: ['create-post', 'iterate-post', 'view-tree', 'show-notification', 'logout'],
+            setup(props, { emit }) {
+                const posts = ref([]);
+                const loading = ref(true);
+                const fetchPosts = async () => {
+                    loading.value = true;
+                    try {
+                        const { data, error } = await window.app.supabase.from('posts').select('*').is('parent_post_id', null).order('created_at', { ascending: false });
+                        if (error) throw error;
+                        posts.value = data;
+                    } catch (error) { emit('show-notification', 'Erro ao carregar posts.', 'error');
+                    } finally { loading.value = false; }
+                };
+                const getInitials = (email) => { if (!email) return '??'; return email.split('@')[0].substring(0, 2).toUpperCase(); };
+                const formatDate = (dateString) => new Date(dateString).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' });
+                onMounted(fetchPosts);
+                return { posts, loading, getInitials, formatDate, emit };
+            },
+            template: `
+                <div class="h-full w-full flex flex-col bg-black">
+                    <header class="flex items-center justify-between p-4 border-b border-neutral-800 bg-[#111111]/80 backdrop-blur-sm sticky top-0 z-10">
+                        <img src="https://res.cloudinary.com/dsqpboeky/image/upload/v1750452925/Gemini_Generated_Image_krs9u5krs9u5krs9_1_1_lgjvon_c_crop_w_730_h_270_b6vbqm.png" alt="Logo Iterate" class="w-25 h-12 fade-in">
+                        <div class="flex items-center gap-4">
+                            <span class="text-sm text-gray-400 hidden sm:block">{{ user.email }}</span>
+                            <button @click="emit('logout')" class="p-2 rounded-full hover:bg-neutral-800 transition">
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
+                            </button>
+                        </div>
+                    </header>
+                    <main class="flex-1 overflow-y-auto p-2 sm:p-4 lg:p-6">
+                        <div v-if="loading" class="text-center py-10 text-gray-400">Carregando feed...</div>
+                        <div v-else-if="posts.length === 0" class="text-center py-20 px-4">
+                            <svg class="mx-auto h-12 w-12 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path vector-effect="non-scaling-stroke" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 13h6m-3-3v6m-9 1V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z" /></svg>
+                            <h2 class="mt-4 text-2xl font-semibold text-white">O feed está vazio</h2>
+                            <p class="mt-2 text-neutral-400">Seja o primeiro a inspirar a comunidade! Crie um post.</p>
+                        </div>
+                        <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                            <div v-for="post in posts" :key="post.id" class="bg-[#1C1C1C] border border-neutral-800 rounded-2xl flex flex-col overflow-hidden transition hover:border-[var(--accent-color)] hover:shadow-2xl hover:shadow-blue-900/30">
+                                <div class="bg-neutral-900 aspect-video flex items-center justify-center">
+                                    <img v-if="post.canvas_thumbnail_url" :src="post.canvas_thumbnail_url" class="w-full h-full object-cover"/>
+                                    <p v-else class="text-neutral-500 text-center text-sm">Sem prévia</p>
+                                </div>
+                                <div class="p-4 flex flex-col flex-1">
+                                    <div class="flex items-center gap-3">
+                                        <div class="w-10 h-10 rounded-full bg-blue-900 flex items-center justify-center font-bold text-white">{{ getInitials(post.user_email) }}</div>
+                                        <div>
+                                            <p class="font-semibold text-white truncate">{{ post.user_email }}</p>
+                                            <p class="text-xs text-neutral-400">{{ formatDate(post.created_at) }}</p>
+                                        </div>
+                                    </div>
+                                    <div class="flex-1"></div>
+                                    <div class="mt-4 flex items-center justify-between gap-2">
+                                        <button @click="emit('iterate-post', post)" class="flex-1 text-sm bg-neutral-800 hover:bg-neutral-700 text-white font-semibold py-2 px-4 rounded-lg transition">Iterar</button>
+                                        <button @click="emit('view-tree', post)" class="flex-1 text-sm bg-[var(--accent-color)] hover:bg-[var(--accent-color-hover)] text-white font-semibold py-2 px-4 rounded-lg transition">Ver {{ post.iteration_count || 0 }} iterações</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </main>
+                    <button @click="emit('create-post')" class="fixed bottom-6 right-6 btn-primary rounded-full p-4 shadow-lg hover:scale-110 transition-transform">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg>
+                    </button>
+                </div>
+            `,
+        });
+
         app.component('EditorComponent', {
             props: ['postToEdit'],
             emits: ['back', 'show-notification'],
@@ -518,28 +461,22 @@
                 let fabricCanvas = null;
                 const loading = ref(false);
 
-                const initCanvas = () => {
+                onMounted(() => {
                     if (!canvasRef.value) return;
-                    fabricCanvas = new fabric.Canvas(canvasRef.value, { backgroundColor: '#18181b' });
-                    
+                    fabricCanvas = new fabric.Canvas(canvasRef.value, { backgroundColor: '#18181b', preserveObjectStacking: true });
                     const resizeCanvas = () => {
                         if (!canvasRef.value || !canvasRef.value.parentElement) return;
                         const container = canvasRef.value.parentElement;
-                        fabricCanvas.setWidth(container.clientWidth);
-                        fabricCanvas.setHeight(container.clientHeight);
+                        fabricCanvas.setWidth(container.clientWidth); fabricCanvas.setHeight(container.clientHeight);
                         fabricCanvas.renderAll();
                     };
-                    
                     const resizeObserver = new ResizeObserver(resizeCanvas);
                     resizeObserver.observe(canvasRef.value.parentElement);
                     resizeCanvas();
-
                     if (props.postToEdit && props.postToEdit.canvas_json) {
                         fabricCanvas.loadFromJSON(props.postToEdit.canvas_json, fabricCanvas.renderAll.bind(fabricCanvas));
                     }
-                };
-
-                onMounted(initCanvas);
+                });
 
                 const addRect = () => fabricCanvas.add(new fabric.Rect({ left: 50, top: 50, fill: '#3B82F6', width: 150, height: 100 }));
                 const addCircle = () => fabricCanvas.add(new fabric.Circle({ left: 100, top: 100, radius: 50, fill: '#EC4899' }));
@@ -552,38 +489,37 @@
                 const saveCanvas = async () => {
                     loading.value = true;
                     try {
-                        const user = app.session.user;
+                        const user = window.app.session.user;
                         const canvasJSON = JSON.stringify(fabricCanvas.toJSON());
+                        const canvasThumbnail = fabricCanvas.toDataURL({ format: 'jpeg', quality: 0.6, multiplier: 200 / fabricCanvas.getWidth() });
+                        
+                        const postData = { user_id: user.id, user_email: user.email, canvas_json: canvasJSON, canvas_thumbnail_url: canvasThumbnail };
 
                         if (props.postToEdit) {
-                             await app.supabase.from('posts').insert({ user_id: user.id, user_email: user.email, canvas_json: canvasJSON, parent_post_id: props.postToEdit.id });
-                             await app.supabase.rpc('increment_iteration_count', { post_id_to_update: props.postToEdit.id });
+                            postData.parent_post_id = props.postToEdit.id;
+                            await window.app.supabase.from('posts').insert(postData);
+                            await window.app.supabase.rpc('increment_iteration_count', { post_id_to_update: props.postToEdit.id });
                         } else {
-                            await app.supabase.from('posts').insert({ user_id: user.id, user_email: user.email, canvas_json: canvasJSON });
+                            await window.app.supabase.from('posts').insert(postData);
                         }
-                        
                         emit('show-notification', 'Post salvo com sucesso!', 'success');
                         emit('back');
                     } catch (error) {
-                        emit('show-notification', 'Erro ao salvar o post: ' + error.message, 'error');
+                        emit('show-notification', 'Erro ao salvar: ' + error.message, 'error');
                     } finally {
                         loading.value = false;
                     }
                 };
-                
                 return { canvasRef, loading, addRect, addCircle, addText, deleteSelected, saveCanvas, emit };
             },
             template: `
                 <div class="h-screen w-screen flex flex-col bg-black text-white">
-                    <div v-if="loading" class="absolute inset-0 bg-black/70 flex items-center justify-center z-20">
-                         <div class="w-16 h-16 border-4 border-t-transparent border-[var(--accent-color)] rounded-full animate-spin"></div>
-                    </div>
+                    <div v-if="loading" class="absolute inset-0 bg-black/70 flex items-center justify-center z-20"><div class="w-16 h-16 border-4 border-t-transparent border-[var(--accent-color)] rounded-full animate-spin"></div></div>
                     <header class="flex-shrink-0 flex items-center justify-between p-4 border-b border-neutral-800 bg-[#111111]">
                         <button @click="emit('back')" class="p-2 rounded-lg hover:bg-neutral-800 transition"> &lt; Voltar </button>
                         <h2 class="text-lg font-semibold">{{ postToEdit ? 'Iterando Post' : 'Novo Post Semente' }}</h2>
                         <button @click="saveCanvas" class="btn-primary px-4 py-2"> Salvar </button>
                     </header>
-
                     <div class="flex-1 flex flex-col md:flex-row overflow-hidden">
                         <aside class="flex-shrink-0 md:w-24 bg-[#111111] border-r border-neutral-800 flex md:flex-col items-center p-2 gap-2">
                             <button @click="addRect" class="p-2 rounded-lg hover:bg-neutral-700 transition">Retângulo</button>
@@ -592,35 +528,15 @@
                             <div class="my-auto"></div>
                             <button @click="deleteSelected" class="p-2 rounded-lg text-[var(--danger-color)] hover:bg-red-900/50 transition">Deletar</button>
                         </aside>
-                        <main class="flex-1 bg-neutral-900 relative overflow-hidden">
-                            <canvas ref="canvasRef"></canvas>
-                        </main>
+                        <main class="flex-1 bg-neutral-900 relative overflow-hidden"><canvas ref="canvasRef"></canvas></main>
                     </div>
                 </div>
             `,
         });
 
-        app.component('TreeViewComponent', {
-            props: ['rootPost'],
-            emits: ['back', 'view-post', 'iterate-post', 'show-notification'],
-            template: `
-                 <div class="h-screen w-screen flex flex-col bg-black text-white">
-                    <header class="flex-shrink-0 flex items-center justify-between p-4 border-b border-neutral-800 bg-[#111111]/80">
-                         <button @click="emit('back')" class="p-2 rounded-lg hover:bg-neutral-800 transition">&lt; Voltar</button>
-                        <h2 class="text-lg font-semibold">Árvore de Evolução</h2>
-                         <div class="w-24"></div>
-                    </header>
-                    <main class="flex-1 overflow-y-auto p-4 text-center">
-                        <h3 class="text-xl font-bold mt-10">Em Construção!</h3>
-                        <p class="text-neutral-400 mt-2">A visualização da árvore de iterações estará disponível em breve.</p>
-                    </main>
-                 </div>
-            `
-        });
-        
+        // Montagem final do App
         app.mount('#app');
         window.app = app._instance.setupState;
-
     </script>
 </body>
-</html>
+</html> 
