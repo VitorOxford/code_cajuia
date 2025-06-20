@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Iterate - A Rede Social do Processo Criativo</title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.1/fabric.min.js"></script>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <style>
+        /* Estilos Globais e Tema Dark */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #000000;
+            color: #E5E7EB; /* gray-200 */
+        }
+
+        /* Cores Vibrantes (Accent) */
+        :root {
+            --accent-color: #3B82F6; /* blue-500 */
+            --accent-color-hover: #2563EB; /* blue-600 */
+            --danger-color: #EF4444; /* red-500 */
+            --danger-color-hover: #DC2626; /* red-600 */
+        }
+        
+        /* Animação de Fade-in */
+        .fade-in {
+            animation: fadeIn 0.5s ease-in-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        /* Classe para botões primários */
+        .btn-primary {
+            background-color: var(--accent-color);
+            transition: background-color 0.2s;
+            color: white;
+            font-weight: 600;
+            border-radius: 0.5rem;
+            padding: 0.75rem 1.5rem;
+        }
+        .btn-primary:hover {
+            background-color: var(--accent-color-hover);
+        }
+
+        /* Canvas container */
+        .canvas-container {
+            width: 100% !important;
+            height: 100% !important;
+        }
+    </style>
+</head>
+<body class="antialiased">
+
+    <div id="app" class="h-screen w-screen overflow-x-hidden">
+
+        <template v-if="isConfigured">
+            <notification-toast :message="notification.message" :type="notification.type" v-if="notification.visible"></notification-toast>
+
+            <div v-if="isLoading" class="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50">
+                <div class="w-16 h-16 border-4 border-t-transparent border-[var(--accent-color)] rounded-full animate-spin"></div>
+            </div>
+
+            <div v-if="!session" class="fade-in">
+                <auth-component @show-notification="showNotification"></auth-component>
+            </div>
+
+            <div v-else class="fade-in h-full">
+                <div v-if="currentView === 'feed'" class="h-full">
+                    <feed-component 
+                        @create-post="navigateToEditor(null)" 
+                        @iterate-post="navigateToEditor($event)"
+                        @view-tree="navigateToTree($event)"
+                        @show-notification="showNotification"
+                        @logout="handleLogout"
+                        :user="session.user"
+                    ></feed-component>
+                </div>
+
+                <div v-if="currentView === 'editor'" class="h-full">
+                    <editor-component 
+                        :post-to-edit="activePost" 
+                        @back="navigateToFeed"
+                        @show-notification="showNotification"
+                    ></editor-component>
+                </div>
+                
+                <div v-if="currentView === 'tree'" class="h-full">
+                     <tree-view-component 
+                        :root-post="activePost"
+                        @back="navigateToFeed"
+                        @view-post="navigateToTree($event)"
+                        @iterate-post="navigateToEditor($event)"
+                        @show-notification="showNotification"
+                    ></tree-view-component>
+                </div>
+            </div>
+        </template>
+        
+        <template v-else>
+            <config-error-component></config-error-component>
+        </template>
+
+    </div>
+
+    <script>
+        const { createApp, ref, reactive, onMounted, computed, watch } = Vue;
+        const { createClient } = supabase;
+
+        // =======================================================
+        // COMPONENTES DA APLICAÇÃO
+        // =======================================================
+
+        const NotificationToast = {
+            props: ['message', 'type'],
+            template: `
+                <div class="fixed bottom-5 right-5 z-50 fade-in">
+                    <div class="flex items-center px-4 py-3 rounded-lg shadow-lg text-white" :class="type === 'success' ? 'bg-green-500' : 'bg-red-500'">
+                        <span class="font-bold mr-2">{{ type === 'success' ? '✓' : '!' }}</span>
+                        <span>{{ message }}</span>
+                    </div>
+                </div>
+            `,
+        };
+        
+        const ConfigErrorComponent = {
+            template: `
+                <div class="h-screen w-screen flex flex-col items-center justify-center bg-red-900/50 p-8 text-center">
+                    <h1 class="text-3xl font-bold text-white mb-4">[!] Configuração Necessária</h1>
+                    <p class="max-w-xl text-lg text-yellow-100 mb-2">
+                        Parece que as credenciais do Supabase ainda não foram configuradas neste código.
+                    </p>
+                    <p class="max-w-xl text-lg text-yellow-100">
+                        Por favor, abra o código, procure por <code class="bg-black/50 px-2 py-1 rounded-md font-mono text-white">SEU_SUPABASE_URL</code> e <code class="bg-black/50 px-2 py-1 rounded-md font-mono text-white">SUA_SUPABASE_ANON_KEY</code> e substitua-os com suas chaves reais do painel do Supabase.
+                    </p>
+                </div>
+            `,
+        };
+
+        const AuthComponent = {
+            emits: ['show-notification'],
+            setup(props, { emit }) {
+                const isLogin = ref(true);
+                const email = ref('');
+                const password = ref('');
+                const loading = ref(false);
+
+                const handleAuth = async () => {
+    if (!email.value || !password.value) {
+        emit('show-notification', 'Por favor, preencha e-mail e senha.', 'error');
+        return;
+    }
+    loading.value = true;
+    try {
+        const { data, error } = isLogin.value
+            ? await window.app.supabase.auth.signInWithPassword({ email: email.value, password: password.value })
+            : await window.app.supabase.auth.signUp({ email: email.value, password: password.value });
+
+        if (error) throw error;
+        
+        if (!isLogin.value) {
+             emit('show-notification', 'Cadastro realizado! Verifique seu e-mail para confirmação.', 'success');
+        }
+
+    } catch (error) {
+        emit('show-notification', error.message || 'Ocorreu um erro.', 'error');
+    } finally {
+        loading.value = false;
+    }
+};
+
+                return { isLogin, email, password, loading, handleAuth };
+            },
+            template: `
+                <div class="min-h-screen flex flex-col items-center justify-center bg-black p-4">
+                    <div class="w-full max-w-md space-y-8">
+                        <div>
+                            <div class="flex items-center justify-center gap-2">
+                                <h1 class="text-4xl font-bold text-white">Iterate</h1>
+                            </div>
+                            <p class="mt-2 text-center text-lg text-gray-400">A rede social do processo criativo.</p>
+                        </div>
+                        <div class="bg-[#111111] border border-neutral-800 p-8 rounded-2xl shadow-2xl shadow-neutral-900/50">
+                            <form class="space-y-6" @submit.prevent="handleAuth">
+                                <div>
+                                    <input v-model="email" id="email" type="email" required
+                                        class="w-full px-4 py-3 bg-neutral-900 border border-neutral-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-[var(--accent-color)]"
+                                        placeholder="seu@email.com">
+                                </div>
+                                <div>
+                                    <input v-model="password" id="password" type="password" required
+                                        class="w-full px-4 py-3 bg-neutral-900 border border-neutral-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-[var(--accent-color)]"
+                                        placeholder="Sua senha">
+                                </div>
+                                <div>
+                                    <button type="submit" class="w-full btn-primary flex justify-center items-center gap-2" :disabled="loading">
+                                        <div v-if="loading" class="w-5 h-5 border-2 border-t-transparent rounded-full animate-spin"></div>
+                                        <span>{{ isLogin ? 'Entrar' : 'Cadastrar' }}</span>
+                                    </button>
+                                </div>
+                            </form>
+                            <p class="mt-6 text-center text-sm text-gray-400">
+                                {{ isLogin ? 'Não tem uma conta?' : 'Já tem uma conta?' }}
+                                <a href="#" @click.prevent="isLogin = !isLogin" class="font-medium text-[var(--accent-color)] hover:text-[var(--accent-color-hover)]">
+                                    {{ isLogin ? 'Cadastre-se' : 'Faça login' }}
+                                </a>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            `,
+        };
+
+        const FeedComponent = {
+            props: ['user'],
+            emits: ['create-post', 'iterate-post', 'view-tree', 'show-notification', 'logout'],
+            setup(props, { emit }) {
+                const posts = ref([]);
+                const loading = ref(true);
+
+                const fetchPosts = async () => {
+                    loading.value = true;
+                    try {
+                        const { data, error } = await app.supabase
+                            .from('posts')
+                            .select('*')
+                            .is('parent_post_id', null) // Apenas posts "raiz"
+                            .order('created_at', { ascending: false });
+                        
+                        if (error) throw error;
+                        posts.value = data;
+                    } catch (error) {
+                        emit('show-notification', 'Erro ao carregar os posts.', 'error');
+                    } finally {
+                        loading.value = false;
+                    }
+                };
+
+                const getInitials = (email) => {
+                    if (!email) return '??';
+                    const parts = email.split('@')[0].split('.').map(p => p[0]).join('');
+                    return parts.substring(0, 2).toUpperCase();
+                };
+
+                const formatDate = (dateString) => {
+                    if(!dateString) return '';
+                    const date = new Date(dateString);
+                    return date.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' });
+                };
+
+                onMounted(fetchPosts);
+
+                return { posts, loading, getInitials, formatDate, fetchPosts, emit };
+            },
+            template: `
+                <div class="h-full w-full flex flex-col bg-black">
+                    <header class="flex items-center justify-between p-4 border-b border-neutral-800 bg-[#111111]/80 backdrop-blur-sm sticky top-0 z-10">
+                         <div class="flex items-center gap-2">
+                             <h1 class="text-2xl font-bold text-white">Iterate</h1>
+                         </div>
+                        <div class="flex items-center gap-4">
+                            <span class="text-sm text-gray-400 hidden sm:block">{{ user.email }}</span>
+                            <button @click="emit('logout')" class="p-2 rounded-full hover:bg-neutral-800 transition">
+                                <span class="text-xs">[Sair]</span>
+                            </button>
+                        </div>
+                    </header>
+                    
+                    <main class="flex-1 overflow-y-auto p-2 sm:p-4 lg:p-6">
+                        <div v-if="loading" class="text-center py-10 text-gray-400">Carregando feed...</div>
+                        <div v-else-if="posts.length === 0" class="text-center py-20 px-4">
+                            <h2 class="mt-4 text-2xl font-semibold text-white">O feed está vazio</h2>
+                            <p class="mt-2 text-neutral-400">Seja o primeiro a inspirar a comunidade! Crie um post.</p>
+                        </div>
+                        <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                            <div v-for="post in posts" :key="post.id" class="bg-[#111111] border border-neutral-800 rounded-2xl flex flex-col overflow-hidden">
+                                <div class="bg-neutral-900 aspect-video flex items-center justify-center p-4">
+                                    <p class="text-neutral-500 text-center text-sm">Visualização do Canvas</p>
+                                </div>
+                                <div class="p-4 flex flex-col flex-1">
+                                    <div class="flex items-center gap-3">
+                                        <div class="w-10 h-10 rounded-full bg-blue-900 flex items-center justify-center font-bold text-white">
+                                            {{ getInitials(post.user_email) }}
+                                        </div>
+                                        <div>
+                                            <p class="font-semibold text-white truncate">{{ post.user_email }}</p>
+                                            <p class="text-xs text-neutral-400">{{ formatDate(post.created_at) }}</p>
+                                        </div>
+                                    </div>
+                                    <div class="flex-1"></div>
+                                    <div class="mt-4 flex items-center justify-between gap-2">
+                                        <button @click="emit('iterate-post', post)" class="flex-1 text-sm bg-neutral-800 hover:bg-neutral-700 text-white font-semibold py-2 px-4 rounded-lg transition">
+                                            Iterar
+                                        </button>
+                                         <button @click="emit('view-tree', post)" class="flex-1 text-sm bg-neutral-800 hover:bg-neutral-700 text-white font-semibold py-2 px-4 rounded-lg transition">
+                                            Ver {{ post.iteration_count || 0 }} iterações
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </main>
+
+                    <button @click="emit('create-post')" class="fixed bottom-6 right-6 btn-primary rounded-full p-4 shadow-lg">
+                        <span class="text-xl font-bold">+</span>
+                    </button>
+                </div>
+            `,
+        };
+
+        const EditorComponent = {
+            props: ['postToEdit'],
+            emits: ['back', 'show-notification'],
+            setup(props, { emit }) {
+                const canvasRef = ref(null);
+                let fabricCanvas = null;
+                const loading = ref(false);
+
+                const initCanvas = () => {
+                    if (!canvasRef.value) return;
+                    fabricCanvas = new fabric.Canvas(canvasRef.value, {
+                        backgroundColor: '#18181b', 
+                    });
+                    
+                    const resizeCanvas = () => {
+                        if (!canvasRef.value || !canvasRef.value.parentElement) return;
+                        const container = canvasRef.value.parentElement;
+                        fabricCanvas.setWidth(container.clientWidth);
+                        fabricCanvas.setHeight(container.clientHeight);
+                        fabricCanvas.renderAll();
+                    };
+                    
+                    const resizeObserver = new ResizeObserver(resizeCanvas);
+                    resizeObserver.observe(canvasRef.value.parentElement);
+                    resizeCanvas();
+
+                    if (props.postToEdit && props.postToEdit.canvas_json) {
+                        fabricCanvas.loadFromJSON(props.postToEdit.canvas_json, fabricCanvas.renderAll.bind(fabricCanvas));
+                    }
+                };
+
+                onMounted(initCanvas);
+
+                const addRect = () => {
+                    const rect = new fabric.Rect({ left: 50, top: 50, fill: '#3B82F6', width: 150, height: 100 });
+                    fabricCanvas.add(rect);
+                };
+                
+                const addCircle = () => {
+                    const circle = new fabric.Circle({ left: 100, top: 100, radius: 50, fill: '#EC4899' });
+                    fabricCanvas.add(circle);
+                };
+
+                const addText = () => {
+                    const text = new fabric.IText('Edite!', { left: 120, top: 120, fill: '#FFFFFF', fontFamily: 'Inter' });
+                    fabricCanvas.add(text);
+                };
+                
+                const deleteSelected = () => {
+                    fabricCanvas.getActiveObjects().forEach(obj => fabricCanvas.remove(obj));
+                    fabricCanvas.discardActiveObject().renderAll();
+                };
+
+                const saveCanvas = async () => {
+                    loading.value = true;
+                    try {
+                        const user = app.session.user;
+                        const canvasJSON = JSON.stringify(fabricCanvas.toJSON());
+
+                        if (props.postToEdit) {
+                             await app.supabase.from('posts').insert({
+                                user_id: user.id, user_email: user.email,
+                                canvas_json: canvasJSON, parent_post_id: props.postToEdit.id
+                            });
+                             await app.supabase.rpc('increment_iteration_count', { post_id_to_update: props.postToEdit.id });
+                        } else {
+                            await app.supabase.from('posts').insert({
+                                user_id: user.id, user_email: user.email, canvas_json: canvasJSON
+                            });
+                        }
+                        
+                        emit('show-notification', 'Post salvo com sucesso!', 'success');
+                        emit('back');
+                    } catch (error) {
+                        emit('show-notification', 'Erro ao salvar o post: ' + error.message, 'error');
+                    } finally {
+                        loading.value = false;
+                    }
+                };
+                
+                return { canvasRef, loading, addRect, addCircle, addText, deleteSelected, saveCanvas, emit };
+            },
+            template: `
+                <div class="h-screen w-screen flex flex-col bg-black text-white">
+                    <div v-if="loading" class="absolute inset-0 bg-black/70 flex items-center justify-center z-20">
+                         <div class="w-16 h-16 border-4 border-t-transparent border-[var(--accent-color)] rounded-full animate-spin"></div>
+                    </div>
+                    <header class="flex-shrink-0 flex items-center justify-between p-4 border-b border-neutral-800 bg-[#111111]">
+                        <button @click="emit('back')" class="p-2 rounded-lg hover:bg-neutral-800 transition"> &lt; Voltar </button>
+                        <h2 class="text-lg font-semibold">{{ postToEdit ? 'Iterando Post' : 'Novo Post Semente' }}</h2>
+                        <button @click="saveCanvas" class="btn-primary px-4 py-2"> Salvar </button>
+                    </header>
+
+                    <div class="flex-1 flex flex-col md:flex-row overflow-hidden">
+                        <aside class="flex-shrink-0 md:w-24 bg-[#111111] border-r border-neutral-800 flex md:flex-col items-center p-2 gap-2">
+                            <button @click="addRect" class="p-2 rounded-lg hover:bg-neutral-700 transition">Retângulo</button>
+                            <button @click="addCircle" class="p-2 rounded-lg hover:bg-neutral-700 transition">Círculo</button>
+                            <button @click="addText" class="p-2 rounded-lg hover:bg-neutral-700 transition">Texto</button>
+                            <div class="my-auto"></div>
+                            <button @click="deleteSelected" class="p-2 rounded-lg text-[var(--danger-color)] hover:bg-red-900/50 transition">Deletar</button>
+                        </aside>
+                        <main class="flex-1 bg-neutral-900 relative overflow-hidden">
+                            <canvas ref="canvasRef"></canvas>
+                        </main>
+                    </div>
+                </div>
+            `,
+        };
+        
+        const TreeViewComponent = {
+            props: ['rootPost'],
+            emits: ['back', 'view-post', 'iterate-post', 'show-notification'],
+            setup(props, { emit }) {
+                // Conteúdo do setup...
+                return { /* ... */ };
+            },
+            template: `
+                 <div class="h-screen w-screen flex flex-col bg-black text-white">
+                    <header class="flex-shrink-0 flex items-center justify-between p-4 border-b border-neutral-800 bg-[#111111]/80">
+                         <button @click="emit('back')" class="p-2 rounded-lg hover:bg-neutral-800 transition">&lt; Voltar</button>
+                        <h2 class="text-lg font-semibold">Árvore de Evolução</h2>
+                         <div class="w-24"></div>
+                    </header>
+                    <main class="flex-1 overflow-y-auto p-4">
+                        <p>Visualização da árvore de iterações (ainda a ser implementada).</p>
+                    </main>
+                 </div>
+            `
+        };
+
+
+        // =======================================================
+        // LÓGICA PRINCIPAL DA APLICAÇÃO VUE
+        // =======================================================
+        const app = createApp({
+            setup() {
+                // --- Configuração do Supabase ---
+                const SUPABASE_URL = 'https://lhppxwgyrzaoabcqrsrg.supabase.co';
+                const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxocHB4d2d5cnphb2FiY3Fyc3JnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA0NDQwNjksImV4cCI6MjA2NjAyMDA2OX0.3Hwg8KqQylXE4_G3Nsn4Yrs7_aiz_djqxsneRqODIbM';
+                
+                const isConfigured = ref(false);
+                let supabaseClient = null;
+                
+                if (SUPABASE_URL !== 'SEU_SUPABASE_URL' && SUPABASE_ANON_KEY !== 'SUA_SUPABASE_ANON_KEY') {
+                    isConfigured.value = true;
+                    supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+                } else {
+                    console.error("ERRO: Configure suas credenciais do Supabase no código!");
+                }
+
+                const session = ref(null);
+                const isLoading = ref(true);
+                const currentView = ref('feed');
+                const activePost = ref(null);
+                const notification = reactive({ visible: false, message: '', type: 'success' });
+
+                onMounted(() => {
+                    if (!isConfigured.value) {
+                        isLoading.value = false;
+                        return;
+                    }
+                
+                    supabaseClient.auth.getSession().then(({ data }) => {
+                        session.value = data.session;
+                        isLoading.value = false;
+                    }).catch(error => {
+                        console.error("Erro ao pegar sessão:", error);
+                        isLoading.value = false;
+                    });
+
+                    supabaseClient.auth.onAuthStateChange((_event, _session) => {
+                        session.value = _session;
+                        if(!_session) {
+                            currentView.value = 'auth';
+                        } else {
+                            currentView.value = 'feed';
+                        }
+                    });
+                });
+                
+                const handleLogout = async () => {
+                    await supabaseClient.auth.signOut();
+                };
+
+                const navigateToFeed = () => { currentView.value = 'feed'; };
+                const navigateToEditor = (post) => { activePost.value = post; currentView.value = 'editor'; };
+                const navigateToTree = (post) => { activePost.value = post; currentView.value = 'tree'; };
+
+                const showNotification = (message, type = 'success') => {
+                    notification.message = message;
+                    notification.type = type;
+                    notification.visible = true;
+                    setTimeout(() => { notification.visible = false; }, 4000);
+                };
+
+                return {
+                    isConfigured, session, isLoading, currentView, activePost, notification,
+                    supabase: supabaseClient, handleLogout, navigateToFeed, navigateToEditor,
+                    navigateToTree, showNotification,
+                };
+            },
+            components: {
+                ConfigErrorComponent, NotificationToast, AuthComponent,
+                FeedComponent, EditorComponent, TreeViewComponent
+            }
+        });
+        
+        app.mount('#app');
+
+        window.app = app._instance.setupState;
+
+    </script>
+</body>
+</html>
