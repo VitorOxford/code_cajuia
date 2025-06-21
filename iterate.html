@@ -10,6 +10,14 @@
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.1/fabric.min.js"></script>
 
+    <!-- Vue Flow (para a nova árvore de evolução) -->
+    <script src="https://unpkg.com/@vue-flow/core@1.33.5/dist/vue-flow.min.js"></script>
+    <script src="https://unpkg.com/@vue-flow/controls@1.1.2/dist/vue-flow.controls.js"></script>
+    <script src="https://unpkg.com/@vue-flow/minimap@1.4.0/dist/vue-flow.minimap.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/@vue-flow/core@1.33.5/dist/style.css">
+    <link rel="stylesheet" href="https://unpkg.com/@vue-flow/controls@1.1.2/dist/style.css">
+    <link rel="stylesheet" href="https://unpkg.com/@vue-flow/minimap@1.4.0/dist/style.css">
+
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -29,7 +37,7 @@
         .loading-bar-container { width: 250px; height: 8px; background-color: #333; border-radius: 4px; overflow: hidden; margin-top: 2rem; }
         .loading-bar { height: 100%; width: 0%; background: linear-gradient(90deg, #3B82F6, #9333ea, #EC4899); border-radius: 4px; animation: fill-bar 7s ease-out forwards; }
         @keyframes fill-bar { from { width: 0%; } to { width: 100%; } }
-        .animated-texts { margin-top: 1.5rem; height: 30px; position: relative; width: 250px; text-align: center; }
+        .animated-texts { margin-top: 0.8rem; height: 30px; position: relative; width: 250px; text-align: center; margin-right:210px; }
         .animated-text { position: absolute; width: 100%; opacity: 0; font-weight: 500; color: #a0a0a0; animation: fade-up-down 2s ease-in-out; }
         @keyframes fade-up-down { 0% { opacity: 0; transform: translateY(20px); } 20% { opacity: 1; transform: translateY(0); } 80% { opacity: 1; transform: translateY(0); } 100% { opacity: 0; transform: translateY(-20px); } }
         .animated-text:nth-child(1) { animation-delay: 0s; } .animated-text:nth-child(2) { animation-delay: 2s; } .animated-text:nth-child(3) { animation-delay: 4s; } .animated-text:nth-child(4) { animation-delay: 6s; font-weight: 700; color: #fff; }
@@ -39,7 +47,16 @@
         .tree-node-content { border-radius: 12px; margin-bottom: 1rem; }
         .tree-branch { position: absolute; top: 50px; left: 10px; width: 20px; height: calc(100% - 40px); border-left: 2px solid #4B5563; }
         .tree-branch-entry { position: absolute; top: 50px; left: 10px; width: 20px; height: 2px; background-color: #4B5563; }
-    </style> 
+   
+   @keyframes pulse-logo {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.08); }
+  100% { transform: scale(1); }
+}
+.pulse-logo {
+  animation: pulse-logo 1.6s;
+}
+   </style>  
 </head>
 <body class="antialiased">
 
@@ -75,6 +92,12 @@
                     <div v-if="currentView === 'tree'" class="h-full">
                          <tree-view-component :root-post-id="activePost.id" @back="navigateToFeed" @iterate-post="navigateToEditor($event)" @show-notification="showNotification"></tree-view-component>
                     </div>
+                    <div v-if="currentView === 'favorites'" class="h-full">
+                        <favorites-component :user="session.user" @show-notification="showNotification"></favorites-component>
+                    </div>
+                    <div v-if="currentView === 'profile'" class="h-full">
+                        <profile-component :user="session.user"></profile-component>
+                    </div>
                 </div>
             </div>
         </template>
@@ -109,7 +132,7 @@
                 const session = ref(null);
                 const isLoading = ref(true);
                 const showPostLoginLoader = ref(false);
-                const currentView = ref('feed');
+                const currentView = ref('feed'); 
                 const activePost = ref(null);
                 const notification = reactive({ visible: false, message: '', type: 'success' });
 
@@ -288,7 +311,7 @@
                 </div>
             `
         });
-
+ 
         const TreeNodeComponent = {
             name: 'TreeNodeComponent',
             props: ['node', 'isLast'],
@@ -333,6 +356,18 @@
             setup(props, { emit }) {
                 const treeData = ref(null);
                 const isLoading = ref(true);
+                const vueFlowReady = ref(!!window.VueFlow);
+                // Checagem para Vue Flow
+                onMounted(() => {
+                    if (!window.VueFlow) {
+                        const check = setInterval(() => {
+                            if (window.VueFlow) {
+                                vueFlowReady.value = true;
+                                clearInterval(check);
+                            }
+                        }, 100);
+                    }
+                });
                 const fetchTree = async () => {
                     isLoading.value = true;
                     try {
@@ -344,7 +379,7 @@
                 };
                 onMounted(fetchTree);
                 const formatDate = (dateString) => new Date(dateString).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year:'numeric' });
-                return { treeData, isLoading, formatDate, emit };
+                return { treeData, isLoading, formatDate, emit, vueFlowReady };
             },
             template: `
                 <div class="h-screen w-screen flex flex-col bg-black text-white">
@@ -354,30 +389,19 @@
                         <div class="w-32"></div>
                     </header>
                     <main class="flex-1 overflow-y-auto p-4 md:p-8">
-                        <div v-if="isLoading" class="text-center py-10">
-                            <div class="w-8 h-8 border-2 border-t-transparent border-[var(--accent-color)] rounded-full animate-spin mx-auto"></div>
-                            <p class="mt-2 text-neutral-400">Carregando árvore...</p>
-                        </div>
-                        <div v-else-if="treeData">
-                            <div class="root-node-content bg-blue-900/20 border border-blue-500 rounded-2xl p-4 flex items-center gap-4 mb-4">
-                               <img v-if="treeData.canvas_thumbnail_url" :src="treeData.canvas_thumbnail_url" class="w-24 h-24 rounded-lg bg-neutral-900 object-cover flex-shrink-0"/>
-                                <div v-else class="w-24 h-24 rounded-lg bg-neutral-900 flex-shrink-0"></div>
-                                <div class="flex-grow">
-                                    <p class="text-xl font-bold text-white">{{ treeData.user_email }}</p>
-                                    <p class="text-sm text-blue-300">Post Semente (Criado em {{ formatDate(treeData.created_at) }})</p>
+                        <div v-if="!vueFlowReady" class="text-center py-10 text-blue-300">Carregando visualização interativa...</div>
+                        <div v-else>
+                            <!-- Aqui entrará a implementação Vue Flow -->
+                            <div v-if="isLoading" class="text-center py-10">
+                                <div class="w-8 h-8 border-2 border-t-transparent border-[var(--accent-color)] rounded-full animate-spin mx-auto"></div>
+                                <p class="mt-2 text-neutral-400">Carregando árvore...</p>
+                            </div>
+                            <div v-else-if="treeData">
+                                <!-- Aqui ficará a árvore Vue Flow -->
+                                <div class="text-center text-neutral-500 py-8 border-2 border-dashed border-neutral-700 rounded-lg">
+                                    <h3 class="font-semibold text-white">Árvore pronta para Vue Flow</h3>
+                                    <p>Implementação visual será exibida aqui.</p>
                                 </div>
-                                <button @click="emit('iterate-post', treeData)" class="btn-primary px-4 py-2">Iterar</button>
-                            </div>
-                             <div v-if="treeData.children && treeData.children.length > 0" class="children-container mt-8">
-                                <TreeNodeComponent 
-                                    v-for="(child, index) in treeData.children" 
-                                    :key="child.id" :node="child" :is-last="index === treeData.children.length - 1"
-                                    @iterate-post="$emit('iterate-post', $event)"
-                                />
-                            </div>
-                            <div v-else class="text-center text-neutral-500 py-8 border-2 border-dashed border-neutral-700 rounded-lg">
-                                <h3 class="font-semibold text-white">Nenhuma iteração ainda.</h3>
-                                <p>Seja o primeiro a evoluir esta ideia!</p>
                             </div>
                         </div>
                     </main>
@@ -386,71 +410,232 @@
         });
 
         app.component('FeedComponent', {
-            props: ['user'],
-            emits: ['create-post', 'iterate-post', 'view-tree', 'show-notification', 'logout'],
-            setup(props, { emit }) {
-                const posts = ref([]);
-                const loading = ref(true);
-                const fetchPosts = async () => {
-                    loading.value = true;
-                    try {
-                        const { data, error } = await window.app.supabase.from('posts').select('*').is('parent_post_id', null).order('created_at', { ascending: false });
-                        if (error) throw error;
-                        posts.value = data;
-                    } catch (error) { emit('show-notification', 'Erro ao carregar posts.', 'error');
-                    } finally { loading.value = false; }
-                };
-                const getInitials = (email) => { if (!email) return '??'; return email.split('@')[0].substring(0, 2).toUpperCase(); };
-                const formatDate = (dateString) => new Date(dateString).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' });
-                onMounted(fetchPosts);
-                return { posts, loading, getInitials, formatDate, emit };
-            },
-            template: `
-                <div class="h-full w-full flex flex-col bg-black">
-                    <header class="flex items-center justify-between p-4 border-b border-neutral-800 bg-[#111111]/80 backdrop-blur-sm sticky top-0 z-10">
-                        <img src="https://res.cloudinary.com/dsqpboeky/image/upload/v1750452925/Gemini_Generated_Image_krs9u5krs9u5krs9_1_1_lgjvon_c_crop_w_730_h_270_b6vbqm.png" alt="Logo Iterate" class="w-25 h-12 fade-in">
-                        <div class="flex items-center gap-4">
-                            <span class="text-sm text-gray-400 hidden sm:block">{{ user.email }}</span>
-                            <button @click="emit('logout')" class="p-2 rounded-full hover:bg-neutral-800 transition">
-                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
-                            </button>
-                        </div>
-                    </header>
-                    <main class="flex-1 overflow-y-auto p-2 sm:p-4 lg:p-6">
-                        <div v-if="loading" class="text-center py-10 text-gray-400">Carregando feed...</div>
-                        <div v-else-if="posts.length === 0" class="text-center py-20 px-4">
-                            <svg class="mx-auto h-12 w-12 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path vector-effect="non-scaling-stroke" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 13h6m-3-3v6m-9 1V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z" /></svg>
-                            <h2 class="mt-4 text-2xl font-semibold text-white">O feed está vazio</h2>
-                            <p class="mt-2 text-neutral-400">Seja o primeiro a inspirar a comunidade! Crie um post.</p>
-                        </div>
-                        <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                            <div v-for="post in posts" :key="post.id" class="bg-[#1C1C1C] border border-neutral-800 rounded-2xl flex flex-col overflow-hidden transition hover:border-[var(--accent-color)] hover:shadow-2xl hover:shadow-blue-900/30">
-                                <div class="bg-neutral-900 aspect-video flex items-center justify-center">
-                                    <img v-if="post.canvas_thumbnail_url" :src="post.canvas_thumbnail_url" class="w-full h-full object-cover"/>
-                                    <p v-else class="text-neutral-500 text-center text-sm">Sem prévia</p>
-                                </div>
-                                <div class="p-4 flex flex-col flex-1">
-                                    <div class="flex items-center gap-3">
-                                        <div class="w-10 h-10 rounded-full bg-blue-900 flex items-center justify-center font-bold text-white">{{ getInitials(post.user_email) }}</div>
-                                        <div>
-                                            <p class="font-semibold text-white truncate">{{ post.user_email }}</p>
-                                            <p class="text-xs text-neutral-400">{{ formatDate(post.created_at) }}</p>
-                                        </div>
-                                    </div>
-                                    <div class="flex-1"></div>
-                                    <div class="mt-4 flex items-center justify-between gap-2">
-                                        <button @click="emit('iterate-post', post)" class="flex-1 text-sm bg-neutral-800 hover:bg-neutral-700 text-white font-semibold py-2 px-4 rounded-lg transition">Iterar</button>
-                                        <button @click="emit('view-tree', post)" class="flex-1 text-sm bg-[var(--accent-color)] hover:bg-[var(--accent-color-hover)] text-white font-semibold py-2 px-4 rounded-lg transition">Ver {{ post.iteration_count || 0 }} iterações</button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </main>
-                    <button @click="emit('create-post')" class="fixed bottom-6 right-6 btn-primary rounded-full p-4 shadow-lg hover:scale-110 transition-transform">
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg>
+    props: ['user'],
+    emits: ['create-post', 'iterate-post', 'view-tree', 'show-notification', 'logout'],
+    setup(props, { emit }) {
+        const posts = ref([]);
+        const profiles = ref({});
+        const likes = ref([]);
+        const favorites = ref([]);
+        const commentsCount = ref({});
+        const loading = ref(true);
+        const showComments = ref(false);
+        const selectedPost = ref(null);
+        const comments = ref([]);
+        const newComment = ref('');
+        const fetchPosts = async () => {
+    loading.value = true;
+    try {
+        // Busca os posts
+        const { data: postsData } = await window.app.supabase
+            .from('posts')
+            .select('*')
+            .is('parent_post_id', null)
+            .order('created_at', { ascending: false });
+        posts.value = postsData || [];
+
+        // Perfis
+        const userIds = [...new Set(posts.value.map(p => p.user_id))];
+        if (userIds.length > 0) {
+            const { data: profilesData } = await window.app.supabase.from('profiles').select('*').in('id', userIds);
+            profiles.value = Object.fromEntries((profilesData||[]).map(p => [p.id, p]));
+        }
+
+        // Likes do usuário logado
+        const { data: likesData } = await window.app.supabase.from('likes').select('post_id').eq('user_id', props.user.id);
+        likes.value = likesData ? likesData.map(l => l.post_id) : [];
+
+        // Favoritos do usuário logado
+        const { data: favData } = await window.app.supabase.from('favorites').select('post_id').eq('user_id', props.user.id);
+        favorites.value = favData ? favData.map(f => f.post_id) : [];
+
+        // Contagem de likes por post
+        const { data: allLikes } = await window.app.supabase.from('likes').select('post_id');
+        const likeCountMap = {};
+        (allLikes || []).forEach(l => {
+            likeCountMap[l.post_id] = (likeCountMap[l.post_id] || 0) + 1;
+        });
+
+        // Contagem de favoritos por post
+        const { data: allFavs } = await window.app.supabase.from('favorites').select('post_id');
+        const favCountMap = {};
+        (allFavs || []).forEach(f => {
+            favCountMap[f.post_id] = (favCountMap[f.post_id] || 0) + 1;
+        });
+
+        // Contagem de comentários
+            const { data: commentsData } = await window.app.supabase.from('comments').select('post_id, id');
+            const countMap = {};
+            (commentsData || []).forEach(c => {
+            countMap[c.post_id] = (countMap[c.post_id] || 0) + 1;
+            });
+            commentsCount.value = countMap;
+
+        // Atualiza os contadores nos posts
+        posts.value.forEach(post => {
+            post.like_count = likeCountMap[post.id] || 0;
+            post.favorite_count = favCountMap[post.id] || 0;
+        });
+        posts.value = [...posts.value]
+    } catch (error) {
+        emit('show-notification', 'Erro ao carregar feed.', 'error');
+    } finally {
+        loading.value = false; 
+    }
+};
+        onMounted(fetchPosts);
+        // Like/Favorite
+        const toggleLike = async (postId) => {
+    if (likes.value.includes(postId)) {
+        await window.app.supabase.from('likes').delete().eq('user_id', props.user.id).eq('post_id', postId);
+        likes.value = likes.value.filter(id => id !== postId);
+    } else {
+        await window.app.supabase.from('likes').insert({ user_id: props.user.id, post_id: postId });
+        likes.value.push(postId);
+    }
+    await fetchPosts(); // <-- Atualiza contadores após ação
+};
+        const toggleFavorite = async (postId) => {
+    if (favorites.value.includes(postId)) {
+        await window.app.supabase.from('favorites').delete().eq('user_id', props.user.id).eq('post_id', postId);
+        favorites.value = favorites.value.filter(id => id !== postId);
+    } else {
+        await window.app.supabase.from('favorites').insert({ user_id: props.user.id, post_id: postId });
+        favorites.value.push(postId);
+    }
+    await fetchPosts(); // <-- Atualiza contadores após ação
+};
+        // Comentários
+        const openComments = async (post) => {
+            selectedPost.value = post;
+            showComments.value = true;
+            await fetchComments(post.id);
+        };
+        const closeComments = () => {
+            showComments.value = false;
+            selectedPost.value = null;
+            comments.value = [];
+        };
+        const fetchComments = async (postId) => { 
+            const { data } = await window.app.supabase.from('comments').select('*').eq('post_id', postId).order('created_at', { ascending: true });
+            comments.value = data || [];
+        };
+        const sendComment = async () => { 
+    if (!newComment.value.trim()) return;
+    const { data, error } = await window.app.supabase.from('comments').insert({
+        post_id: selectedPost.value.id,
+        user_id: props.user.id,
+        comment_text: newComment.value
+    }).select().single();
+    if (!error && data) {
+        newComment.value = '';
+        await fetchComments(selectedPost.value.id); // Atualiza lista e contador
+        commentsCount.value[selectedPost.value.id] = (commentsCount.value[selectedPost.value.id] || 0) + 1;
+    }
+};
+        return { posts, profiles, likes, favorites, commentsCount, loading, toggleLike, toggleFavorite, showComments, selectedPost, comments, newComment, openComments, closeComments, sendComment, emit };
+    },
+    template: `
+        <div class="h-full w-full flex flex-col">
+            <header class="flex items-center justify-between p-4 border-b border-neutral-800 bg-[#111111]/80 backdrop-blur-sm sticky top-0 z-10">
+                <img src="https://res.cloudinary.com/dsqpboeky/image/upload/v1750452925/Gemini_Generated_Image_krs9u5krs9u5krs9_1_1_lgjvon_c_crop_w_730_h_270_b6vbqm.png" alt="Logo Iterate" class="w-25 h-12 fade-in">
+                <div class="flex items-center gap-4">
+                    <span class="text-sm text-gray-400 hidden sm:block">{{ profiles[user.id]?.full_name || user.email }}</span>
+                    <button @click="emit('logout')" class="p-2 rounded-full hover:bg-neutral-800 transition">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
                     </button>
                 </div>
-            `,
+            </header>
+            <main class="flex-1 overflow-y-auto p-2 sm:p-4 lg:p-6">  
+                <div v-if="loading" class="relative inset-0 flex items-center justify-center min-h-[80vh]">
+  <img
+    src="https://res.cloudinary.com/dsqpboeky/image/upload/v1750467605/Gemini_Generated_Image_krs9u5krs9u5krs9_1_2_ffdjoe.png"
+    alt="Loading"
+    class="w-32 h-45 pulse-logo" 
+    draggable="false"
+  />
+</div>
+                <div v-else-if="posts.length === 0" class="text-center py-20 px-4">
+                    <svg class="mx-auto h-12 w-12 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path vector-effect="non-scaling-stroke" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 13h6m-3-3v6m-9 1V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h4a2 2 0 012 2v1"></path></svg>
+                    <h2 class="mt-4 text-2xl font-semibold text-white">O feed está vazio</h2>
+                    <p class="mt-2 text-neutral-400">Seja o primeiro a inspirar a comunidade! Crie um post.</p>
+                </div>
+                <div v-else class="max-w-2xl mx-auto flex flex-col gap-8 pb-24">
+                    <div v-for="post in posts" :key="post.id" class="bg-[#18181b] border border-neutral-800 rounded-2xl shadow-lg overflow-hidden transition-all duration-300 hover:shadow-blue-900/30 relative">
+                        <div class="relative group">
+                            <img v-if="post.canvas_thumbnail_url" :src="post.canvas_thumbnail_url" class="w-full aspect-square object-cover transition-transform duration-500 group-hover:scale-105"/>
+                            <div v-else class="w-full aspect-square flex items-center justify-center text-neutral-500 text-sm bg-neutral-900">Sem prévia</div>
+                            <div class="absolute top-4 left-4 flex items-center gap-2 bg-black/60 px-3 py-1 rounded-full shadow-lg animate-fade-in">
+                                <img :src="profiles[post.user_id]?.avatar_url || 'https://ui-avatars.com/api/?name=' + encodeURIComponent(profiles[post.user_id]?.full_name || post.user_email)" class="w-8 h-8 rounded-full object-cover border-2 border-white">
+                                <span class="text-white font-semibold text-sm">{{ profiles[post.user_id]?.full_name || post.user_email }}</span>
+                            </div>
+                        </div>
+                        <div class="flex items-center justify-between px-4 py-3 bg-[#18181b] border-t border-neutral-800">
+                            <div class="flex items-center gap-4">
+                                <button @click="toggleLike(post.id)" :class="likes.includes(post.id) ? 'text-pink-500 scale-110' : 'text-white/80'" class="transition-all duration-200 hover:scale-125">
+                                    <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20"><path d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z"></path></svg>
+                                </button>
+                                <span class="text-xs text-neutral-400">{{ post.like_count || 0 }}</span>
+                                <button @click="toggleFavorite(post.id)" :class="favorites.includes(post.id) ? 'text-yellow-400 scale-110' : 'text-white/80'" class="transition-all duration-200 hover:scale-125">
+                                    <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20"><path d="M10 15l-5.878 3.09 1.122-6.545L.488 6.91l6.562-.955L10 0l2.95 5.955 6.562.955-4.756 4.635 1.122 6.545z"/></svg>
+                                </button>
+                                <span class="text-xs text-neutral-400">{{ post.favorite_count || 0 }}</span>
+                                <button @click="openComments(post)" class="text-white/80 transition-all duration-200 hover:scale-125">
+                                    <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8 10h.01M12 10h.01M16 10h.01M21 12c0 4.418-4.03 8-9 8a9.77 9.77 0 01-4-.8l-4.28 1.07a1 1 0 01-1.22-1.22l1.07-4.28A8.96 8.96 0 013 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>
+                                </button>
+                                <span class="text-xs text-neutral-400">{{ commentsCount[post.id] || 0 }}</span>
+                            </div>
+                            <button @click="emit('view-tree', post)" class="px-3 py-1 rounded bg-blue-900/60 text-xs text-blue-200 hover:bg-blue-700/80 transition">{{ post.iteration_count || 0 }} iterações</button>
+                        </div>
+                        <div class="px-4 pb-4 flex gap-2">
+                            <button @click="emit('iterate-post', post)" class="btn-primary px-4 py-2 text-xs">Iterar</button>
+                        </div>
+                    </div>
+                </div>
+                <!-- Modal de comentários -->
+                <transition name="fade">
+  <div v-if="showComments" class="fixed inset-0 bg-black/90 z-50 flex flex-col">
+    <div class="flex-shrink-0 flex items-center justify-between p-4 border-b border-neutral-800 bg-[#18181b]">
+      <button @click="closeComments" class="text-white/60 hover:text-white text-2xl">&larr;</button>
+      <h3 class="text-lg font-bold">Comentários</h3>
+      <div class="w-8"></div>
+    </div>
+    <div class="flex-1 overflow-y-auto">
+      <div class="max-w-xl mx-auto p-4">
+        <!-- Post resumido no topo -->
+        <div class="bg-[#23232b] rounded-2xl p-4 mb-4 flex gap-3 items-center">
+          <img :src="profiles[selectedPost.user_id]?.avatar_url || 'https://ui-avatars.com/api/?name=' + encodeURIComponent(profiles[selectedPost.user_id]?.full_name || selectedPost.user_email)" class="w-10 h-10 rounded-full object-cover border-2 border-white">
+          <div>
+            <p class="font-semibold text-white text-sm">{{ profiles[selectedPost.user_id]?.full_name || selectedPost.user_email }}</p>
+            <img v-if="selectedPost.canvas_thumbnail_url" :src="selectedPost.canvas_thumbnail_url" class="w-24 h-24 rounded-lg object-cover mt-2"/>
+          </div>
+        </div>
+        <!-- Lista de comentários -->
+        <div v-if="comments.length === 0" class="text-center text-neutral-400 py-8">Nenhum comentário ainda.</div>
+        <div v-else class="space-y-4">
+          <div v-for="c in comments" :key="c.id" class="flex items-start gap-2">
+            <img :src="profiles[c.user_id]?.avatar_url || 'https://ui-avatars.com/api/?name=' + encodeURIComponent(profiles[c.user_id]?.full_name || c.user_id)" class="w-8 h-8 rounded-full object-cover bg-gray-700">
+            <div>
+              <p class="font-semibold text-white text-sm">{{ profiles[c.user_id]?.full_name || c.user_id }}</p>
+              <p class="text-neutral-300 text-xs">{{ new Date(c.created_at).toLocaleString('pt-BR') }}</p>
+              <p class="text-white mt-1">{{ c.comment_text }}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <form @submit.prevent="sendComment" class="flex gap-2 p-4 border-t border-neutral-800 bg-[#18181b]">
+      <input v-model="newComment" class="flex-1 px-3 py-2 rounded bg-neutral-800 border border-neutral-700 text-white" placeholder="Escreva um comentário...">
+      <button type="submit" class="btn-primary px-4">Enviar</button>
+    </form>
+  </div>
+</transition>
+            </main>
+            <button @click="emit('create-post')" class="fixed bottom-24 right-6 btn-primary rounded-full p-4 shadow-lg hover:scale-110 transition-transform">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg>
+            </button>
+        </div>
+    `,
         });
 
         app.component('EditorComponent', {
@@ -491,7 +676,7 @@
                     try {
                         const user = window.app.session.user;
                         const canvasJSON = JSON.stringify(fabricCanvas.toJSON());
-                        const canvasThumbnail = fabricCanvas.toDataURL({ format: 'jpeg', quality: 0.6, multiplier: 200 / fabricCanvas.getWidth() });
+                        const canvasThumbnail = fabricCanvas.toDataURL({ format: 'png', multiplier: 500 / fabricCanvas.getWidth() });
                         
                         const postData = { user_id: user.id, user_email: user.email, canvas_json: canvasJSON, canvas_thumbnail_url: canvasThumbnail };
 
@@ -537,6 +722,183 @@
         // Montagem final do App
         app.mount('#app');
         window.app = app._instance.setupState;
+
+        // ========== BARRA DE NAVEGAÇÃO INFERIOR ==========
+        // Adiciona a barra de navegação fixa com ícones e labels
+        const navBar = document.createElement('nav');
+        navBar.className = 'fixed bottom-0 left-0 w-full h-20 bg-[#181818] border-t border-neutral-800 flex items-center justify-around z-50';
+        navBar.innerHTML = `
+          <button id="nav-feed" class="flex flex-col items-center justify-center text-xs w-16 text-gray-400">
+            <svg class="w-6 h-6 mb-1" fill="currentColor" viewBox="0 0 20 20"><path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z"></path></svg>
+            Feed
+          </button>
+          <button id="nav-favorites" class="flex flex-col items-center justify-center text-xs w-16 text-gray-400">
+            <svg class="w-6 h-6 mb-1" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" clip-rule="evenodd"></path></svg>
+            Favoritos
+          </button>
+          <button id="nav-create" class="flex items-center justify-center w-14 h-14 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl text-white shadow-lg -mt-8">
+            <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg>
+          </button>
+          <button id="nav-notifications" class="flex flex-col items-center justify-center text-xs w-16 text-gray-400">
+            <svg class="w-6 h-6 mb-1" fill="currentColor" viewBox="0 0 20 20"><path d="M10 2a6 6 0 00-6 6v3.586l-.707.707A1 1 0 004 14h12a1 1 0 00.707-1.707L16 11.586V8a6 6 0 00-6-6zM10 18a3 3 0 01-3-3h6a3 3 0 01-3 3z"></path></svg>
+            Notificações
+          </button>
+          <button id="nav-profile" class="flex flex-col items-center justify-center text-xs w-16 text-gray-400">
+            <svg class="w-6 h-6 mb-1" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-6-3a2 2 0 11-4 0 2 2 0 014 0zm-2 4a5 5 0 00-4.546 2.916A5.986 5.986 0 0010 16a5.986 5.986 0 004.546-2.084A5 5 0 0010 11z" clip-rule="evenodd"></path></svg>
+            Perfil
+          </button>
+        `;
+        document.body.appendChild(navBar);
+
+        // ========== GARANTIR VUE FLOW SÓ NO COMPONENTE TREE ==========
+        // Exemplo de uso seguro dentro do componente TreeViewComponent:
+        // const { VueFlow, useVueFlow } = window.VueFlow || {};
+        // if (!VueFlow) { /* mostrar erro amigável ou loading */ }
+
+        // Adiciona navegação da barra inferior
+function setNavActive(id) {
+  document.querySelectorAll('nav button').forEach(btn => btn.classList.remove('text-[var(--accent-color)]'));
+  const btn = document.getElementById(id);
+  if (btn) btn.classList.add('text-[var(--accent-color)]');
+}
+
+document.getElementById('nav-feed').onclick = () => { window.app.currentView = 'feed'; setNavActive('nav-feed'); };
+document.getElementById('nav-favorites').onclick = () => { window.app.currentView = 'favorites'; setNavActive('nav-favorites'); };
+document.getElementById('nav-create').onclick = () => { window.app.currentView = 'editor'; setNavActive('nav-create'); };
+document.getElementById('nav-notifications').onclick = () => { window.app.currentView = 'notifications'; setNavActive('nav-notifications'); };
+document.getElementById('nav-profile').onclick = () => { window.app.currentView = 'profile'; setNavActive('nav-profile'); };
+setNavActive('nav-feed');
+
+// FavoritesComponent
+app.component('FavoritesComponent', {
+  props: ['user'],
+  emits: ['show-notification'],
+  setup(props, { emit }) {
+    const favoritePosts = ref([]);
+    const loading = ref(true);
+    const fetchFavorites = async () => {
+      loading.value = true;
+      try {
+        const { data: favorites } = await window.app.supabase.from('favorites').select('post_id').eq('user_id', props.user.id);
+        const postIds = favorites.map(f => f.post_id);
+        if (postIds.length === 0) { favoritePosts.value = []; loading.value = false; return; }
+        const { data: postData } = await window.app.supabase.from('posts').select('*').in('id', postIds);
+        favoritePosts.value = postData;
+      } catch (e) { emit('show-notification', 'Erro ao carregar favoritos.', 'error'); }
+      loading.value = false;
+    };
+    onMounted(fetchFavorites);
+    return { favoritePosts, loading };
+  },
+  template: `
+    <div class="p-2 md:p-4">
+      <h1 class="text-2xl font-bold p-2 text-white">Favoritos</h1>
+      <div v-if="loading" class="text-center py-10 text-gray-400">Carregando favoritos...</div>
+      <div v-else-if="favoritePosts.length === 0" class="text-center py-20 px-4">
+        <svg class="mx-auto h-12 w-12 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 016.364 0L12 7.757l1.318-1.44a4.5 4.5 0 116.364 6.364L12 20.06l-7.682-7.682a4.5 4.5 0 010-6.364z"></path></svg>
+        <h2 class="mt-4 text-2xl font-semibold text-white">Nenhum favorito ainda</h2>
+        <p class="mt-2 text-neutral-400">Explore o feed e salve suas inspirações!</p>
+      </div>
+      <div v-else class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2 md:gap-4">
+        <div v-for="post in favoritePosts" :key="post.id" class="aspect-square bg-neutral-800 rounded-2xl overflow-hidden">
+          <img :src="post.canvas_thumbnail_url" class="w-full h-full object-cover"/>
+        </div>
+      </div>
+    </div>
+  ` 
+});
+
+// ProfileComponent
+app.component('ProfileComponent', {
+  props: ['user'],
+  setup(props) {
+    const profile = ref(null);
+    const posts = ref([]);
+    const loading = ref(true);
+    const editing = ref(false);
+    const form = reactive({ full_name: '', avatar_url: '', bio: '' });
+
+    const fetchProfile = async () => {
+      loading.value = true;
+      const { data: profileData } = await window.app.supabase.from('profiles').select('*').eq('id', props.user.id).single();
+      profile.value = profileData;
+      if (profileData) {
+        form.full_name = profileData.full_name || '';
+        form.avatar_url = profileData.avatar_url || '';
+        form.bio = profileData.bio || '';
+      }
+      const { data: postData } = await window.app.supabase.from('posts').select('*').eq('user_id', props.user.id);
+      posts.value = postData;
+      loading.value = false;
+    };
+
+    const saveProfile = async () => {
+      loading.value = true;
+      if (profile.value) {
+        await window.app.supabase.from('profiles').update({
+          full_name: form.full_name,
+          avatar_url: form.avatar_url,
+          bio: form.bio
+        }).eq('id', props.user.id);
+      } else {
+        await window.app.supabase.from('profiles').insert({
+          id: props.user.id,
+          full_name: form.full_name,
+          avatar_url: form.avatar_url,
+          bio: form.bio
+        });
+      }
+      editing.value = false;
+      await fetchProfile();
+    };
+
+    onMounted(fetchProfile);
+    return { profile, posts, loading, editing, form, saveProfile, fetchProfile };
+  },
+  template: `
+    <div v-if="loading" class="flex items-center justify-center h-full"><div class="w-10 h-10 border-2 border-t-transparent rounded-full animate-spin"></div></div>
+    <div v-else>
+      <div class="p-4 md:p-6 max-w-2xl mx-auto">
+        <div v-if="editing || !profile">
+          <h2 class="text-xl font-bold mb-4">{{ profile ? 'Editar Perfil' : 'Criar Perfil' }}</h2>
+          <form @submit.prevent="saveProfile" class="space-y-4">
+            <div>
+              <label class="block text-sm mb-1">Nome</label>
+              <input v-model="form.full_name" class="w-full px-3 py-2 rounded bg-neutral-800 border border-neutral-700 text-white" required>
+            </div>
+            <div>
+              <label class="block text-sm mb-1">Avatar (URL)</label>
+              <input v-model="form.avatar_url" class="w-full px-3 py-2 rounded bg-neutral-800 border border-neutral-700 text-white">
+            </div>
+            <div>
+              <label class="block text-sm mb-1">Bio</label>
+              <textarea v-model="form.bio" class="w-full px-3 py-2 rounded bg-neutral-800 border border-neutral-700 text-white"></textarea>
+            </div>
+            <button type="submit" class="btn-primary px-6 py-2">Salvar</button>
+            <button v-if="profile" type="button" @click="editing=false" class="ml-2 px-6 py-2 rounded bg-neutral-700 text-white">Cancelar</button>
+          </form>
+        </div>
+        <div v-else>
+          <div class="flex items-center gap-4 mb-6">
+            <img :src="profile.avatar_url || 'https://ui-avatars.com/api/?name=' + encodeURIComponent(profile.full_name || user.email)" class="w-20 h-20 md:w-24 md:h-24 rounded-full object-cover bg-gray-700">
+            <div class="flex-1">
+              <h1 class="text-2xl font-bold">{{ profile.full_name }}</h1>
+              <p class="text-gray-400 text-sm">{{ profile.bio || 'Sem bio.' }}</p>
+            </div>
+            <button @click="editing=true" class="btn-primary px-4 py-2">Editar Perfil</button>
+          </div>
+          <h2 class="font-bold mb-4 text-lg">Criações</h2>
+          <div v-if="posts.length > 0" class="grid grid-cols-3 gap-1">
+            <div v-for="post in posts" :key="post.id" class="aspect-square bg-neutral-800">
+              <img :src="post.canvas_thumbnail_url" class="w-full h-full object-cover"/>
+            </div>
+          </div>
+          <p v-else class="text-gray-500">Este usuário ainda não criou nada.</p>
+        </div>
+      </div>
+    </div>
+  `
+});
     </script>
 </body>
-</html> 
+</html>
