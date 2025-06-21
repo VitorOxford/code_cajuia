@@ -445,63 +445,155 @@ nav #nav-favorites:hover .nav-label {
         app.component('TreeNodeComponent', TreeNodeComponent);
 
         app.component('TreeViewComponent', {
-            props: ['rootPostId'],
-            emits: ['back', 'iterate-post'],
-            setup(props, { emit }) {
-                const treeData = ref(null);
-                const isLoading = ref(true);
-                const vueFlowReady = ref(!!window.VueFlow);
-                // Checagem para Vue Flow
-                onMounted(() => {
-                    if (!window.VueFlow) {
-                        const check = setInterval(() => {
-                            if (window.VueFlow) {
-                                vueFlowReady.value = true;
-                                clearInterval(check);
-                            }
-                        }, 100);
-                    }
-                });
-                const fetchTree = async () => {
-                    isLoading.value = true;
-                    try {
-                        const { data, error } = await window.app.supabase.rpc('get_post_tree', { root_id: props.rootPostId });
-                        if (error) throw error;
-                        treeData.value = data;
-                    } catch (error) { console.error("Erro ao carregar a árvore:", error);
-                    } finally { isLoading.value = false; }
-                };
-                onMounted(fetchTree);
-                const formatDate = (dateString) => new Date(dateString).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year:'numeric' });
-                return { treeData, isLoading, formatDate, emit, vueFlowReady };
-            },
-            template: `
-                <div class="h-screen w-screen flex flex-col bg-black text-white">
-                    <header class="flex-shrink-0 flex items-center justify-between p-4 border-b border-neutral-800 bg-[#111111]/80 backdrop-blur-sm sticky top-0 z-10">
-                        <button @click="emit('back')" class="p-2 rounded-lg hover:bg-neutral-800 transition">&lt; Voltar ao Feed</button>
-                        <h2 class="text-lg font-semibold">Árvore de Evolução</h2>
-                        <div class="w-32"></div>
-                    </header>
-                    <main class="flex-1 overflow-y-auto p-4 md:p-8">
-                        <div v-if="!vueFlowReady" class="text-center py-10 text-blue-300">Carregando visualização interativa...</div>
-                        <div v-else>
-                            <!-- Aqui entrará a implementação Vue Flow -->
-                            <div v-if="isLoading" class="text-center py-10">
-                                <div class="w-8 h-8 border-2 border-t-transparent border-[var(--accent-color)] rounded-full animate-spin mx-auto"></div>
-                                <p class="mt-2 text-neutral-400">Carregando árvore...</p>
-                            </div>
-                            <div v-else-if="treeData">
-                                <!-- Aqui ficará a árvore Vue Flow -->
-                                <div class="text-center text-neutral-500 py-8 border-2 border-dashed border-neutral-700 rounded-lg">
-                                    <h3 class="font-semibold text-white">Árvore pronta para Vue Flow</h3>
-                                    <p>Implementação visual será exibida aqui.</p>
-                                </div>
-                            </div>
-                        </div>
-                    </main>
-                </div>
-            `
+  props: ['rootPostId'],
+  emits: ['back', 'iterate-post', 'show-notification'],
+  setup(props, { emit }) {
+    const treeData = ref(null);
+    const isLoading = ref(true);
+    const vueFlowReady = ref(!!window.VueFlow);
+    const nodes = ref([]);
+    const edges = ref([]);
+
+    // Função para transformar a árvore em nós e arestas para o Vue Flow
+    function buildFlowData(tree, x = 0, y = 0, parentId = null, depth = 0, siblingIndex = 0, siblingsCount = 1) {
+      if (!tree) return { nodes: [], edges: [] };
+      const nodeId = tree.id.toString();
+      // Calcula posição: centraliza o root, espalha filhos horizontalmente
+      const nodeX = x + (siblingIndex - (siblingsCount - 1) / 2) * 350;
+      const nodeY = y + (depth === 0 ? 0 : 220);
+
+      const node = {
+        id: nodeId,
+        position: { x: nodeX, y: nodeY },
+        data: {
+          ...tree,
+          onIterate: () => emit('iterate-post', tree),
+        },
+        type: 'customNode',
+        selectable: false,
+      };
+      let nodesArr = [node];
+      let edgesArr = [];
+      if (parentId) {
+        edgesArr.push({
+          id: `${parentId}-${nodeId}`,
+          source: parentId,
+          target: nodeId,
+          animated: false,
+          style: { stroke: '#a855f7', strokeWidth: 2 },
         });
+      }
+      if (tree.children && tree.children.length > 0) {
+        tree.children.forEach((child, idx) => {
+          const { nodes: childNodes, edges: childEdges } = buildFlowData(
+            child,
+            nodeX,
+            nodeY + 220,
+            nodeId,
+            depth + 1,
+            idx,
+            tree.children.length
+          );
+          nodesArr = nodesArr.concat(childNodes);
+          edgesArr = edgesArr.concat(childEdges);
+        });
+      }
+      return { nodes: nodesArr, edges: edgesArr };
+    }
+
+    // Busca a árvore do Supabase
+    const fetchTree = async () => {
+      isLoading.value = true;
+      try {
+        const { data, error } = await window.app.supabase.rpc('get_post_tree', { root_id: props.rootPostId });
+        if (error) throw error;
+        treeData.value = data;
+        // Monta os dados para o Vue Flow
+        const { nodes: n, edges: e } = buildFlowData(data);
+        nodes.value = n;
+        edges.value = e;
+      } catch (error) {
+        emit('show-notification', 'Erro ao carregar árvore', 'error');
+      } finally {
+        isLoading.value = false;
+      }
+    };
+
+    onMounted(() => {
+      if (!window.VueFlow) {
+        const check = setInterval(() => {
+          if (window.VueFlow) {
+            vueFlowReady.value = true;
+            clearInterval(check);
+            fetchTree();
+          }
+        }, 100);
+      } else {
+        fetchTree();
+      }
+    });
+
+    // Custom node para mostrar thumbnail, email e botão de iterar
+    const CustomNode = {
+      props: ['data'],
+      setup(props) {
+        return { props };
+      },
+      template: `
+        <div class="bg-[#18181b] border-2 border-[#a855f7] rounded-xl shadow-lg flex flex-col items-center p-3 min-w-[160px] max-w-[220px]">
+          <img v-if="props.data.canvas_thumbnail_url" :src="props.data.canvas_thumbnail_url" class="w-20 h-20 rounded-lg object-cover mb-2"/>
+          <div v-else class="w-20 h-20 rounded-lg bg-neutral-800 mb-2"></div>
+          <div class="font-bold text-white text-center text-xs mb-1 break-all">{{ props.data.user_email }}</div>
+          <button @click="props.data.onIterate()" class="mt-1 px-3 py-1 rounded bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-1 text-xs">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M15.232 5.232l3.536 3.536m-2.036-2.036A9 9 0 1112 3v1m0 0v4m0-4h4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            Iterar
+          </button>
+        </div>
+      `
+    };
+
+    return { treeData, isLoading, vueFlowReady, nodes, edges, CustomNode, emit };
+  },
+  template: `
+    <div class="h-screen w-screen flex flex-col bg-black text-white">
+      <header class="flex-shrink-0 flex items-center justify-between p-4 border-b border-neutral-800 bg-[#111111]/80 backdrop-blur-sm sticky top-0 z-10">
+        <button @click="emit('back')" class="p-2 rounded-lg hover:bg-neutral-800 transition">&lt; Voltar ao Feed</button>
+        <h2 class="text-lg font-semibold">Árvore de Evolução</h2>
+        <div class="w-32"></div>
+      </header>
+      <main class="flex-1 overflow-hidden">
+        <div v-if="!vueFlowReady" class="text-center py-10 text-blue-300">Carregando visualização interativa...</div>
+        <div v-else-if="isLoading" class="text-center py-10">
+          <div class="w-8 h-8 border-2 border-t-transparent border-[var(--accent-color)] rounded-full animate-spin mx-auto"></div>
+          <p class="mt-2 text-neutral-400">Carregando árvore...</p>
+        </div>
+        <div v-else class="h-full w-full">
+          <VueFlow
+            :nodes="nodes"
+            :edges="edges"
+            fit-view
+            :min-zoom="0.2"
+            :max-zoom="2.5"
+            :zoom-on-scroll="true"
+            :pan-on-drag="true"
+            :zoom-on-double-click="true"
+            :pan-on-scroll="true"
+            :nodes-draggable="false"
+            :nodes-connectable="false"
+            :elements-selectable="false"
+            style="width:100vw;height:calc(100vh-64px);background:#18181b;"
+          >
+            <template #node-customNode="nodeProps">
+              <component :is="CustomNode" v-bind="nodeProps" />
+            </template>
+            <VueFlowControls />
+            <VueFlowMinimap />
+          </VueFlow>
+        </div>
+      </main>
+    </div>
+  `
+});
 
 app.component('FeedComponent', {
   props: ['user'],
@@ -816,6 +908,20 @@ const toggleFavorite = async (postId) => {
                 <div class="px-4 pb-1">
                   <span class="font-bold text-white text-sm">{{ post.like_count || 0 }} curtidas</span>
                 </div>
+                <!-- Iterações -->
+<div class="px-4 pb-1 flex items-center gap-2">
+  <button
+    @click="emit('view-tree', post)"
+    class="flex items-center gap-1 text-purple-400 hover:text-purple-300 text-sm font-semibold transition"
+    title="Ver árvore de iterações"
+  >
+    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
+    </svg>
+    Iterações
+    <span v-if="post.iteration_count !== undefined" class="ml-1 px-2 py-0.5 rounded-full bg-purple-700 text-white text-xs">{{ post.iteration_count }}</span>
+  </button>
+</div>
                 <!-- Legenda -->
                 <div class="px-4 pb-1">
                   <span class="font-bold text-white text-sm">{{ profiles[post.user_id]?.full_name || post.user_email }}</span>
