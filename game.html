@@ -1,0 +1,1337 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Conquista Global: Versão Definitiva</title>
+    <style>
+        :root {
+            --cor-fundo: #0a101a;
+            --cor-painel: #182336;
+            --cor-borda: #3a5078;
+            --cor-texto: #dfe8f7;
+            --cor-texto-secundario: #a0b0c8;
+            --cor-player: #4a90e2;
+            --cor-bot1: #e24a4a;
+            --cor-bot2: #50e3c2;
+            --cor-bot3: #f5a623;
+            --cor-neutro: #6c7a89;
+            --cor-destaque: #ffffff;
+            --cor-ataque: #ff4757;
+            --cor-ciencia: #8e44ad;
+            --cor-cultura: #f1c40f;
+            --cor-desativado: #555e6d;
+            --cor-fog-unexplored: #05080f;
+            --cor-fog-seen: rgba(10, 16, 26, 0.6);
+
+            --biome-grass: #6e9e4a;
+            --biome-forest: #3c824A;
+            --biome-desert: #d4b463;
+            --biome-water: #3474cc;
+        }
+        /* SVG noise texture for UI panels */
+        #hud, .modal-content {
+            background-image: url("data:image/svg+xml;utf8,<svg width='120' height='120' xmlns='http://www.w3.org/2000/svg'><filter id='noise'><feTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%' height='100%' filter='url(%23noise)' opacity='0.12'/></svg>");
+            background-size: 200px 200px;
+        }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes fadeOut { from { opacity: 1; } to { opacity: 0; } }
+        @keyframes slideInUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+        body, html { margin: 0; padding: 0; width: 100%; height: 100%; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif; background-color: var(--cor-fundo); color: var(--cor-texto); overflow: hidden; }
+        #game-container { width: 100%; height: 100%; position: relative; }
+        canvas { display: block; width: 100%; height: 100%; cursor: grab; background-color: #0d1726; position: absolute; top: 0; left: 0; z-index: 1; }
+        canvas:active { cursor: grabbing; }
+        
+        #hud { width: 100%; background-color: var(--cor-painel); border-top: 2px solid var(--cor-borda); display: flex; justify-content: space-between; align-items: center; padding: 0 20px; box-sizing: border-box; position: absolute; bottom: 0; z-index: 5; height: 70px;}
+        #hud-resources { display: flex; gap: 25px; }
+        .resource { font-size: 1.1em; font-weight: 500; display: flex; align-items: center; }
+        #hud-actions { display: flex; gap: 10px; }
+        .hud-button { background-color: var(--cor-borda); color: var(--cor-texto); border: none; padding: 10px 15px; border-radius: 5px; cursor: pointer; font-size: 1.2em; font-weight: bold; transition: background-color 0.2s, transform 0.2s; }
+        .hud-button:hover { background-color: var(--cor-player); transform: translateY(-2px); }
+
+        #info-panel { position: absolute; bottom: 80px; right: 10px; width: 320px; background-color: rgba(28, 42, 66, 0.97); border: 1px solid var(--cor-borda); border-radius: 8px; padding: 15px; box-sizing: border-box; display: none; box-shadow: 0 4px 15px rgba(0,0,0,0.5); z-index: 10; animation: fadeIn 0.3s ease; }
+        #info-panel h3 { margin-top: 0; padding-bottom: 10px; border-bottom: 1px solid var(--cor-borda); font-size: 1.2em; }
+        #info-panel p { margin: 8px 0; font-size: 0.95em; color: var(--cor-texto-secundario); }
+        .info-button { width: 100%; padding: 10px; margin-top: 8px; background-color: var(--cor-player); color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 1em; font-weight: 500; transition: background-color 0.2s; }
+        .info-button:hover { background-color: #5aa1f2; }
+        .info-button:disabled { background-color: var(--cor-desativado); cursor: not-allowed; }
+
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(15, 26, 46, 0.8); backdrop-filter: blur(5px); display: flex; justify-content: center; align-items: center; z-index: 2000; animation: fadeIn 0.5s ease; pointer-events: all; }
+        .modal-content { background-color: var(--cor-painel); padding: 30px; border-radius: 10px; text-align: center; max-width: 90vw; max-height: 90vh; box-shadow: 0 5px 20px rgba(0,0,0,0.6); border: 1px solid var(--cor-borda); display: flex; flex-direction: column;}
+        .modal-content h2 { margin-top: 0; font-size: 2em; }
+        .modal-button { padding: 12px 25px; margin: 10px; font-size: 1.1em; cursor: pointer; border: none; border-radius: 5px; color: white; transition: transform 0.2s, box-shadow 0.2s; font-weight: 500; }
+        .modal-button:hover { transform: scale(1.05); box-shadow: 0 4px 10px rgba(0,0,0,0.4); }
+
+        #tech-tree-container { overflow-y: auto; padding: 20px; display: flex; flex-direction: column; align-items: center; gap: 20px;}
+        .tech-era { width: 100%; text-align: center; font-size: 1.8em; font-weight: bold; color: var(--cor-cultura); margin-bottom: 10px; border-bottom: 2px solid var(--cor-cultura); padding-bottom: 10px; }
+        .tech-node { background-color: #2c3e50; border: 1px solid var(--cor-borda); padding: 15px; border-radius: 8px; width: 300px; text-align: left; transition: all 0.3s; }
+        .tech-node.researched { background-color: #0b480d; border-color: #0f0; }
+        .tech-node.researchable { background-color: #34495e; cursor: pointer; border-color: var(--cor-player); }
+        .tech-node.researchable:hover { transform: scale(1.05); box-shadow: 0 0 15px var(--cor-player); }
+        .tech-node h4 { margin: 0 0 10px 0; font-size: 1.2em; }
+        .tech-node p { margin: 0; color: var(--cor-texto-secundario); font-size: 0.9em; }
+        
+        #policies-container { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; overflow-y: auto; padding: 10px; }
+        .policy-card { background-color: #2c3e50; border: 1px solid var(--cor-borda); padding: 15px; border-radius: 8px; cursor: pointer; transition: all 0.2s; }
+        .policy-card.active { border-color: var(--cor-cultura); box-shadow: 0 0 15px var(--cor-cultura); transform: scale(1.05); }
+        .policy-card h4 { margin: 0 0 10px 0; }
+        .policy-card p { margin: 0; font-size: 0.9em; color: var(--cor-texto-secundario); }
+
+        #notification-log { position: absolute; top: 10px; right: 10px; width: 300px; z-index: 20; display: flex; flex-direction: column; gap: 10px; pointer-events: none; }
+        .notification { background-color: rgba(28, 42, 66, 0.9); padding: 10px; border-radius: 5px; border-left: 4px solid var(--cor-cultura); animation: slideInUp 0.5s ease forwards, fadeOut 0.5s ease 4.5s forwards; }
+        /* Destaque para modo de posicionamento */
+        .build-highlight { outline: 3px solid var(--cor-cultura); outline-offset: -3px; box-shadow: 0 0 12px 2px var(--cor-cultura); }
+    </style>
+</head>
+<body>
+    <div id="game-container">
+        <canvas id="gameCanvas"></canvas>
+        <div id="hud">
+            <div id="hud-resources">
+                <div class="resource" id="res-dinheiro">💰 0</div>
+                <div class="resource" id="res-ciencia">🔬 0 (+0)</div>
+                <div class="resource" id="res-cultura">🎭 0 (+0)</div>
+            </div>
+            <div id="hud-actions">
+                <button class="hud-button" id="btn-open-tech">Tecnologia</button>
+                <button class="hud-button" id="btn-open-gov">Governo</button>
+            </div>
+        </div>
+        <div id="info-panel"></div>
+        <div id="notification-log"></div>
+    </div>
+    <div id="start-modal" class="modal-overlay">
+        <div class="modal-content">
+            <h2>Escolha seu Legado</h2>
+            <div id="start-modal-options">
+                <button class="modal-button" id="btn-militarista" style="background-color: var(--cor-ataque);">Militarista</button>
+                <button class="modal-button" id="btn-cientifico" style="background-color: var(--cor-ciencia);">Científico</button>
+                <button class="modal-button" id="btn-economico" style="background-color: #4CAF50;">Econômico</button>
+            </div>
+        </div>
+    </div>
+    <div id="end-modal" class="modal-overlay" style="display: none;"></div>
+    <div id="tech-tree-modal" class="modal-overlay" style="display: none;"></div>
+    <div id="gov-modal" class="modal-overlay" style="display: none;"></div>
+
+<script>
+
+    let canvas, ctx;
+    let hudDinheiro, hudCiencia, hudCultura;
+    let infoPanel, notificationLog;
+    let startModal, endModal, techTreeModal, govModal;
+/*
+    CONQUISTA GLOBAL - VERSÃO DEFINITIVA
+    Corrige bugs, otimiza performance (off-screen culling), sistema de posicionamento de construções,
+    múltiplos tipos de unidade, evolução de unidades, UI texturizada e emojis de construções no mapa.
+    Por favor, leia os comentários nas seções principais para entender as mudanças!
+*/
+// 1. Mapeamento dos sprites para cada bioma
+const BIOME_SPRITES = {
+    grama: [
+        'sprites/grama1.png', 'sprites/grama2.png', 'sprites/grama3.png'
+    ],
+    floresta: [
+        'sprites/floresta1.png', 'sprites/floresta2.png'
+    ],
+    deserto: [
+        'sprites/deserto1.png', 'sprites/deserto2.png', 'sprites/deserto3.png', 'sprites/deserto4.png', 'sprites/deserto5.png', 'sprites/deserto6.png'
+    ],
+    água: [
+        'sprites/oceano_raso.png', 'sprites/oceano_medio.png', 'sprites/oceano_profundo.png', 'sprites/praia1.png', 'sprites/praia2.png', 'sprites/riacho1.png'
+    ]
+};
+
+// 2. Pré-carregamento dos sprites
+const loadedSprites = {};
+function preloadSprites(callback) {
+    let total = 0, loaded = 0;
+    for (const biome in BIOME_SPRITES) {
+        loadedSprites[biome] = [];
+        BIOME_SPRITES[biome].forEach((url, idx) => {
+            total++;
+            const img = new Image();
+            img.src = url;
+            img.onload = () => {
+                loaded++;
+                if (loaded === total) callback();
+            };
+            img.onerror = () => {
+                loaded++;
+                if (loaded === total) callback();
+            };
+            loadedSprites[biome][idx] = img;
+        });
+    }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    preloadSprites(() => {
+        // INICIALIZAÇÃO SÓ DEPOIS DOS SPRITES CARREGAREM!
+        canvas = document.getElementById('gameCanvas');
+        ctx = canvas.getContext('2d');
+        canvas = document.getElementById('gameCanvas');
+        ctx = canvas.getContext('2d');
+        hudDinheiro = document.getElementById('res-dinheiro');
+        hudCiencia = document.getElementById('res-ciencia');
+        hudCultura = document.getElementById('res-cultura');
+        infoPanel = document.getElementById('info-panel');
+        notificationLog = document.getElementById('notification-log');
+        startModal = document.getElementById('start-modal');
+        endModal = document.getElementById('end-modal');
+        techTreeModal = document.getElementById('tech-tree-modal');
+        govModal = document.getElementById('gov-modal');
+        const btnOpenTech = document.getElementById('btn-open-tech');
+        const btnOpenGov = document.getElementById('btn-open-gov');
+        const btnMilitarista = document.getElementById('btn-militarista');
+        const btnCientifico = document.getElementById('btn-cientifico');
+        const btnEconomico = document.getElementById('btn-economico');
+
+        resizeCanvas();
+        startModal.style.display = 'flex';
+
+        btnOpenTech.onclick = showTechTree;
+        btnOpenGov.onclick = showGovPolicies;
+        btnMilitarista.onclick = () => setupGame('militarista');
+        btnCientifico.onclick = () => setupGame('cientifico');
+        btnEconomico.onclick = () => setupGame('economico');
+
+        window.addEventListener('resize', resizeCanvas);
+        canvas.addEventListener('click', handleCanvasClick);
+        canvas.addEventListener('mousemove', handleCanvasMouseMove);
+        canvas.addEventListener('wheel', (event) => {
+            event.preventDefault();
+            const zoomAmount = 0.1;
+            const worldPos = screenToWorld(event.clientX, event.clientY);
+            if (event.deltaY < 0) camera.zoom = Math.min(camera.zoom + zoomAmount, 2.0);
+            else camera.zoom = Math.max(camera.zoom - zoomAmount, 0.3);
+            const newWorldPos = screenToWorld(event.clientX, event.clientY);
+            camera.x += (newWorldPos.x - worldPos.x) * camera.zoom;
+            camera.y += (newWorldPos.y - worldPos.y) * camera.zoom;
+        }, { passive: false });
+        canvas.addEventListener('mousedown', (event) => {
+            if (event.button === 1 || event.button === 2) {
+                event.preventDefault(); camera.isPanning = true;
+                camera.panStart.x = event.clientX - camera.x;
+                camera.panStart.y = event.clientY - camera.y;
+            }
+            camera.lastClickTime = performance.now();
+        });
+        window.addEventListener('mouseup', (event) => {
+            if (event.button === 1 || event.button === 2) {
+                camera.isPanning = false;
+            }
+        });
+        canvas.addEventListener('contextmenu', (e) => e.preventDefault());
+    });
+
+
+// =================== 2. CONFIGURAÇÕES GLOBAIS E ESTRUTURAS DE DADOS ===================
+const CONFIG = {
+    HEX_SIZE: 50,
+    GRID_WIDTH: 200,   // Reduza para 18 colunas
+    GRID_HEIGHT: 180,  // Reduza para 12 linhas
+    PLAYER_ID: 'player', BOT_IDS: ['bot1', 'bot2', 'bot3'],
+    STARTING_RESOURCES: { dinheiro: 500, ciencia: 0, cultura: 0 },
+    STARTING_UNIT_POWER: 10, UPDATE_INTERVAL: 1000,
+    AI_ACTION_INTERVAL: 3000,
+    VISION_RANGE: 3,
+    UNIT_COST: 100,
+    XP_PER_LEVEL: 20,
+};
+const EMOJIS = {
+    city: '🏛️',
+    eras: { era_tribal: '🏹', era_classica: '🗡️', era_medieval: '🛡️', era_industrial: '🔫', era_atomica: '💥' },
+    combat: '💥'
+};
+
+const PLAYER_COLORS = { player: 'var(--cor-player)', bot1: 'var(--cor-bot1)', bot2: 'var(--cor-bot2)', bot3: 'var(--cor-bot3)', neutro: 'var(--cor-neutro)' };
+const BIOMES = [
+    { type: 'grama', color: 'var(--biome-grass)', movementCost: 1 },
+    { type: 'floresta', color: 'var(--biome-forest)', movementCost: 2 },
+    { type: 'deserto', color: 'var(--biome-desert)', movementCost: 2 },
+    { type: 'água', color: 'var(--biome-water)', impassable: true },
+];
+// NOVO: Sistema de unidades militares expandidas
+const UNITS = {
+    guerreiro: { name: "Guerreiro", emoji: "🗡️", cost: 100, power: 10, requiredTech: null },
+    lanceiro: { name: "Lanceiro", emoji: "🔱", cost: 150, power: 14, requiredTech: 'metalurgia' },
+    arqueiro: { name: "Arqueiro", emoji: "🏹", cost: 120, power: 12, requiredTech: 'escrita' },
+};
+const BUILDINGS = {
+    banco: { name: "Banco", emoji: "💰", cost: 250, maintenance: 1, provides: { dinheiro: 50 }, requiredTech: null, placeable: false },
+    escola: { name: "Escola", emoji: "🏫", cost: 150, maintenance: 1, provides: { ciencia: 5 }, requiredTech: null, placeable: false },
+    base_militar: { name: "Quartel", emoji: "⛺️", cost: 300, maintenance: 2, provides: {}, requiredTech: 'forja', placeable: true, validBiomes: ['grama', 'deserto'] },
+    universidade: { name: "Universidade", emoji: "🎓", cost: 400, maintenance: 3, provides: { ciencia: 15 }, requiredTech: 'escrita', placeable: false },
+    laboratorio: { name: "Laboratório", emoji: "🧪", cost: 600, maintenance: 5, provides: { scienceBonus: 0.1 }, requiredTech: 'metodo_cientifico', placeable: false },
+    centro_filosofico: { name: "Centro Filosófico", emoji: "🎭", cost: 200, maintenance: 1, provides: { cultura: 5 }, requiredTech: 'filosofia', placeable: false },
+    fazenda: { name: "Fazenda", emoji: "🌾", cost: 120, maintenance: 0, provides: { dinheiro: 15 }, requiredTech: null, placeable: true, validBiomes: ['grama'] },
+    serraria: { name: "Serraria", emoji: "🪵", cost: 140, maintenance: 0, provides: { dinheiro: 20 }, requiredTech: null, placeable: true, validBiomes: ['floresta'] },
+};
+const TECH_TREE = {
+    era_tribal: {
+        name: "Era Tribal", techs: {
+            agricultura: { name: "Agricultura", cost: 20, description: "Permite maior crescimento populacional." },
+            mineracao: { name: "Mineração", cost: 25, description: "Desbloqueia a Forja.", requires: ['agricultura'] },
+            forja: { name: "Forja", cost: 40, description: "Desbloqueia Quartéis e unidades mais fortes.", requires: ['mineracao'] },
+        }
+    },
+    era_classica: {
+        name: "Era Clássica", techs: {
+            escrita: { name: "Escrita", cost: 60, description: "Desbloqueia Universidades e Arqueiros.", requires: ['agricultura'] },
+            filosofia: { name: "Filosofia", cost: 60, description: "Desbloqueia Centros Filosóficos e Políticas.", requires: ['escrita'] },
+            matematica: { name: "Matemática", cost: 80, description: "Melhora a eficiência de construções.", requires: ['escrita'] },
+        }
+    },
+    era_medieval: {
+        name: "Era Medieval", techs: {
+            engenharia: { name: "Engenharia", cost: 150, description: "Aumenta a defesa das cidades.", requires: ['matematica'] },
+            metalurgia: { name: "Metalurgia", cost: 200, description: "Aumenta o poder das unidades militares e libera Lanceiros.", requires: ['forja', 'engenharia'] },
+        }
+    },
+    era_industrial: {
+        name: "Era Industrial", techs: {
+            metodo_cientifico: { name: "Método Científico", cost: 500, description: "Desbloqueia Laboratórios.", requires: ['matematica', 'engenharia'] },
+            industrializacao: { name: "Industrialização", cost: 600, description: "Aumenta massivamente a produção.", requires: ['metalurgia'] },
+        }
+    },
+    era_atomica: {
+        name: "Era Atômica", techs: {
+            fissao_nuclear: { name: "Fissão Nuclear", cost: 1200, description: "Desbloqueia a arma suprema. Use com sabedoria.", requires: ['industrializacao', 'metodo_cientifico'] }
+        }
+    }
+};
+const GOV_POLICIES = {
+    militarismo: { name: "Militarismo", category: 'military', cultureCost: 20, description: "+10% de poder de ataque para todas as unidades." },
+    urbanizacao: { name: "Urbanização", category: 'economic', cultureCost: 20, description: "-10% no custo de todas as construções." },
+    racionalismo: { name: "Racionalismo", category: 'science', cultureCost: 30, description: "+10% de bônus em toda geração de ciência." },
+    logistica_avancada: { name: "Logística Avançada", category: 'military', cultureCost: 50, description: "Unidades se movem 25% mais rápido." },
+};
+
+let gameState = {};
+let camera = { x: 0, y: 0, zoom: 0.8, isPanning: false, panStart: { x: 0, y: 0 }, lastClickTime: 0 };
+let transientEffects = [];
+let buildMode = null; // { buildingKey, validHexes: Set, cityHexKey }
+let buildHighlightHexes = new Set();
+
+// =================== 3. LÓGICA DE MANIPULAÇÃO DE HEXÁGONOS E RENDERIZAÇÃO ===================
+const Hex = {
+    width: Math.sqrt(3) * CONFIG.HEX_SIZE,
+    height: 2 * CONFIG.HEX_SIZE,
+    toPixel: (hex) => {
+        // Flat-top even-q offset
+        const x = CONFIG.HEX_SIZE * 3/2 * hex.q;
+        const y = CONFIG.HEX_SIZE * Math.sqrt(3) * (hex.r + (hex.q % 2) / 2);
+        return { x, y };
+    },
+    draw: (ctx, hex, highlight = false) => {
+        const { x, y } = Hex.toPixel(hex);
+        ctx.beginPath();
+        for (let i = 0; i < 6; i++) {
+            const angle = 2 * Math.PI / 6 * i;
+            ctx.lineTo(x + CONFIG.HEX_SIZE * Math.cos(angle), y + CONFIG.HEX_SIZE * Math.sin(angle));
+        }
+        ctx.closePath();
+        const biomeColor = getCssVariable(hex.biome.color);
+        ctx.fillStyle = biomeColor;
+        ctx.fill();
+
+        // Textura sutil de emoji de bioma
+        const biomeEmoji = BIOME_EMOJIS[hex.biome.type];
+        if (biomeEmoji) {
+            if (!hex.emojiDecorations) {
+                hex.emojiDecorations = [];
+                for(let i=0; i < 3; i++) {
+                    hex.emojiDecorations.push({
+                        angle: Math.random() * Math.PI * 2,
+                        radius: Math.random() * CONFIG.HEX_SIZE * 0.5,
+                        size: CONFIG.HEX_SIZE * (0.2 + Math.random() * 0.2)
+                    });
+                }
+            }
+            hex.emojiDecorations.forEach(deco => {
+                ctx.font = `${deco.size}px sans-serif`;
+                ctx.globalAlpha = 0.4;
+                ctx.fillText(biomeEmoji, x + Math.cos(deco.angle) * deco.radius, y + Math.sin(deco.angle) * deco.radius);
+                ctx.globalAlpha = 1.0;
+            });
+        }
+
+        ctx.strokeStyle = `rgba(0,0,0,0.2)`;
+        ctx.lineWidth = 1;
+        ctx.stroke();
+
+        if (hex.owner !== 'neutro') {
+            ctx.strokeStyle = getCssVariable(PLAYER_COLORS[hex.owner]);
+            ctx.lineWidth = 5;
+            ctx.stroke();
+        }
+        if (hex.key === gameState.selectedHexKey || hex.key === gameState.unitSelectedHexKey) {
+            ctx.strokeStyle = getCssVariable('var(--cor-destaque)');
+            ctx.lineWidth = 4;
+            ctx.stroke();
+        }
+        // NOVO: Destaque para modo de posicionamento de construção
+        if (buildMode && buildHighlightHexes.has(hex.key)) {
+            ctx.save();
+            ctx.strokeStyle = getCssVariable('var(--cor-cultura)');
+            ctx.lineWidth = 6;
+            ctx.globalAlpha = 0.7;
+            ctx.stroke();
+            ctx.restore();
+        }
+    },
+    drawContent: (ctx, hex) => {
+        const { x, y } = Hex.toPixel(hex);
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        let yOffset = 0;
+        if (hex.isCityCenter) {
+            ctx.font = `${CONFIG.HEX_SIZE * 0.6}px sans-serif`;
+            ctx.fillText(EMOJIS.city, x, y - CONFIG.HEX_SIZE * 0.25);
+            yOffset = CONFIG.HEX_SIZE * 0.3;
+        }
+        // NOVO: Emoji de construção no centro do hexágono
+        if (hex.building) {
+            ctx.font = `${CONFIG.HEX_SIZE * 0.5}px sans-serif`;
+            ctx.globalAlpha = 0.92;
+            ctx.fillText(BUILDINGS[hex.building].emoji, x, y + yOffset);
+            ctx.globalAlpha = 1.0;
+            yOffset += CONFIG.HEX_SIZE * 0.2;
+        }
+        if (hex.unit) {
+            ctx.font = `${CONFIG.HEX_SIZE * 0.4}px sans-serif`;
+            ctx.fillStyle = 'white';
+            const player = gameState.players[hex.owner];
+            const unitEmoji = hex.unit.emoji || (player ? getUnitEmojiForPlayer(player) : EMOJIS.eras.era_tribal);
+            let xpStar = hex.unit.level && hex.unit.level > 1 ? '⭐'.repeat(hex.unit.level) : '';
+            ctx.fillText(unitEmoji + hex.unit.power + xpStar, x, y + yOffset);
+        }
+        let buildingXOffset = -CONFIG.HEX_SIZE * 0.4;
+        // Renderiza prédios antigos (cidade)
+        if (hex.isCityCenter && hex.buildings) {
+            for (const buildingKey in hex.buildings) {
+                if (!BUILDINGS[buildingKey].placeable) {
+                    ctx.font = `${CONFIG.HEX_SIZE * 0.35}px sans-serif`;
+                    ctx.fillText(BUILDINGS[buildingKey].emoji, x + buildingXOffset, y - CONFIG.HEX_SIZE * 0.35);
+                    buildingXOffset += CONFIG.HEX_SIZE * 0.4;
+                }
+            }
+        }
+    },
+    pixelToHex: (x, y) => {
+         const q = (Math.sqrt(3)/3 * x - 1/3 * y) / CONFIG.HEX_SIZE;
+         const r = (2/3 * y) / CONFIG.HEX_SIZE;
+         return Hex.round(q, r);
+    },
+    round: (q, r) => {
+        const s = -q - r;
+        let rq = Math.round(q);
+        let rr = Math.round(r);
+        let rs = Math.round(s);
+        const q_diff = Math.abs(rq - q);
+        const r_diff = Math.abs(rr - r);
+        const s_diff = Math.abs(rs - s);
+        if (q_diff > r_diff && q_diff > s_diff) rq = -rr - rs;
+        else if (r_diff > s_diff) rr = -rq - rs;
+        return { q: rq, r: rr };
+    },
+    neighbors: (q, r) => {
+        const directions = [[1, 0], [0, 1], [-1, 1], [-1, 0], [0, -1], [1, -1]];
+        return directions.map(d => ({ q: q + d[0], r: r + d[1] }));
+    }
+};
+
+function hexDistance(a, b) {
+    if (!a || !b) return Infinity;
+    return (Math.abs(a.q - b.q) + Math.abs(a.q + a.r - b.q - b.r) + Math.abs(a.r - b.r)) / 2;
+}
+
+function getWaterSpriteType(q, r) {
+    // 3 camadas de oceano profundo
+    if (
+        q < 3 || r < 3 ||
+        q >= CONFIG.GRID_WIDTH - 3 || r >= CONFIG.GRID_HEIGHT - 3
+    ) return 'oceano_profundo';
+    // 2 camadas de oceano médio
+    if (
+        q < 5 || r < 5 ||
+        q >= CONFIG.GRID_WIDTH - 5 || r >= CONFIG.GRID_HEIGHT - 5
+    ) return 'oceano_medio';
+    // 2 camadas de oceano raso
+    if (
+        q < 7 || r < 7 ||
+        q >= CONFIG.GRID_WIDTH - 7 || r >= CONFIG.GRID_HEIGHT - 7
+    ) return 'oceano_raso';
+    // 1 camada de praia
+    if (
+        q < 8 || r < 8 ||
+        q >= CONFIG.GRID_WIDTH - 8 || r >= CONFIG.GRID_HEIGHT - 8
+    ) return 'praia1';
+    // Interior = terra normal
+    return null;
+}
+
+// =================== 4. LÓGICA DO JOGO (ENGINE) ===================
+function setupGame(leaderType) {
+    gameState = {
+        players: {}, grid: new Map(), movingUnits: [], status: 'running', selectedHexKey: null, unitSelectedHexKey: null, hoveredHexKey: null,
+        playerLeader: leaderType, lastUpdateTime: performance.now(), lastAIUpdateTime: performance.now(), gameTick: 0,
+    };
+    const allPlayers = [CONFIG.PLAYER_ID, ...CONFIG.BOT_IDS];
+    allPlayers.forEach(id => {
+        gameState.players[id] = { id, isEliminated: false, dinheiro: CONFIG.STARTING_RESOURCES.dinheiro, ciencia: 0, cultura: 0, techs: new Set(), currentResearch: null, researchProgress: 0, policies: new Set(), policySlots: 1, bonus: { dinheiro: 1.0, ciencia: 1.0, ataque: 1.0, movimento: 1.0 }, };
+    });
+    const player = gameState.players[CONFIG.PLAYER_ID];
+    if (leaderType === 'militarista') player.bonus.ataque = 1.2;
+    if (leaderType === 'cientifico') player.bonus.ciencia = 1.25;
+    if (leaderType === 'economico') player.bonus.dinheiro = 1.25;
+    createHexGrid();
+    assignStartingPositions(allPlayers);
+    const playerCity = Array.from(gameState.grid.values()).find(h => h.owner === CONFIG.PLAYER_ID && h.isCityCenter);
+    if (playerCity) {
+        const cityPixelPos = Hex.toPixel(playerCity);
+        // Corrigido: centraliza corretamente a cidade do jogador
+        camera.zoom = 0.8;
+        camera.x = canvas.width / 2 - cityPixelPos.x * camera.zoom;
+        camera.y = canvas.height / 2 - cityPixelPos.y * camera.zoom;
+    }
+    updateFogOfWar();
+    startModal.style.display = 'none';
+    addNotification("Sua civilização deu seus primeiros passos.", 'info');
+    updateHud();
+    requestAnimationFrame(gameLoop);
+}
+
+// 3. Sorteie um sprite para cada hex na criação do grid
+function createHexGrid() {
+    for (let q = 0; q < CONFIG.GRID_WIDTH; q++) {
+        for (let r = 0; r < CONFIG.GRID_HEIGHT; r++) {
+            const key = `${q},${r}`;
+            let biome = BIOMES[0]; // padrão: grama
+
+            // Checa se é água ou praia
+            const waterType = getWaterSpriteType(q, r);
+            if (waterType) {
+                biome = BIOMES[3]; // água
+                let spriteIdx = 0;
+                if (waterType === 'oceano_profundo') spriteIdx = 2;
+                else if (waterType === 'oceano_medio') spriteIdx = 1;
+                else if (waterType === 'oceano_raso') spriteIdx = 0;
+                else if (waterType === 'praia1') spriteIdx = 3; // praia1.png
+                gameState.grid.set(key, {
+                    q, r, key, owner: 'neutro', biome, isCityCenter: false, unit: null, buildings: {}, visibility: 'unexplored',
+                    spriteIdx
+                });
+                continue;
+            }
+
+            // Sorteio normal para o interior
+            const rand = Math.random();
+            if (rand < 0.3) biome = BIOMES[1];
+            else if (rand < 0.4) biome = BIOMES[2];
+
+            const spriteList = loadedSprites[biome.type];
+            const spriteIdx = spriteList ? Math.floor(Math.random() * spriteList.length) : 0;
+            gameState.grid.set(key, {
+                q, r, key, owner: 'neutro', biome, isCityCenter: false, unit: null, buildings: {}, visibility: 'unexplored',
+                spriteIdx
+            });
+        }
+    }
+}
+
+// 4. Hex.draw: desenhe o sprite ao invés do emoji
+Hex.draw = (ctx, hex, highlight = false) => {
+    const { x, y } = Hex.toPixel(hex);
+
+    // Cria o path do hexágono para clipping
+    ctx.save();
+    ctx.beginPath();
+    for (let i = 0; i < 6; i++) {
+        const angle = Math.PI / 3 * i;
+        ctx.lineTo(x + CONFIG.HEX_SIZE * Math.cos(angle), y + CONFIG.HEX_SIZE * Math.sin(angle));
+    }
+    ctx.closePath();
+    ctx.clip();
+
+    // Desenha o sprite do bioma dentro do hexágono
+    const spriteList = loadedSprites[hex.biome.type];
+    if (spriteList && spriteList[hex.spriteIdx]) {
+        ctx.drawImage(
+            spriteList[hex.spriteIdx],
+            x - CONFIG.HEX_SIZE, y - CONFIG.HEX_SIZE,
+            CONFIG.HEX_SIZE * 2, CONFIG.HEX_SIZE * 2
+        );
+    } else {
+        ctx.fillStyle = getCssVariable(hex.biome.color);
+        ctx.fill();
+    }
+    ctx.restore();
+
+    // Borda do hexágono
+    ctx.beginPath();
+    for (let i = 0; i < 6; i++) {
+        const angle = Math.PI / 3 * i;
+        ctx.lineTo(x + CONFIG.HEX_SIZE * Math.cos(angle), y + CONFIG.HEX_SIZE * Math.sin(angle));
+    }
+    ctx.closePath();
+    ctx.strokeStyle = `rgba(0,0,0,0.2)`;
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    if (hex.owner !== 'neutro') {
+        ctx.strokeStyle = getCssVariable(PLAYER_COLORS[hex.owner]);
+        ctx.lineWidth = 5;
+        ctx.stroke();
+    }
+    if (hex.key === gameState.selectedHexKey || hex.key === gameState.unitSelectedHexKey) {
+        ctx.strokeStyle = getCssVariable('var(--cor-destaque)');
+        ctx.lineWidth = 4;
+        ctx.stroke();
+    }
+    // Destaque para modo de posicionamento de construção
+    if (buildMode && buildHighlightHexes.has(hex.key)) {
+        ctx.save();
+        ctx.strokeStyle = getCssVariable('var(--cor-cultura)');
+        ctx.lineWidth = 6;
+        ctx.globalAlpha = 0.7;
+        ctx.stroke();
+        ctx.restore();
+    }
+};
+
+// =================== Off-Screen Culling: só desenha o que está visível ===================
+function getVisibleHexes() {
+    const padding = 2; // hex extra para fora da tela
+    const minX = (-camera.x) / camera.zoom - CONFIG.HEX_SIZE * padding;
+    const minY = (-camera.y) / camera.zoom - CONFIG.HEX_SIZE * padding;
+    const maxX = (canvas.width - camera.x) / camera.zoom + CONFIG.HEX_SIZE * padding;
+    const maxY = (canvas.height - camera.y) / camera.zoom + CONFIG.HEX_SIZE * padding;
+
+    let visible = [];
+    for (let hex of gameState.grid.values()) {
+        const { x, y } = Hex.toPixel(hex);
+        if (x > minX && x < maxX && y > minY && y < maxY) {
+            visible.push(hex);
+        }
+    }
+    return visible;
+}
+
+// =================== Sistema de Posicionamento de Construções ===================
+function enterBuildMode(buildingKey, cityHex) {
+    buildMode = { buildingKey, cityHexKey: cityHex.key };
+    buildHighlightHexes.clear();
+    // Hexágonos adjacentes válidos
+    Hex.neighbors(cityHex.q, cityHex.r).forEach(coord => {
+        const key = `${coord.q},${coord.r}`;
+        const hex = gameState.grid.get(key);
+        if (!hex) return;
+        // Restrições: não pode já ter construção, não pode ser cidade, não pode ser água, bioma correto
+        if (!hex.building && !hex.isCityCenter && !hex.unit && !hex.biome.impassable && BUILDINGS[buildingKey].validBiomes.includes(hex.biome.type)) {
+            buildHighlightHexes.add(key);
+        }
+    });
+    addNotification("Selecione um hexágono destacado para construir.", "info");
+}
+function exitBuildMode() {
+    buildMode = null;
+    buildHighlightHexes.clear();
+}
+
+// =================== Sistema de Evolução de Unidades (XP) ===================
+function grantUnitXP(unit, amount) {
+    if (!unit) return;
+    unit.xp = (unit.xp || 0) + amount;
+    if (!unit.level) unit.level = 1;
+    if (unit.xp >= CONFIG.XP_PER_LEVEL) {
+        unit.level++;
+        unit.power += 2;
+        unit.xp = 0;
+        addNotification("Uma unidade subiu de nível! ⭐", "info");
+    }
+}
+
+// =================== Sistema de posicionamento de construções no clique ===================
+function handleBuildPlacement(hex) {
+    if (!buildMode) return;
+    if (!buildHighlightHexes.has(hex.key)) return;
+    hex.building = buildMode.buildingKey;
+    // Cobra o custo do jogador
+    const player = gameState.players[CONFIG.PLAYER_ID];
+    player.dinheiro -= BUILDINGS[buildMode.buildingKey].cost;
+    exitBuildMode();
+    updateHud();
+    updateInfoPanel();
+    addNotification(`Construção de ${BUILDINGS[hex.building].name} concluída!`, "info");
+}
+
+// =================== 5. FUNÇÕES DE JOGO E EVENTOS ===================
+function assignStartingPositions(allPlayers) {
+    let assignedHexes = new Set();
+    let attempts = 0;
+    allPlayers.forEach(playerId => {
+        let hex, hexKey;
+        let tooClose;
+        do {
+            const q = Math.floor(Math.random() * CONFIG.GRID_WIDTH);
+            const r = Math.floor(Math.random() * CONFIG.GRID_HEIGHT);
+            hexKey = `${q},${r}`;
+            hex = gameState.grid.get(hexKey);
+            attempts++;
+            tooClose = false;
+            assignedHexes.forEach(assignedKey => {
+                const [aq, ar] = assignedKey.split(',').map(Number);
+                if (hexDistance({q, r}, {q: aq, r: ar}) < 5) tooClose = true;
+            });
+        } while (!hex || assignedHexes.has(hexKey) || hex.biome.impassable || tooClose);
+        hex.owner = playerId;
+        hex.isCityCenter = true;
+        hex.unit = { power: CONFIG.STARTING_UNIT_POWER, emoji: UNITS.guerreiro.emoji, xp: 0, level: 1 };
+        assignedHexes.add(hexKey);
+        Hex.neighbors(hex.q, hex.r).forEach(n_coord => {
+            const neighborHex = gameState.grid.get(`${n_coord.q},${n_coord.r}`);
+            if (neighborHex && neighborHex.owner === 'neutro') neighborHex.owner = playerId;
+        });
+    });
+}
+
+function gameLoop(timestamp) {
+    if (!gameState.status || gameState.status !== 'running') return;
+    update(timestamp);
+    draw();
+    requestAnimationFrame(gameLoop);
+}
+
+function update(timestamp) {
+    const deltaTime = timestamp - (gameState.lastUpdateTime || timestamp);
+    updateMovingUnits(deltaTime);
+    updateEffects(deltaTime);
+    if (deltaTime >= CONFIG.UPDATE_INTERVAL) {
+        gameState.gameTick++;
+        updateResourcesAndResearch();
+        updateFogOfWar();
+        checkWinLossConditions();
+        gameState.lastUpdateTime = timestamp;
+    }
+    if (timestamp - (gameState.lastAIUpdateTime || timestamp) >= CONFIG.AI_ACTION_INTERVAL) {
+        runAI();
+        gameState.lastAIUpdateTime = timestamp;
+    }
+}
+
+function updateResourcesAndResearch() {
+    for (const id in gameState.players) {
+        const player = gameState.players[id];
+        if (player.isEliminated) continue;
+        let income = { dinheiro: 0, ciencia: 0, cultura: 0 };
+        let maintenance = 0;
+        let scienceBonus = player.policies.has('racionalismo') ? 1.1 : 1.0;
+        // Prédios antigos (cidade)
+        gameState.grid.forEach(hex => {
+            if (hex.owner === id && hex.isCityCenter) {
+                for (const key in hex.buildings) {
+                    const b = BUILDINGS[key];
+                    maintenance += b.maintenance;
+                    if(b.provides.dinheiro) income.dinheiro += b.provides.dinheiro;
+                    if(b.provides.ciencia) income.ciencia += b.provides.ciencia;
+                    if(b.provides.cultura) income.cultura += b.provides.cultura;
+                    if(b.provides.scienceBonus) scienceBonus += b.provides.scienceBonus;
+                }
+            }
+        });
+        // Prédios posicionados no mapa
+        gameState.grid.forEach(hex => {
+            if (hex.owner === id && hex.building) {
+                const b = BUILDINGS[hex.building];
+                if(b.provides.dinheiro) income.dinheiro += b.provides.dinheiro;
+                if(b.provides.ciencia) income.ciencia += b.provides.ciencia;
+                if(b.provides.cultura) income.cultura += b.provides.cultura;
+                if(b.provides.scienceBonus) scienceBonus += b.provides.scienceBonus;
+            }
+        });
+        player.dinheiro += Math.floor(income.dinheiro * player.bonus.dinheiro) - maintenance;
+        const finalScience = Math.floor((income.ciencia * scienceBonus) * player.bonus.ciencia);
+        player.ciencia += finalScience;
+        player.cultura += Math.floor(income.cultura);
+        if (player.currentResearch) {
+            player.researchProgress += finalScience;
+            const techData = findTech(player.currentResearch);
+            if (techData && player.researchProgress >= techData.cost) {
+                player.techs.add(player.currentResearch);
+                if (id === CONFIG.PLAYER_ID) {
+                    addNotification(`Tecnologia "${techData.name}" pesquisada!`, 'science');
+                    if (techData.name.includes("Filosofia")) { player.policySlots++; addNotification("Um novo slot de política foi desbloqueado!", 'info'); }
+                }
+                player.currentResearch = null;
+                player.researchProgress = 0;
+            }
+        }
+    }
+    if (gameState.gameTick % 2 === 0) { updateHud(); }
+}
+
+function updateMovingUnits(deltaTime) {
+    if(!deltaTime || deltaTime <= 0) return;
+    for (let i = gameState.movingUnits.length - 1; i >= 0; i--) {
+        const unit = gameState.movingUnits[i];
+        const player = gameState.players[unit.owner];
+        if (!player) { gameState.movingUnits.splice(i, 1); continue; }
+        const moveBonus = player.policies.has('logistica_avancada') ? 1.25 : 1.0;
+        const speed = 0.18 * CONFIG.HEX_SIZE * moveBonus * (deltaTime / 1000); // Corrigido: velocidade perceptível
+        if (!unit.path || unit.path.length === 0) {
+            handleUnitArrival(unit, gameState.grid.get(unit.targetKey));
+            gameState.movingUnits.splice(i, 1);
+            continue;
+        }
+        const targetPixel = Hex.toPixel(unit.path[0]);
+        const dx = targetPixel.x - unit.pixel.x;
+        const dy = targetPixel.y - unit.pixel.y;
+        const dist = Math.sqrt(dx*dx + dy*dy);
+        if (dist < speed) {
+            unit.pixel.x = targetPixel.x;
+            unit.pixel.y = targetPixel.y;
+            unit.path.shift();
+        } else {
+            unit.pixel.x += (dx / dist) * speed;
+            unit.pixel.y += (dy / dist) * speed;
+        }
+    }
+}
+
+function updateEffects(deltaTime) {
+    for (let i = transientEffects.length - 1; i >= 0; i--) {
+        const effect = transientEffects[i];
+        effect.duration -= deltaTime;
+        if (effect.duration <= 0) { transientEffects.splice(i, 1); }
+    }
+}
+
+function handleUnitArrival(unit, targetHex) {
+    if (!targetHex || !unit) return;
+    if (targetHex.owner === unit.owner) {
+        if (!targetHex.unit) targetHex.unit = { power: 0, emoji: unit.emoji, xp: 0, level: 1 };
+        targetHex.unit.power += unit.power;
+        grantUnitXP(targetHex.unit, 5);
+    } else {
+        const attacker = gameState.players[unit.owner];
+        const defender = gameState.players[targetHex.owner];
+        if (!attacker) return; 
+        const attackBonus = attacker.policies.has('militarismo') ? 1.1 : 1.0;
+        const attackerPower = unit.power * attacker.bonus.ataque * getTechPowerBonus(attacker) * attackBonus;
+        const defenderPower = (targetHex.unit ? targetHex.unit.power : 0) * (defender ? getTechPowerBonus(defender) : 1.0);
+        addEffect('combat', Hex.toPixel(targetHex));
+        if (attackerPower > defenderPower) {
+            if (targetHex.isCityCenter && defender) { addNotification(`${defender.id} perdeu sua capital!`, 'war'); defender.isEliminated = true; }
+            targetHex.owner = unit.owner;
+            targetHex.unit = { power: Math.max(1, Math.round((attackerPower - defenderPower) / getTechPowerBonus(attacker))), emoji: unit.emoji, xp: unit.xp, level: unit.level };
+            targetHex.isCityCenter = false;
+            targetHex.buildings = {};
+            grantUnitXP(targetHex.unit, 10 + Math.floor(defenderPower/2));
+        } else {
+            if(targetHex.unit) {
+                targetHex.unit.power = Math.round((defenderPower - attackerPower) / (defender ? getTechPowerBonus(defender) : 1.0));
+                if (targetHex.unit.power <= 0) targetHex.unit = null;
+                else grantUnitXP(targetHex.unit, 5);
+            }
+        }
+    }
+    updateFogOfWar();
+    if(gameState.selectedHexKey === targetHex.key) updateInfoPanel();
+}
+
+function checkWinLossConditions() {
+    if (!gameState.players || Object.keys(gameState.players).length === 0) return;
+    let activePlayers = 0;
+    let winner = null;
+    for(const id in gameState.players) { if (!gameState.players[id].isEliminated) { activePlayers++; winner = id; } }
+    if (gameState.status !== 'running') return;
+    if (activePlayers <= 1) { endGame(winner === CONFIG.PLAYER_ID); }
+    else if (gameState.players[CONFIG.PLAYER_ID].isEliminated) { endGame(false); }
+}
+
+function endGame(playerWon) {
+    gameState.status = 'gameover';
+    let content = `<div class="modal-content"> <h2 style="color: ${playerWon ? 'var(--cor-cultura)' : 'var(--cor-ataque)'};">${playerWon ? "Vitória Histórica!" : "Fim de uma Era"}</h2> <p>${playerWon ? "Sua civilização transcendeu, unificando o mundo sob sua bandeira." : "Sua civilização foi reduzida a ruínas e esquecida pelo tempo."}</p> <button class="modal-button" id="btn-restart" style="background-color: var(--cor-player);">Jogar Novamente</button> </div>`;
+    endModal.innerHTML = content;
+    endModal.style.display = 'flex';
+    document.getElementById('btn-restart').onclick = () => location.reload();
+}
+
+function runAI() {
+    CONFIG.BOT_IDS.forEach(botId => {
+        const bot = gameState.players[botId];
+        if (!bot || bot.isEliminated) return;
+        const myHexes = Array.from(gameState.grid.values()).filter(h => h.owner === botId);
+        if (myHexes.length === 0) { bot.isEliminated = true; return; }
+        if (!bot.currentResearch) {
+            const availableTechs = getResearchableTechs(bot);
+            if(availableTechs.length > 0) {
+                const bestTech = availableTechs.sort((a,b) => a.cost - b.cost)[0];
+                if (bestTech) bot.currentResearch = bestTech.id;
+            }
+        }
+        const cities = myHexes.filter(h => h.isCityCenter);
+        if (cities.length === 0) return;
+        const mainCity = cities[0];
+        const militaryPower = myHexes.reduce((sum, h) => sum + (h.unit ? h.unit.power : 0), 0);
+        if(militaryPower < 30 && bot.dinheiro >= CONFIG.UNIT_COST) {
+             const base = myHexes.find(h => h.building === 'base_militar' && !h.unit);
+             if(base) { bot.dinheiro -= CONFIG.UNIT_COST; base.unit = { power: 10, emoji: UNITS.guerreiro.emoji, xp: 0, level: 1 }; return; }
+        }
+        if (Math.random() < 0.7) { 
+            let buildingToBuild = null;
+            if (bot.dinheiro < 500) buildingToBuild = 'banco';
+            else if (myHexes.filter(h => h.buildings && h.buildings.escola).length === 0) buildingToBuild = 'escola';
+            else if (bot.techs.has('forja') && myHexes.filter(h => h.building === 'base_militar').length === 0) buildingToBuild = 'base_militar';
+            else buildingToBuild = 'escola';
+            const buildingData = BUILDINGS[buildingToBuild];
+            if(buildingData && bot.dinheiro >= buildingData.cost && !mainCity.buildings[buildingToBuild] && (!buildingData.requiredTech || bot.techs.has(buildingData.requiredTech))) {
+                bot.dinheiro -= buildingData.cost; mainCity.buildings[buildingToBuild] = true;
+                return;
+            }
+        }
+        if (militaryPower > 50) {
+            const unitHex = myHexes.find(h => h.unit && h.unit.power > 10);
+            if (unitHex) {
+                const targets = Array.from(gameState.grid.values()).filter(h => h.owner !== 'neutro' && h.owner !== botId);
+                if (targets.length > 0) {
+                    const targetHex = targets.sort((a,b) => hexDistance(unitHex, a) - hexDistance(unitHex, b))[0];
+                    if (targetHex) {
+                        const path = findPath(unitHex, targetHex);
+                        if(path && path.length > 1) { startMovement(path, unitHex.unit.power, botId, targetHex.key, unitHex.unit.emoji, unitHex.unit.xp, unitHex.unit.level); unitHex.unit = null; return; }
+                    }
+                }
+            }
+        }
+    });
+}
+
+function updateFogOfWar() {
+    gameState.grid.forEach(hex => { if (hex.visibility === 'visible') hex.visibility = 'seen'; });
+    const playerSources = Array.from(gameState.grid.values()).filter(h => h.owner === CONFIG.PLAYER_ID && (h.unit || h.isCityCenter));
+    playerSources.forEach(startHex => {
+        for (let q = -CONFIG.VISION_RANGE; q <= CONFIG.VISION_RANGE; q++) {
+            for (let r = -CONFIG.VISION_RANGE; r <= CONFIG.VISION_RANGE; r++) {
+                 const dist = hexDistance(startHex, {q: startHex.q + q, r: startHex.r + r});
+                 if (dist <= CONFIG.VISION_RANGE) {
+                     const targetKey = `${startHex.q + q},${startHex.r + r}`;
+                     const targetHex = gameState.grid.get(targetKey);
+                     if (targetHex) targetHex.visibility = 'visible';
+                 }
+            }
+        }
+    });
+}
+
+// =================== 6. RENDERIZAÇÃO PRINCIPAL ===================
+function draw() {
+    ctx.save();
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.translate(camera.x, camera.y);
+    ctx.scale(camera.zoom, camera.zoom);
+
+    // Off-screen culling: só desenha hexágonos visíveis
+    const visibleHexes = getVisibleHexes();
+    visibleHexes.forEach(hex => {
+        if (hex.visibility !== 'unexplored') {
+            Hex.draw(ctx, hex);
+            if (hex.visibility === 'visible') Hex.drawContent(ctx, hex);
+        }
+    });
+    // Fog of war
+    visibleHexes.forEach(hex => {
+        const { x, y } = Hex.toPixel(hex);
+        ctx.beginPath();
+        for (let i = 0; i < 6; i++) {
+            const angle = 2 * Math.PI / 6 * i;
+            ctx.lineTo(x + CONFIG.HEX_SIZE * Math.cos(angle), y + CONFIG.HEX_SIZE * Math.sin(angle));
+        }
+        ctx.closePath();
+        if (hex.visibility === 'unexplored') { ctx.fillStyle = getCssVariable('--cor-fog-unexplored'); ctx.fill(); }
+        else if (hex.visibility === 'seen') { ctx.fillStyle = getCssVariable('--cor-fog-seen'); ctx.fill(); }
+    });
+    // Caminho de movimentação
+    if (gameState.unitSelectedHexKey && gameState.hoveredHexKey) {
+        const startHex = gameState.grid.get(gameState.unitSelectedHexKey);
+        const endHex = gameState.grid.get(gameState.hoveredHexKey);
+        if (startHex && endHex) { const path = findPath(startHex, endHex); if (path) drawPath(path); }
+    }
+    // Unidades em movimento
+    gameState.movingUnits.forEach(unit => {
+        const player = gameState.players[unit.owner]; if (!player) return;
+        const unitEmoji = unit.emoji || getUnitEmojiForPlayer(player);
+        const p = unit.pixel;
+        ctx.font = `${CONFIG.HEX_SIZE * 0.5}px sans-serif`; ctx.textAlign = 'center'; ctx.fillText(unitEmoji, p.x, p.y);
+    });
+    drawEffects();
+    ctx.restore();
+}
+
+function drawPath(path) {
+    ctx.strokeStyle = getCssVariable('var(--cor-caminho)'); ctx.lineWidth = 4; ctx.beginPath();
+    path.forEach((hex, i) => { const p = Hex.toPixel(hex); if (i === 0) ctx.moveTo(p.x, p.y); else ctx.lineTo(p.x, p.y); });
+    ctx.stroke();
+}
+
+function drawEffects() {
+    transientEffects.forEach(effect => {
+        if (effect.type === 'combat') {
+            const life = effect.duration / effect.maxDuration;
+            ctx.font = `${CONFIG.HEX_SIZE * (1.5 - life)}px sans-serif`;
+            ctx.globalAlpha = life;
+            ctx.fillText(EMOJIS.combat, effect.pos.x, effect.pos.y);
+            ctx.globalAlpha = 1.0;
+        }
+    });
+}
+
+// =================== 7. PATHFINDING E UTILITÁRIOS ===================
+function findPath(startHex, endHex) {
+    if (!startHex || !endHex) return null;
+    const openSet = new Map([[startHex.key, startHex]]); const cameFrom = new Map();
+    const gScore = new Map([[startHex.key, 0]]); const fScore = new Map([[startHex.key, hexDistance(startHex, endHex)]]);
+    let securityBreak = 0;
+    while (openSet.size > 0) {
+        securityBreak++; if(securityBreak > 2000) { console.error("Pathfinding excedeu limite de segurança"); return null; }
+        let currentKey = null; let lowestFScore = Infinity;
+        openSet.forEach((hex, key) => { if ((fScore.get(key) || Infinity) < lowestFScore) { lowestFScore = fScore.get(key); currentKey = key; } });
+        const current = gameState.grid.get(currentKey);
+        if (current.key === endHex.key) return reconstructPath(cameFrom, current);
+        openSet.delete(currentKey);
+        Hex.neighbors(current.q, current.r).forEach(neighborCoord => {
+            const neighborKey = `${neighborCoord.q},${neighborCoord.r}`; const neighbor = gameState.grid.get(neighborKey);
+            if (!neighbor || neighbor.biome.impassable) return;
+            const tentativeGScore = (gScore.get(currentKey) || 0) + neighbor.biome.movementCost;
+            if (tentativeGScore < (gScore.get(neighborKey) || Infinity)) {
+                cameFrom.set(neighborKey, current); gScore.set(neighborKey, tentativeGScore); fScore.set(neighborKey, tentativeGScore + hexDistance(neighbor, endHex));
+                if (!openSet.has(neighborKey)) openSet.set(neighborKey, neighbor);
+            }
+        });
+    }
+    return null;
+}
+function reconstructPath(cameFrom, current) {
+    const totalPath = [current]; let currentKey = current.key;
+    while(cameFrom.has(currentKey)) { current = cameFrom.get(currentKey); currentKey = current.key; totalPath.unshift(current); }
+    return totalPath;
+}
+function screenToWorld(x, y) { return { x: (x - camera.x) / camera.zoom, y: (y - camera.y) / camera.zoom }; }
+
+// =================== 8. EVENTOS DE INTERFACE E JOGO ===================
+function handleCanvasClick(event) {
+    const clickDuration = performance.now() - camera.lastClickTime;
+    if (camera.isPanning || clickDuration < 100) return;
+    if (gameState.status !== 'running') return;
+    const worldPos = screenToWorld(event.clientX, event.clientY);
+    const { q, r } = Hex.pixelToHex(worldPos.x, worldPos.y);
+    const clickedKey = `${q},${r}`;
+    const clickedHex = gameState.grid.get(clickedKey);
+    if (!clickedHex || clickedHex.visibility === 'unexplored') return;
+
+    // NOVO: Modo de posicionamento de construção
+    if (buildMode) {
+        handleBuildPlacement(clickedHex);
+        return;
+    }
+
+    // Primeiro: se for movimento de unidade
+    if (gameState.unitSelectedHexKey && gameState.unitSelectedHexKey !== clickedKey) {
+        const startHex = gameState.grid.get(gameState.unitSelectedHexKey);
+        if (startHex && startHex.unit) {
+            const path = findPath(startHex, clickedHex);
+            if (path && path.length > 1) {
+                startMovement(path, startHex.unit.power, startHex.owner, clickedHex.key, startHex.unit.emoji, startHex.unit.xp, startHex.unit.level);
+                startHex.unit = null;
+            }
+        }
+        gameState.unitSelectedHexKey = null;
+        gameState.selectedHexKey = null;
+        infoPanel.style.display = 'none';
+        return;
+    }
+
+    // Se não for movimento, apenas seleciona e mostra painel
+    gameState.selectedHexKey = clickedKey;
+    gameState.unitSelectedHexKey = (clickedHex.unit && clickedHex.owner === CONFIG.PLAYER_ID) ? clickedKey : null;
+    updateInfoPanel();
+    infoPanel.style.display = 'block';
+}
+
+function handleCanvasMouseMove(event) {
+    if (camera.isPanning) {
+        camera.x = event.clientX - camera.panStart.x;
+        camera.y = event.clientY - camera.panStart.y;
+    } else if (gameState.unitSelectedHexKey) {
+        const worldPos = screenToWorld(event.clientX, event.clientY);
+        const { q, r } = Hex.pixelToHex(worldPos.x, worldPos.y);
+        gameState.hoveredHexKey = `${q},${r}`;
+    }
+}
+
+// =================== 9. HUD, PAINEL DE INFORMAÇÕES E MODAIS ===================
+function updateHud() {
+    const player = gameState.players[CONFIG.PLAYER_ID];
+    if (!player) return;
+    let income = {dinheiro: 0, ciencia: 0, cultura: 0}; let maintenance = 0; let scienceBonus = player.policies.has('racionalismo') ? 1.1 : 1.0;
+    gameState.grid.forEach(h => {
+        if(h.owner === player.id && h.isCityCenter) {
+            for(const key in h.buildings) {
+                const b = BUILDINGS[key]; maintenance += b.maintenance;
+                if(b.provides.dinheiro) income.dinheiro += b.provides.dinheiro;
+                if(b.provides.ciencia) income.ciencia += b.provides.ciencia;
+                if(b.provides.cultura) income.cultura += b.provides.cultura;
+                if(b.provides.scienceBonus) scienceBonus += b.provides.scienceBonus;
+            }
+        }
+        if (h.owner === player.id && h.building) {
+            const b = BUILDINGS[h.building];
+            if(b.provides.dinheiro) income.dinheiro += b.provides.dinheiro;
+            if(b.provides.ciencia) income.ciencia += b.provides.ciencia;
+            if(b.provides.cultura) income.cultura += b.provides.cultura;
+            if(b.provides.scienceBonus) scienceBonus += b.provides.scienceBonus;
+        }
+    });
+    const netIncome = Math.floor(income.dinheiro * player.bonus.dinheiro) - maintenance;
+    const netScience = Math.floor((income.ciencia * scienceBonus) * player.bonus.ciencia);
+    const netCulture = Math.floor(income.cultura);
+    hudDinheiro.textContent = `💰 ${player.dinheiro} (${netIncome >= 0 ? '+' : ''}${netIncome})`;
+    hudCiencia.textContent = `🔬 ${player.ciencia} (+${netScience})`;
+    hudCultura.textContent = `🎭 ${player.cultura} (+${netCulture})`;
+}
+
+function updateInfoPanel() {
+    if (!gameState.selectedHexKey) { infoPanel.style.display = 'none'; return; }
+    const hex = gameState.grid.get(gameState.selectedHexKey); if (!hex) { infoPanel.style.display = 'none'; return; }
+    let content = `<h3>Hex (${hex.q}, ${hex.r})</h3> <p>Dono: ${hex.owner}</p> <p>Terreno: ${hex.biome.type}</p>`;
+    // Construções posicionadas
+    if (hex.building) content += `<h4>Construção:</h4><p>${BUILDINGS[hex.building].emoji} ${BUILDINGS[hex.building].name}</p>`;
+    // Prédios antigos (cidade)
+    if (hex.isCityCenter) {
+        content += '<h4>Infraestrutura:</h4>'; let hasBuildings = false;
+        for (const key in hex.buildings) { content += `<p>${BUILDINGS[key].emoji} ${BUILDINGS[key].name}</p>`; hasBuildings = true; }
+        if (!hasBuildings) content += '<p>Nenhuma</p>';
+    }
+    // Unidade
+    if (hex.unit) {
+        let xpStar = hex.unit.level && hex.unit.level > 1 ? '⭐'.repeat(hex.unit.level) : '';
+        content += `<h4>Unidade:</h4><p>${hex.unit.emoji || "🗡️"} Poder: ${hex.unit.power} ${xpStar} (XP: ${hex.unit.xp||0})</p>`;
+    }
+    infoPanel.innerHTML = content;
+    const actionsDiv = document.createElement('div'); actionsDiv.id = 'info-panel-actions';
+    actionsDiv.innerHTML = '<h4>Ações:</h4>';
+    const player = gameState.players[CONFIG.PLAYER_ID];
+    // Construção de prédios antigos (cidade)
+    if (hex.owner === CONFIG.PLAYER_ID && hex.isCityCenter) {
+        for (const key in BUILDINGS) {
+            if (!hex.buildings[key] && !BUILDINGS[key].placeable) {
+                const b = BUILDINGS[key];
+                if (!b.requiredTech || player.techs.has(b.requiredTech)) actionsDiv.appendChild(createButton(`Construir ${b.name} (${b.cost}💰)`, () => build(key), player.dinheiro < b.cost));
+            }
+        }
+        // NOVO: Botão para modo de posicionamento de construção
+        for (const key in BUILDINGS) {
+            const b = BUILDINGS[key];
+            if (b.placeable && (!b.requiredTech || player.techs.has(b.requiredTech))) {
+                actionsDiv.appendChild(createButton(`Construir ${b.name} (${b.cost}💰)`, () => enterBuildMode(key, hex), player.dinheiro < b.cost));
+            }
+        }
+    }
+    // Treinar unidade (Quartel)
+    if (hex.owner === CONFIG.PLAYER_ID && hex.building === 'base_militar' && !hex.unit) {
+        // Mostra opções de unidade disponíveis
+        for (const unitKey in UNITS) {
+            const unit = UNITS[unitKey];
+            if (!unit.requiredTech || player.techs.has(unit.requiredTech)) {
+                actionsDiv.appendChild(createButton(`Treinar ${unit.name} (${unit.cost}💰)`, () => trainUnit(hex, unitKey), player.dinheiro < unit.cost));
+            }
+        }
+    }
+    if (hex.owner === CONFIG.PLAYER_ID && hex.isCityCenter && hex.buildings['base_militar'] && !hex.unit) {
+        // Quartel antigo (cidade)
+        for (const unitKey in UNITS) {
+            const unit = UNITS[unitKey];
+            if (!unit.requiredTech || player.techs.has(unit.requiredTech)) {
+                actionsDiv.appendChild(createButton(`Treinar ${unit.name} (${unit.cost}💰)`, () => trainUnit(hex, unitKey), player.dinheiro < unit.cost));
+            }
+        }
+    }
+
+    if (
+        hex.unit &&
+        hex.owner === CONFIG.PLAYER_ID &&
+        !buildMode
+    ) {
+        actionsDiv.appendChild(createButton(
+            "Mover unidade",
+            () => {
+                gameState.unitSelectedHexKey = hex.key;
+                addNotification("Selecione o destino da unidade no mapa.", "info");
+            }
+        ));
+    }
+
+    infoPanel.appendChild(actionsDiv);
+    infoPanel.style.display = 'block';
+}
+
+// =================== 10. MODAIS E OUTROS ===================
+function showTechTree() {
+    const player = gameState.players[CONFIG.PLAYER_ID];
+    let content = `<div class="modal-content"><h2 style="color: var(--cor-ciencia)">Árvore de Tecnologia</h2><div id="tech-tree-container">`;
+    for (const eraKey in TECH_TREE) {
+        content += `<div class="tech-era">${TECH_TREE[eraKey].name}</div>`;
+        for (const techKey in TECH_TREE[eraKey].techs) {
+            const tech = TECH_TREE[eraKey].techs[techKey];
+            let classes = "tech-node"; let canResearch = true;
+            if (tech.requires) { for (const req of tech.requires) { if (!player.techs.has(req)) { canResearch = false; break; } } }
+            if (player.techs.has(techKey)) classes += " researched"; else if (canResearch) classes += " researchable";
+            content += `<div class="${classes}" data-tech-id="${techKey}"><h4>${tech.name} (${tech.cost}🔬)</h4><p>${tech.description}</p>${player.currentResearch === techKey ? `<p style="color: var(--cor-player);">Pesquisando... (${player.researchProgress}/${tech.cost})</p>` : ''}</div>`;
+        }
+    }
+    content += `</div><button class="modal-button" id="btn-close-tech">Fechar</button></div>`;
+    techTreeModal.innerHTML = content; techTreeModal.style.display = 'flex';
+    document.querySelectorAll('.researchable').forEach(node => { node.onclick = () => { player.currentResearch = node.dataset.techId; player.researchProgress = 0; showTechTree(); }; });
+    document.getElementById('btn-close-tech').onclick = () => techTreeModal.style.display = 'none';
+}
+
+function showGovPolicies() {
+    const player = gameState.players[CONFIG.PLAYER_ID];
+    let content = `<div class="modal-content"><h2 style="color: var(--cor-cultura)">Políticas de Governo</h2><p>Slots de Política: ${player.policies.size} / ${player.policySlots}</p><div id="policies-container">`;
+    for (const key in GOV_POLICIES) {
+        const policy = GOV_POLICIES[key]; const isActive = player.policies.has(key);
+        content += `<div class="policy-card ${isActive ? 'active' : ''}" data-policy-id="${key}"><h4>${policy.name}</h4><p>${policy.description}</p>${!isActive ? `<p>Custo: ${policy.cultureCost}🎭</p>` : '<p style="color: var(--cor-cultura);">Ativa</p>'}</div>`;
+    }
+    content += `</div><button class="modal-button" id="btn-close-gov">Fechar</button></div>`;
+    govModal.innerHTML = content; govModal.style.display = 'flex';
+    document.querySelectorAll('.policy-card').forEach(card => { card.onclick = () => { togglePolicy(card.dataset.policyId); showGovPolicies(); } });
+    document.getElementById('btn-close-gov').onclick = () => govModal.style.display = 'none';
+}
+
+function addNotification(message, type = 'info') {
+    const notif = document.createElement('div');
+    notif.className = 'notification';
+    notif.textContent = message;
+    if (type === 'war') notif.style.borderLeftColor = 'var(--cor-ataque)';
+    if (type === 'science') notif.style.borderLeftColor = 'var(--cor-ciencia)';
+    notificationLog.appendChild(notif);
+}
+
+function createButton(text, onClick, disabled = false) {
+    const btn = document.createElement('button');
+    btn.className = 'info-button';
+    btn.textContent = text;
+    btn.disabled = disabled;
+    btn.onclick = onClick;
+    return btn;
+}
+
+// =================== 11. AÇÕES DE JOGO ===================
+function build(buildingKey) {
+    const hex = gameState.grid.get(gameState.selectedHexKey);
+    const player = gameState.players[CONFIG.PLAYER_ID];
+    const cost = BUILDINGS[buildingKey].cost;
+    if (hex && hex.owner === player.id && player.dinheiro >= cost) {
+        player.dinheiro -= cost;
+        hex.buildings[buildingKey] = true;
+        updateInfoPanel();
+        updateHud();
+    }
+}
+function trainUnit(hex, unitKey) {
+    const player = gameState.players[CONFIG.PLAYER_ID];
+    const unit = UNITS[unitKey];
+    if (hex && hex.owner === player.id && player.dinheiro >= unit.cost && !hex.unit) {
+        player.dinheiro -= unit.cost;
+        hex.unit = { power: unit.power, emoji: unit.emoji, xp: 0, level: 1 };
+        updateInfoPanel();
+        updateHud();
+    }
+}
+function startMovement(path, power, ownerId, targetKey, emoji, xp, level) {
+    const startHex = path[0];
+    if (!startHex) return;
+    gameState.movingUnits.push({
+        pixel: Hex.toPixel(startHex),
+        path: path.slice(1),
+        power,
+        owner: ownerId,
+        targetKey,
+        emoji,
+        xp: xp || 0,
+        level: level || 1
+    });
+}
+function addEffect(type, pos) { transientEffects.push({ type, pos, duration: 500, maxDuration: 500 }); }
+function getCssVariable(varNameString) {
+    if (!varNameString || !varNameString.includes('--')) return '#ff00ff';
+    const match = varNameString.match(/--([\w-]+)/);
+    if (!match) return '#ff00ff';
+    const varName = `--${match[1]}`;
+    return getComputedStyle(document.documentElement).getPropertyValue(varName).trim();
+}
+function findTech(techId) {
+    for (const eraKey in TECH_TREE) {
+        if (TECH_TREE[eraKey].techs[techId]) return TECH_TREE[eraKey].techs[techId];
+    }
+    return null;
+}
+function getResearchableTechs(player) {
+    const researchable = [];
+    for (const eraKey in TECH_TREE) {
+        for (const techKey in TECH_TREE[eraKey].techs) {
+            if (player.techs.has(techKey)) continue;
+            const tech = TECH_TREE[eraKey].techs[techKey];
+            let canResearch = true;
+            if (tech.requires) {
+                for (const req of tech.requires) {
+                    if (!player.techs.has(req)) { canResearch = false; break; }
+                }
+            }
+            if (canResearch) researchable.push({id: techKey, ...tech});
+        }
+    }
+    return researchable;
+}
+function getTechPowerBonus(player) {
+    if(!player) return 1.0;
+    let bonus = 1.0;
+    if (player.techs.has('metalurgia')) bonus *= 1.5;
+    if (player.techs.has('industrializacao')) bonus *= 2.0;
+    if (player.techs.has('fissao_nuclear')) bonus *= 5.0;
+    return bonus;
+}
+function getUnitEmojiForPlayer(player) {
+    if (player.techs.has('fissao_nuclear')) return EMOJIS.eras.era_atomica;
+    if (player.techs.has('industrializacao')) return EMOJIS.eras.era_industrial;
+    if (player.techs.has('metalurgia')) return EMOJIS.eras.era_medieval;
+    if (player.techs.has('forja')) return EMOJIS.eras.era_classica;
+    return EMOJIS.eras.era_tribal;
+}
+function togglePolicy(policyId) {
+    const player = gameState.players[CONFIG.PLAYER_ID];
+    const policy = GOV_POLICIES[policyId];
+    if (player.policies.has(policyId)) {
+        player.policies.delete(policyId);
+    } else if (player.cultura >= policy.cultureCost && player.policies.size < player.policySlots) {
+        player.cultura -= policy.cultureCost;
+        player.policies.add(policyId);
+    } else if (player.policies.size >= player.policySlots) {
+        addNotification("Slots de política insuficientes!", 'war');
+    } else {
+        addNotification("Cultura insuficiente!", 'war');
+    }
+    updateHud();
+}
+function resizeCanvas() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    if (gameState.status === 'running') draw();
+}
+
+});
+</script>
+</body>
+</html>
