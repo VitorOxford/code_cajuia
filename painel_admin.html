@@ -1,0 +1,932 @@
+<!--Cajuia Admin-->
+
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+    
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Painel Administrativo - Cajuia</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+
+
+    <style>
+        :root {
+            --bg-color: #F9FAFB;
+            --sidebar-bg: rgba(255, 255, 255, 0.6);
+            --card-bg: #FFFFFF;
+            --primary-color: #007AFF;
+            --primary-color-light: #e6f2ff;
+            --text-primary: #1d1d1f;
+            --text-secondary: #6e6e73;
+            --border-color: #E5E7EB;
+            --danger-color: #FF3B30;
+            --success-color: #34C759;
+            --font-family: 'Inter', sans-serif;
+            --font-family-serif: 'Playfair Display', serif;
+            --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.06), 0 2px 4px -2px rgba(0, 0, 0, 0.06);
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.07), 0 4px 6px -4px rgba(0, 0, 0, 0.07);
+            --radius-xl: 1.5rem;
+            --radius-lg: 1rem;
+            --radius-md: 0.75rem;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html { scroll-behavior: smooth; }
+        
+        body {
+            font-family: var(--font-family);
+            background-color: var(--bg-color);
+            color: var(--text-primary);
+            -webkit-font-smoothing: antialiased;
+            text-rendering: optimizeLegibility;
+            overflow-x: hidden;
+        }
+
+        /* --- Tela de Carregamento --- */
+        #loading-screen { position: fixed; inset: 0; background-color: var(--bg-color); z-index: 1000; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: opacity 0.5s ease-out; }
+        .loading-logo { width: 400px; margin-bottom: -5rem; }
+        .loading-progress-bar { width: 220px; height: 6px; background-color: var(--border-color); border-radius: 3px; overflow: hidden; margin-bottom: 1.5rem; }
+        #loading-bar { width: 0%; height: 100%; background: linear-gradient(90deg, #d1d1d6, var(--text-secondary)); border-radius: 3px; transition: width 1.4s cubic-bezier(0.25, 1, 0.5, 1); }
+        .loading-texts { height: 20px; text-align: center; width: 220px; position: relative; }
+        .loading-texts p { position: absolute; inset: 0; font-weight: 500; color: var(--text-secondary); opacity: 0; transition: opacity 0.4s ease-in-out; }
+        .loading-texts p.visible { opacity: 1; }
+        
+        /* --- Layout Principal --- */
+        #app-wrapper { display: flex; transition: opacity 0.5s ease-in; opacity: 0; }
+        #sidebar { position: fixed; top: 0; left: 0; width: 260px; height: 100vh; background: var(--sidebar-bg); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border-right: 1px solid var(--border-color); padding: 1.5rem; display: flex; flex-direction: column; transition: transform 0.3s ease; }
+        #main-content { margin-left: 260px; width: calc(100% - 260px); padding: 2rem; }
+        .sidebar-logo { height: 40px; margin-bottom: 3rem; align-self: center; }
+        .nav-menu { display: flex; flex-direction: column; gap: 0.5rem; }
+        .nav-link { display: flex; align-items: center; gap: 1rem; padding: 0.75rem 1rem; border-radius: var(--radius-md); text-decoration: none; color: var(--text-primary); font-weight: 600; transition: background-color 0.2s, color 0.2s; }
+        .nav-link:hover { background-color: var(--primary-color-light); }
+        .nav-link.active { background-color: var(--primary-color); color: white; }
+        .nav-link svg { width: 22px; height: 22px; }
+        
+        main header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; gap: 1rem;}
+        main header h1 { font-size: 2.25rem; font-weight: 700; }
+        
+        /* --- Componentes Genéricos --- */
+        .card { background-color: var(--card-bg); border-radius: var(--radius-xl); padding: 2rem; box-shadow: var(--shadow-md); }
+        .btn { padding: 0.75rem 1.5rem; border-radius: var(--radius-md); border: none; font-weight: 600; font-size: 1rem; cursor: pointer; transition: all 0.2s; display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; }
+        .btn:active { transform: scale(0.97); }
+        .btn-primary { background-color: var(--primary-color); color: white; }
+        .btn-primary:hover:not(:disabled) { filter: brightness(1.1); }
+        .btn-primary:disabled { background-color: var(--border-color); color: var(--text-secondary); cursor: not-allowed; }
+        .btn-danger { background-color: var(--danger-color); color: white; }
+        .btn-secondary { background-color: var(--border-color); color: var(--text-primary); }
+        .btn-icon { background: none; border: none; padding: 0.5rem; border-radius: 50%; width: 36px; height: 36px; cursor: pointer; transition: background-color 0.2s; }
+        .btn-icon:hover { background-color: var(--border-color); }
+        .btn-icon svg { width: 20px; height: 20px; color: var(--text-secondary); }
+
+        /* --- Tabela --- */
+        .table-wrapper { overflow-x: auto; }
+        table { width: 100%; border-collapse: separate; border-spacing: 0 0.75rem; }
+        th, td { text-align: left; padding: 1rem 1.5rem; vertical-align: middle; }
+        th { font-weight: 600; color: var(--text-secondary); font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.05em; }
+        tbody tr { background-color: var(--card-bg); transition: background-color 0.2s; border-radius: var(--radius-lg); box-shadow: var(--shadow-sm); }
+        tbody tr:hover { background-color: #fcfcfc; }
+        td { color: var(--text-primary); font-weight: 500; }
+        td:first-child { border-top-left-radius: var(--radius-lg); border-bottom-left-radius: var(--radius-lg); }
+        td:last-child { border-top-right-radius: var(--radius-lg); border-bottom-right-radius: var(--radius-lg); }
+        .actions-cell { display: flex; justify-content: flex-end; gap: 0.5rem; }
+        .product-image-sm { width: 48px; height: 48px; border-radius: var(--radius-md); object-fit: cover; }
+        
+        /* --- Modal --- */
+        .modal-backdrop { position: fixed; inset: 0; background-color: rgba(0,0,0,0.3); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); z-index: 800; display: flex; align-items: center; justify-content: center; padding: 1rem; opacity: 0; transition: opacity 0.3s; pointer-events: none; }
+        .modal-backdrop.visible { opacity: 1; pointer-events: auto; }
+        .modal-content { background-color: var(--card-bg); border-radius: var(--radius-xl); padding: 2rem; box-shadow: var(--shadow-lg); width: 100%; max-width: 600px; transform: scale(0.95); transition: transform 0.3s; max-height: 90vh; overflow-y: auto;}
+        .modal-backdrop.visible .modal-content { transform: scale(1); }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; }
+        .modal-header h2 { font-size: 1.5rem; }
+        .modal-header .btn-icon { color: var(--text-secondary); }
+        .modal-footer { display: flex; justify-content: flex-end; gap: 1rem; margin-top: 2rem; border-top: 1px solid var(--border-color); padding-top: 1.5rem; }
+        .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; }
+        .form-group { display: flex; flex-direction: column; }
+        .form-group label { font-weight: 600; margin-bottom: 0.5rem; font-size: 0.9rem; }
+        .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 0.75rem 1rem; border-radius: var(--radius-md); border: 1px solid var(--border-color); font-size: 1rem; font-family: var(--font-family); transition: border-color 0.2s, box-shadow 0.2s; }
+        .form-group input:focus, .form-group select:focus, .form-group textarea:focus { border-color: var(--primary-color); box-shadow: 0 0 0 3px var(--primary-color-light); outline: none; }
+        
+        /* --- Notificações --- */
+        #notification-container { position: fixed; top: 1.5rem; right: 1.5rem; z-index: 900; display: flex; flex-direction: column; gap: 1rem; }
+        .notification { background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); padding: 1rem 1.5rem; border-radius: var(--radius-md); box-shadow: var(--shadow-lg); display: flex; align-items: center; gap: 1rem; animation: slideIn 0.4s cubic-bezier(0.25, 1, 0.5, 1) forwards; }
+        .notification.hiding { animation: slideOut 0.4s ease-out forwards; }
+        .notification p { font-weight: 600; }
+        .notification.success { border-left: 4px solid var(--success-color); }
+        .notification.error { border-left: 4px solid var(--danger-color); }
+
+        @keyframes slideIn { from { transform: translateX(120%); } to { transform: translateX(0); } }
+        @keyframes slideOut { from { transform: translateX(0); } to { transform: translateX(120%); } }
+
+        /* --- [NOVO] Estilos para a Aba de Personalização --- */
+        .customization-layout { display: grid; grid-template-columns: 1fr 420px; gap: 2rem; align-items: flex-start; }
+        .toggle-switch { display: flex; align-items: center; justify-content: space-between; padding: 1rem; background-color: #f0f3f5; border-radius: var(--radius-lg); margin-bottom: 1.5rem; }
+        .toggle-switch label { font-weight: 600; }
+        .switch { position: relative; display: inline-block; width: 50px; height: 28px; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .4s; border-radius: 28px; }
+        .slider:before { position: absolute; content: ""; height: 20px; width: 20px; left: 4px; bottom: 4px; background-color: white; transition: .4s; border-radius: 50%; }
+        input:checked + .slider { background-color: var(--success-color); }
+        input:checked + .slider:before { transform: translateX(22px); }
+
+        #banner-list { display: flex; flex-direction: column; gap: 1rem; }
+        .banner-item { display: flex; align-items: center; gap: 1rem; background-color: #f0f3f5; padding: 1rem; border-radius: var(--radius-lg); }
+        .banner-item-img { width: 80px; height: 50px; border-radius: var(--radius-md); object-fit: cover; }
+        .banner-item-title { flex-grow: 1; font-weight: 600; }
+        .banner-item-actions { display: flex; gap: 0.5rem; }
+        #btn-new-banner { width: 100%; margin-top: 1.5rem; }
+
+        .preview-container { position: sticky; top: 2rem; width: 100%; max-width: 400px; height: 720px; border: 8px solid #1d1d1f; border-radius: 40px; background: #fff; overflow: hidden; box-shadow: var(--shadow-lg); font-family: 'Poppins', sans-serif; }
+        .preview-content { width: 100%; height: 100%; overflow-y: auto; scrollbar-width: none; }
+        .preview-content::-webkit-scrollbar { display: none; }
+        
+        /* Estilos do Carrossel do Preview */
+        .preview-container .hero-carousel-container { position: relative; width: 100%; height: 50%; overflow: hidden; }
+        .preview-container .hero-carousel-wrapper { display: flex; height: 100%; transition: transform 0.5s ease; }
+        .preview-container .hero-banner-slide { flex: 0 0 100%; position: relative; background-size: cover; background-position: center; color: white; display: flex; flex-direction: column; justify-content: flex-end; padding: 2rem 1.5rem; }
+        .preview-container .hero-banner-slide::before { content: ''; position: absolute; inset: 0; background: linear-gradient(to top, rgba(0,0,0,0.4), transparent 50%); z-index: 1; }
+        .preview-container .hero-banner-slide > div { position: relative; z-index: 2; }
+        .preview-container .hero-banner-slide h1 { font-family: var(--font-family-serif); font-size: 1.8rem; line-height: 1.2; text-shadow: 1px 1px 3px rgba(0,0,0,0.4); }
+        .preview-container .hero-banner-slide span { font-size: 2.5rem; font-family: var(--font-family-serif); text-shadow: 1px 1px 3px rgba(0,0,0,0.4); }
+        .preview-container .hero-banner-slide p { font-size: 0.8rem; margin-top: 0.5rem; text-shadow: 1px 1px 2px rgba(0,0,0,0.3); }
+        .preview-container .carousel-dots { position: absolute; bottom: 1rem; left: 50%; transform: translateX(-50%); display: flex; gap: 0.5rem; z-index: 3; }
+        .preview-container .dot { width: 8px; height: 8px; border-radius: 50%; background-color: rgba(255,255,255,0.5); transition: all 0.3s; }
+        .preview-container .dot.active { background-color: white; }
+
+        @media (max-width: 1024px) {
+            .customization-layout { grid-template-columns: 1fr; }
+            .preview-container { position: relative; top: 0; height: 600px; max-width: 100%; }
+        }
+        @media (max-width: 768px) {
+            #sidebar { transform: translateX(-100%); width: 220px; z-index: 600; }
+            #main-content { margin-left: 0; width: 100%; }
+            main header h1 { font-size: 1.75rem; }
+        }
+        
+    </style>
+</head>
+<body>
+
+    <div id="loading-screen">
+        <img src="https://cdn.shopify.com/s/files/1/0927/1286/1998/files/Sem_nome__200_x_200_px___1_-removebg-preview.png?v=1750256192" alt="Logo" class="loading-logo">
+        <div class="loading-progress-bar">
+            <div id="loading-bar"></div>
+        </div>
+        <div class="loading-texts">
+            <p id="loading-text-0" class="visible">Carregando interface...</p>
+            <p id="loading-text-1">Sincronizando ferramentas...</p>
+            <p id="loading-text-2">Puxando dados...</p>
+            <p id="loading-text-3">Preparando experiência...</p>
+        </div>
+    </div>
+
+    <div id="app-wrapper" style="opacity: 0;">
+        <aside id="sidebar">
+            <img src="https://cdn.shopify.com/s/files/1/0927/1286/1998/files/Design_sem_nome_-_2025-06-13T102227.591.png?v=1750256134" alt="Cajuia Logo" class="sidebar-logo">
+            <nav class="nav-menu">
+                <a href="#products" class="nav-link active" data-view="products-view">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M12.38.998a2.248 2.248 0 0 0-2.12.879l-4.48 7.55a2.25 2.25 0 0 0-.25 1.06v9.262a2.25 2.25 0 0 0 2.25 2.25h9.22a2.25 2.25 0 0 0 2.25-2.25V9.487a2.25 2.25 0 0 0-.25-1.06l-4.48-7.55a2.249 2.249 0 0 0-2.12-.879ZM12 3.398l3.92 6.6H8.08L12 3.398Zm-3.37 8.1h6.74a.75.75 0 0 1 .75.75v5.5a.75.75 0 0 1-.75.75H8.63a.75.75 0 0 1-.75-.75v-5.5a.75.75 0 0 1 .75-.75Z"></path></svg>
+                    <span>Produtos</span>
+                </a>
+                <a href="#categories" class="nav-link" data-view="categories-view">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M10.5 4.5a1.5 1.5 0 1 0 3 0 1.5 1.5 0 0 0-3 0Zm-3 3a1.5 1.5 0 1 0 3 0 1.5 1.5 0 0 0-3 0Zm3 3a1.5 1.5 0 1 0 3 0 1.5 1.5 0 0 0-3 0Zm-3 3a1.5 1.5 0 1 0 3 0 1.5 1.5 0 0 0-3 0Zm3 3a1.5 1.5 0 1 0 3 0 1.5 1.5 0 0 0-3 0Zm3-9a1.5 1.5 0 1 0 3 0 1.5 1.5 0 0 0-3 0Zm3 3a1.5 1.5 0 1 0 3 0 1.5 1.5 0 0 0-3 0Zm-3 3a1.5 1.5 0 1 0 3 0 1.5 1.5 0 0 0-3 0Zm3 3a1.5 1.5 0 1 0 3 0 1.5 1.5 0 0 0-3 0Z"></path></svg>
+                    <span>Categorias</span>
+                </a>
+                <a href="#personalizacao" class="nav-link" data-view="personalizacao-view">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M14.06 4.69a2.25 2.25 0 0 0-3.18-.04L3.13 12a3 3 0 0 0 0 4.24l4.24 4.24a3 3 0 0 0 4.24 0l7.75-7.75a2.25 2.25 0 0 0-3.17-3.18l-5.45 5.45a.75.75 0 0 1-1.06-1.06l5.45-5.45Zm-2.12 2.12a.75.75 0 0 1 1.06 0l5.45 5.45a.75.75 0 0 1 0 1.06l-5.45 5.45a.75.75 0 0 1-1.06 0L4.19 14.1a1.5 1.5 0 0 1 0-2.12l7.75-7.75Z"></path></svg>
+                    <span>Personalização</span>
+                </a>
+                <a href="#users" class="nav-link" data-view="users-view">
+                    <svg ...></svg>
+                    <span>Usuários</span>
+                </a>
+            </nav>
+        </aside>
+
+        <main id="main-content">
+            <section id="products-view">
+                <header>
+                    <h1>Produtos</h1>
+                    <div style="display: flex; gap: 1rem;">
+                        <button id="btn-save-all" class="btn btn-primary" disabled>Salvar Alterações</button>
+                        <button id="btn-new-product" class="btn btn-secondary">Novo Produto</button>
+                    </div>
+                </header>
+                <div class="card">
+                    <div class="table-wrapper">
+                        <table>
+                            <thead><tr><th>Produto</th><th>Categoria</th><th>Preço</th><th>Status</th><th>Ações</th></tr></thead>
+                            <tbody id="products-table-body"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+            
+            <section id="categories-view" style="display: none;">
+                <header>
+                    <h1>Categorias</h1>
+                     <div style="display: flex; gap: 1rem;">
+                        <button id="btn-save-all-cat" class="btn btn-primary" disabled>Salvar Alterações</button>
+                        <button id="btn-new-category" class="btn btn-secondary">Nova Categoria</button>
+                    </div>
+                </header>
+                <div class="card">
+                    <div class="table-wrapper">
+                        <table>
+                            <thead><tr><th>Ícone</th><th>Nome da Categoria</th><th>Ações</th></tr></thead>
+                            <tbody id="categories-table-body"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <section id="personalizacao-view" style="display: none;">
+                <header>
+                    <h1>Personalização da Loja</h1>
+                    <button id="btn-save-all-custom" class="btn btn-primary" disabled>Salvar Alterações</button>
+                </header>
+                <div class="customization-layout">
+                    <div class="card">
+                        <div class="toggle-switch">
+                            <label for="hero-active-toggle">Ativar Banner Principal</label>
+                            <label class="switch">
+                                <input type="checkbox" id="hero-active-toggle">
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+                        <h2>Slides do Carrossel</h2><br>
+                        <div id="banner-list"></div>
+                        <button id="btn-new-banner" class="btn btn-secondary">Adicionar Novo Slide</button>
+                    </div>
+                    <div class="preview-container">
+                        <div id="preview-content" class="preview-content">
+                            <div class="hero-carousel-container">
+                                <div id="preview-carousel-wrapper" class="hero-carousel-wrapper"></div>
+                                <div id="preview-carousel-dots" class="carousel-dots"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="users-view">
+    <header>
+        <h1>Usuários</h1>
+        <button id="btn-refresh-users" class="btn btn-secondary">Atualizar Lista</button>
+    </header>
+    <div class="card">
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Nome</th><th>Email</th><th>Telefone</th><th>Empresa</th><th>CNPJ</th><th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody id="users-table-body"></tbody>
+            </table>
+        </div>
+    </div>
+</section>
+        </main>
+    </div>
+
+    <div id="modal-backdrop" class="modal-backdrop">
+        <div id="modal-content" class="modal-content"></div>
+    </div>
+
+    <div id="notification-container"></div>
+    
+    <script>
+        const supabaseUrl = 'https://qmiptiariyjekecvyalo.supabase.co';
+        const supabaseServiceKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFtaXB0aWFyaXlqZWtlY3Z5YWxvIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1MDY2OTAyMywiZXhwIjoyMDY2MjQ1MDIzfQ.7r0HZKZvl0sofGZWaGGwrphLer9sdIz7Sk9MgN6ou8g'; // Use a service key, não a anon key
+        const _supabase = window.supabase.createClient(supabaseUrl, supabaseServiceKey);
+        console.log('Supabase:', typeof supabase); // Deve mostrar 'function'
+
+         async function fetchUsers() {
+    console.log('fetchUsers chamado');
+    try {
+        const { data, error } = await _supabase.from('profiles').select('*');
+        console.log('Usuários do Supabase:', data, error);
+        if (error) {
+            showNotification('Erro ao buscar usuários: ' + error.message, 'error');
+            return [];
+        }
+        return data;
+    } catch (err) {
+        console.error('Erro inesperado em fetchUsers:', err);
+        showNotification('Erro inesperado ao buscar usuários: ' + err.message, 'error');
+        return [];
+    }
+}
+
+            // Função para excluir usuário do perfil
+            async function deleteUserProfile(userId) {
+                const { error } = await _supabase.from('profiles').delete().eq('id', userId);
+                if (error) {
+                    showNotification('Erro ao excluir usuário: ' + error.message, 'error');
+                    return false;
+                }
+                return true;
+            }
+
+
+    document.addEventListener('DOMContentLoaded', () => {
+        
+        const state = {
+            data: { produtos: [], categorias: [], personalizacao: { heroAtivo: false, heroBanners: [] } },
+            originalData: {},
+            apiUrl: 'https://cajuia.onrender.com/backend_cajuia.json',
+            updateUrl: 'https://cajuia.onrender.com/atualizar-json' 
+        };
+
+        const init = async () => {
+            await startLoadingAnimation();
+            await fetchData();
+            finishLoading();
+            setupEventListeners();
+        };
+
+
+const fetchData = async () => {
+    try {
+        const response = await fetch(`${state.apiUrl}?t=${new Date().getTime()}`);
+        if (!response.ok) throw new Error('Falha na rede');
+        const data = await response.json();
+
+console.log('Dados recebidos do backend:', data);
+if (!data.produtos || !Array.isArray(data.produtos)) {
+    showNotification('Backend não retornou array de produtos.', 'error');
+    throw new Error('Backend não retornou array de produtos.');
+}
+
+        data.personalizacao = data.personalizacao || { heroAtivo: false, heroBanners: [] };
+        data.personalizacao.heroBanners = data.personalizacao.heroBanners || [];
+
+        state.data = data;
+
+        // GARANTE CAMPOS OBRIGATÓRIOS EM TODOS OS PRODUTOS
+        state.data.produtos.forEach(prod => {
+            if (!('variacoes' in prod)) prod.variacoes = { tamanhos: [], cores: [] };
+            if (!('estoque' in prod)) prod.estoque = {};
+            if (!('habilitarTamanhos' in prod)) prod.habilitarTamanhos = true;
+            if (!('habilitarCores' in prod)) prod.habilitarCores = true;
+            if (!('imagensVariacoes' in prod)) prod.imagensVariacoes = ["", "", ""];
+            if (!('precoPromocional' in prod)) prod.precoPromocional = null;
+            if (!('mostrarPrecoPromocional' in prod)) prod.mostrarPrecoPromocional = false;
+            if (!('precoPromocionalAtivo' in prod)) prod.precoPromocionalAtivo = false;
+            if (!Array.isArray(prod.imagensVariacoes)) prod.imagensVariacoes = ["", "", ""];
+            while (prod.imagensVariacoes.length < 3) prod.imagensVariacoes.push("");
+        });
+
+        state.originalData = JSON.parse(JSON.stringify(data));
+try {
+    renderAll();
+} catch (e) {
+    console.error('Erro ao renderizar:', e);
+    showNotification('Erro ao renderizar: ' + e.message, 'error');
+}
+    } catch (error) {
+        showNotification('Erro ao carregar os dados.', 'error');
+    }
+};
+
+        
+        const startLoadingAnimation = () => {
+            return new Promise(resolve => {
+                const texts = Array.from(document.querySelectorAll('.loading-texts p'));
+                const bar = document.getElementById('loading-bar');
+                let currentTextIndex = 0;
+                
+                const showNextText = () => {
+                    texts.forEach((p, index) => p.classList.toggle('visible', index === currentTextIndex));
+                    const progress = currentTextIndex >= texts.length ? 100 : (((currentTextIndex + 1) / texts.length) * 100);
+                    bar.style.width = `${progress}%`;
+                    
+                    if (currentTextIndex >= texts.length) {
+                        clearInterval(window.loadingInterval);
+                        setTimeout(resolve, 1500);
+                    }
+                    currentTextIndex++;
+                };
+                
+                showNextText();
+                window.loadingInterval = setInterval(showNextText, 1000);
+            });
+        };
+        
+        const finishLoading = () => {
+            const loadingScreen = document.getElementById('loading-screen');
+            if (loadingScreen) {
+                loadingScreen.style.opacity = '0';
+                document.getElementById('app-wrapper').style.opacity = '1';
+                setTimeout(() => {
+                    if (loadingScreen) loadingScreen.style.display = 'none';
+                }, 500);
+            }
+        };
+        
+        const renderAll = () => {
+            renderProductsTable();
+            renderCategoriesTable();
+            renderPersonalizacaoView();
+            checkForChanges();
+        };
+
+        async function loadAndRenderUsers() {
+            console.log('loadAndRenderUsers chamado');
+    const users = await fetchUsers();
+    renderUsersTable(users);
+}
+
+function renderProductsTable() {
+    const tbody = document.getElementById('products-table-body');
+    tbody.innerHTML = '';
+    state.data.produtos.forEach(prod => {
+        const categoria = state.data.categorias.find(cat => cat.id === prod.categoriaId);
+        tbody.innerHTML += `
+            <tr data-id="${prod.id}">
+                <td>
+                    <img src="${prod.imagem}" class="product-image-sm" alt="">
+                    ${prod.nome}
+                </td>
+                <td>${categoria ? categoria.nome : '-'}</td>
+                <td>R$ ${prod.preco.toFixed(2)}</td>
+                <td>${prod.disponivel ? 'Ativo' : 'Inativo'}</td>
+                <td class="actions-cell">
+                    <button class="btn-icon btn-edit-product" title="Editar"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83zM3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25z"></path></svg></button>
+                    <button class="btn-icon btn-delete-product" title="Excluir"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"></path></svg></button>
+                </td>
+            </tr>
+        `;
+    });
+}
+
+function renderCategoriesTable() {
+    const tbody = document.getElementById('categories-table-body');
+    tbody.innerHTML = '';
+    state.data.categorias.forEach(cat => {
+        tbody.innerHTML += `
+            <tr data-id="${cat.id}">
+                <td><img src="${cat.icone}" class="product-image-sm" alt=""></td>
+                <td>${cat.nome}</td>
+                <td class="actions-cell">
+                    <button class="btn-icon btn-edit-category" title="Editar"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83zM3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25z"></path></svg></button>
+                    <button class="btn-icon btn-delete-category" title="Excluir"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"></path></svg></button>
+                </td>
+            </tr>
+        `;
+    });
+}
+
+
+function renderUsersTable(users) {
+    console.log('Renderizando usuários:', users);
+    const tbody = document.getElementById('users-table-body');
+    tbody.innerHTML = '';
+    users.forEach(user => {
+        tbody.innerHTML += `
+            <tr data-id="${user.id}">
+                <td>${user.nome || '-'}</td>
+                <td>${user.email || '-'}</td>
+                <td>${user.telefone || '-'}</td>
+                <td>${user.empresa || '-'}</td>
+                <td>${user.cnpj || '-'}</td>
+                <td class="actions-cell">
+                    <button class="btn-icon btn-delete-user" title="Excluir"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"></path></svg></button>
+                </td>
+            </tr>
+        `;
+    });
+}
+
+        const renderPersonalizacaoView = () => {
+            const { heroAtivo, heroBanners } = state.data.personalizacao;
+            document.getElementById('hero-active-toggle').checked = heroAtivo;
+
+            const bannerList = document.getElementById('banner-list');
+            bannerList.innerHTML = '';
+            heroBanners.forEach((banner, index) => {
+                const item = document.createElement('div');
+                item.className = 'banner-item';
+                item.innerHTML = `
+                    <img src="${banner.imagemFundo}" class="banner-item-img" alt="Preview">
+                    <p class="banner-item-title">${banner.titulo}</p>
+                    <div class="banner-item-actions">
+                         <button class="btn-icon btn-move-banner" data-index="${index}" data-direction="up" title="Mover para Cima" ${index === 0 ? 'disabled' : ''}>
+                           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M12 8l-6 6h12l-6-6z"></path></svg>
+                        </button>
+                        <button class="btn-icon btn-move-banner" data-index="${index}" data-direction="down" title="Mover para Baixo" ${index === heroBanners.length - 1 ? 'disabled' : ''}>
+                           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M12 16l6-6H6l6 6z"></path></svg>
+                        </button>
+                        <button class="btn-icon btn-edit-banner" data-id="${banner.id}" title="Editar">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83zM3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25z"></path></svg>
+                        </button>
+                        <button class="btn-icon btn-delete-banner" data-id="${banner.id}" title="Excluir">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"></path></svg>
+                        </button>
+                    </div>
+                `;
+                bannerList.appendChild(item);
+            });
+            updatePreviewCarousel();
+        };
+        
+        const updatePreviewCarousel = () => {
+            const { heroAtivo, heroBanners } = state.data.personalizacao;
+            const wrapper = document.getElementById('preview-carousel-wrapper');
+            const dots = document.getElementById('preview-carousel-dots');
+            wrapper.innerHTML = '';
+            dots.innerHTML = '';
+            
+            if (!heroAtivo || heroBanners.length === 0) {
+                 wrapper.innerHTML = `<div class="hero-banner-slide" style="background: #f0f0f0; align-items:center; justify-content:center; color: #ccc;">Banner Desativado</div>`;
+                 return;
+            }
+
+            heroBanners.forEach((slide, index) => {
+                const slideEl = document.createElement('div');
+                slideEl.className = 'hero-banner-slide';
+                slideEl.style.backgroundImage = `url('${slide.imagemFundo}')`;
+                slideEl.innerHTML = `
+                    <div>
+                        <h1>${slide.titulo || ''}</h1>
+                        <span>${slide.desconto || ''}</span>
+                        <p>${slide.subtitulo || ''}</p>
+                    </div>`;
+                wrapper.appendChild(slideEl);
+
+                const dotEl = document.createElement('span');
+                dotEl.className = 'dot';
+                if(index === 0) dotEl.classList.add('active');
+                dots.appendChild(dotEl);
+            });
+        };
+
+        const setupEventListeners = () => {
+             console.log('setupEventListeners rodou');
+            // Navegação principal
+            document.querySelectorAll('.nav-link').forEach(link => {
+    link.addEventListener('click', (e) => {
+        e.preventDefault();
+        document.querySelector('.nav-link.active').classList.remove('active');
+        e.currentTarget.classList.add('active');
+        const viewId = e.currentTarget.dataset.view;
+        document.querySelectorAll('#main-content > section').forEach(s => s.style.display = 'none');
+        document.getElementById(viewId).style.display = 'block';
+
+        // Chama a função de carregar usuários se for a aba de usuários
+        if (viewId === 'users-view') {
+            loadAndRenderUsers();
+        }
+    });
+});
+
+            // Botões de salvar, novo produto, nova categoria
+            document.getElementById('btn-save-all').addEventListener('click', saveAllDataToServer);
+            document.getElementById('btn-save-all-cat').addEventListener('click', saveAllDataToServer);
+            document.getElementById('btn-save-all-custom').addEventListener('click', saveAllDataToServer);
+            document.getElementById('btn-new-product').addEventListener('click', () => openProductModal());
+            document.getElementById('btn-new-category').addEventListener('click', () => openCategoryModal());
+            document.getElementById('btn-new-banner').addEventListener('click', () => openBannerModal());
+
+            // Listeners da Personalização
+            document.getElementById('hero-active-toggle').addEventListener('change', e => {
+                state.data.personalizacao.heroAtivo = e.target.checked;
+                updatePreviewCarousel();
+            });
+            
+            document.getElementById('banner-list').addEventListener('click', e => {
+                const button = e.target.closest('button');
+                if (!button) return;
+                
+                if(button.classList.contains('btn-edit-banner')) {
+                    openBannerModal(parseInt(button.dataset.id));
+                }
+                if(button.classList.contains('btn-delete-banner')) {
+                    openDeleteConfirmation('banner', parseInt(button.dataset.id));
+                }
+                if(button.classList.contains('btn-move-banner')) {
+                    moveBanner(parseInt(button.dataset.index), button.dataset.direction);
+                }
+            });
+
+            // Listeners de Tabelas (Produtos e Categorias)
+            const handleTableClick = (e) => {
+                const button = e.target.closest('button');
+                if (!button) return;
+                const id = parseInt(button.closest('tr').dataset.id);
+                if (button.classList.contains('btn-edit-product')) openProductModal(id);
+                if (button.classList.contains('btn-delete-product')) openDeleteConfirmation('product', id);
+                if (button.classList.contains('btn-edit-category')) openCategoryModal(id);
+                if (button.classList.contains('btn-delete-category')) openDeleteConfirmation('category', id);
+            };
+            document.querySelector('#products-table-body').addEventListener('click', handleTableClick);
+            document.querySelector('#categories-table-body').addEventListener('click', handleTableClick);
+            
+            // Listener global para fechar modal
+            document.getElementById('modal-backdrop').addEventListener('click', e => { if (e.target.id === 'modal-backdrop') closeModal(); });
+
+            document.addEventListener('DOMContentLoaded', () => {
+    if (document.querySelector('.nav-link.active')?.dataset.view === 'users-view') {
+        loadAndRenderUsers();
+    }
+});
+        
+        };
+
+        // Listener para deletar usuário
+document.getElementById('users-table-body').addEventListener('click', async (e) => {
+    const button = e.target.closest('.btn-delete-user');
+    if (!button) return;
+    const id = button.closest('tr').dataset.id;
+    if (confirm('Tem certeza que deseja excluir este usuário?')) {
+        const ok = await deleteUserProfile(id);
+        if (ok) {
+            loadAndRenderUsers();
+            showNotification('Usuário excluído com sucesso!');
+        }
+    }
+});
+
+// Botão de atualizar lista de usuários
+document.getElementById('btn-refresh-users').addEventListener('click', loadAndRenderUsers);
+        
+        // Funções de Modal (Banner)
+        const openBannerModal = (id = null) => {
+            const isEditing = id !== null;
+            const banner = isEditing ? state.data.personalizacao.heroBanners.find(b => b.id === id) : { id: Date.now(), titulo: '', desconto: '', subtitulo: '', imagemFundo: ''};
+            
+            const modalHTML = `
+                <div class="modal-header"><h2>${isEditing ? 'Editar Slide' : 'Novo Slide'}</h2><button type="button" class="btn-icon" id="close-modal-btn">&times;</button></div>
+                <form id="banner-form">
+                    <div class="form-grid">
+                        <div class="form-group"><label for="banner-titulo">Título</label><input type="text" id="banner-titulo" value="${banner.titulo}" required></div>
+                        <div class="form-group"><label for="banner-desconto">Destaque</label><input type="text" id="banner-desconto" value="${banner.desconto}"></div>
+                        <div class="form-group" style="grid-column: 1 / -1;"><label for="banner-subtitulo">Subtítulo</label><input type="text" id="banner-subtitulo" value="${banner.subtitulo}"></div>
+                        <div class="form-group" style="grid-column: 1 / -1;"><label for="banner-imagem">URL da Imagem</label><input type="text" id="banner-imagem" value="${banner.imagemFundo}" required></div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" id="cancel-modal-btn">Cancelar</button>
+                        <button type="submit" class="btn btn-primary">${isEditing ? 'Salvar' : 'Criar'}</button>
+                    </div>
+                </form>`;
+            showModal(modalHTML);
+            document.getElementById('banner-form').addEventListener('submit', e => handleBannerFormSubmit(e, banner.id));
+            document.getElementById('close-modal-btn').addEventListener('click', closeModal);
+            document.getElementById('cancel-modal-btn').addEventListener('click', closeModal);
+        };
+
+        const handleBannerFormSubmit = (e, id) => {
+            e.preventDefault();
+            const isEditing = state.data.personalizacao.heroBanners.some(b => b.id === id);
+            const updatedBanner = {
+                id: id,
+                titulo: document.getElementById('banner-titulo').value,
+                desconto: document.getElementById('banner-desconto').value,
+                subtitulo: document.getElementById('banner-subtitulo').value,
+                imagemFundo: document.getElementById('banner-imagem').value,
+            };
+
+            if (isEditing) {
+                const index = state.data.personalizacao.heroBanners.findIndex(b => b.id === id);
+                state.data.personalizacao.heroBanners[index] = updatedBanner;
+            } else {
+                state.data.personalizacao.heroBanners.push(updatedBanner);
+            }
+            renderPersonalizacaoView();
+            closeModal();
+            showNotification(`Slide ${isEditing ? 'atualizado' : 'criado'}!`);
+        };
+
+        // Funções de Ação (Banner)
+        const moveBanner = (index, direction) => {
+            const banners = state.data.personalizacao.heroBanners;
+            if (direction === 'up' && index > 0) {
+                [banners[index], banners[index - 1]] = [banners[index - 1], banners[index]];
+            } else if (direction === 'down' && index < banners.length - 1) {
+                [banners[index], banners[index + 1]] = [banners[index + 1], banners[index]];
+            }
+            renderPersonalizacaoView();
+        };
+
+        // Funções CRUD Genéricas (já existentes, adaptadas)
+        const openDeleteConfirmation = (type, id) => {
+            let itemName = '';
+            if (type === 'product') itemName = state.data.produtos.find(p => p.id === id)?.nome;
+            else if (type === 'category') itemName = state.data.categorias.find(c => c.id === id)?.nome;
+            else if (type === 'banner') itemName = state.data.personalizacao.heroBanners.find(b => b.id === id)?.titulo;
+            
+            const modalHTML = `
+                <div class="modal-header"><h2>Confirmar Exclusão</h2></div>
+                <p>Você tem certeza que deseja excluir <strong>"${itemName}"</strong>? Esta ação não pode ser desfeita.</p>
+                <div class="modal-footer">
+                    <button id="cancel-delete" class="btn btn-secondary">Cancelar</button>
+                    <button id="confirm-delete" class="btn btn-danger">Excluir</button>
+                </div>`;
+            showModal(modalHTML);
+            document.getElementById('cancel-delete').addEventListener('click', closeModal);
+            document.getElementById('confirm-delete').addEventListener('click', () => handleDelete(type, id));
+        };
+        
+        const handleDelete = (type, id) => {
+            if (type === 'product') state.data.produtos = state.data.produtos.filter(p => p.id !== id);
+            else if (type === 'category') state.data.categorias = state.data.categorias.filter(c => c.id !== id);
+            else if (type === 'banner') state.data.personalizacao.heroBanners = state.data.personalizacao.heroBanners.filter(b => b.id !== id);
+            
+            renderAll();
+            closeModal();
+            showNotification('Item excluído com sucesso. 🗑️');
+        };
+
+        const checkForChanges = () => {
+            const hasChanged = JSON.stringify(state.data) !== JSON.stringify(state.originalData);
+            document.querySelectorAll('#btn-save-all, #btn-save-all-cat, #btn-save-all-custom').forEach(btn => btn.disabled = !hasChanged);
+        };
+
+        const saveAllDataToServer = async () => {
+            const buttons = document.querySelectorAll('#btn-save-all, #btn-save-all-cat, #btn-save-all-custom');
+            buttons.forEach(btn => {
+                btn.disabled = true;
+                btn.dataset.originalText = btn.textContent;
+                btn.textContent = 'Salvando...';
+            });
+
+            try {
+                const response = await fetch(state.updateUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(state.data)
+                });
+                if (!response.ok) throw new Error('Falha ao salvar no servidor.');
+                
+                state.originalData = JSON.parse(JSON.stringify(state.data));
+                showNotification('Alterações salvas no servidor! ✅');
+            } catch (error) {
+                showNotification('Erro ao salvar: ' + error.message, 'error');
+            } finally {
+                buttons.forEach(btn => btn.textContent = btn.dataset.originalText);
+                checkForChanges();
+            }
+        };
+
+        // Demais funções (showModal, closeModal, showNotification, modais de produto/categoria)
+        const showModal = (content) => { document.getElementById('modal-content').innerHTML = content; document.getElementById('modal-backdrop').classList.add('visible'); };
+        const closeModal = () => { document.getElementById('modal-backdrop').classList.remove('visible'); };
+        const showNotification = (message, type = 'success') => {
+            const container = document.getElementById('notification-container');
+            const notif = document.createElement('div');
+            notif.className = `notification ${type}`;
+            notif.innerHTML = `<p>${message}</p>`;
+            container.appendChild(notif);
+            setTimeout(() => { notif.classList.add('hiding'); notif.addEventListener('animationend', () => notif.remove()); }, 4000);
+        };
+        const openCategoryModal = (id = null) => {
+            const isEditing = id !== null;
+            const category = isEditing ? state.data.categorias.find(c => c.id === id) : { nome: '', icone: '' };
+            const modalHTML = `
+                <div class="modal-header"><h2>${isEditing ? 'Editar Categoria' : 'Nova Categoria'}</h2><button type="button" class="btn-icon" id="close-modal-btn">&times;</button></div>
+                <form id="category-form">
+                    <div class="form-grid">
+                        <div class="form-group"><label for="nome">Nome</label><input type="text" id="nome" value="${category.nome}" required></div>
+                        <div class="form-group"><label for="icone">URL do Ícone</label><input type="text" id="icone" value="${category.icone}" required></div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" id="cancel-modal-btn">Cancelar</button>
+                        <button type="submit" class="btn btn-primary">${isEditing ? 'Salvar' : 'Criar'}</button>
+                    </div>
+                </form>`;
+            showModal(modalHTML);
+            document.getElementById('category-form').addEventListener('submit', e => handleCategoryFormSubmit(e, id));
+            document.getElementById('close-modal-btn').addEventListener('click', closeModal);
+            document.getElementById('cancel-modal-btn').addEventListener('click', closeModal);
+        };
+        const handleCategoryFormSubmit = (e, id) => {
+            e.preventDefault();
+            const isEditing = id !== null;
+            const updatedCategory = { id: isEditing ? id : Date.now(), nome: document.getElementById('nome').value, icone: document.getElementById('icone').value };
+            if (isEditing) state.data.categorias[state.data.categorias.findIndex(c => c.id === id)] = updatedCategory;
+            else state.data.categorias.push(updatedCategory);
+            renderAll();
+            closeModal();
+            showNotification(`Categoria ${isEditing ? 'atualizada' : 'criada'}! ✅`);
+        };
+        const openProductModal = (id = null) => {
+            const isEditing = id !== null;
+            const product = isEditing ? state.data.produtos.find(p => p.id === id) : {
+                nome: '', descricao: '', preco: 0, disponivel: true, imagem: '', categoriaId: state.data.categorias[0]?.id || '',
+                variacoes: { tamanhos: ['P', 'M', 'G'], cores: [] },
+                habilitarTamanhos: true,
+                habilitarCores: true,
+                imagensVariacoes: ["", "", ""],
+                precoPromocional: null,
+                mostrarPrecoPromocional: false,
+                precoPromocionalAtivo: false,
+                estoque: { P: 0, M: 0, G: 0 }
+            };
+            // Garantir propriedades novas em produtos antigos
+            if (!('habilitarTamanhos' in product)) product.habilitarTamanhos = true;
+            if (!('habilitarCores' in product)) product.habilitarCores = true;
+            if (!('imagensVariacoes' in product)) product.imagensVariacoes = ["", "", ""];
+            if (!('precoPromocional' in product)) product.precoPromocional = null;
+            if (!('mostrarPrecoPromocional' in product)) product.mostrarPrecoPromocional = false;
+            if (!('precoPromocionalAtivo' in product)) product.precoPromocionalAtivo = false;
+
+            const categoriesOptions = state.data.categorias.map(cat => `<option value="${cat.id}" ${cat.id === product.categoriaId ? 'selected' : ''}>${cat.nome}</option>`).join('');
+            const imagensVariacoes = product.imagensVariacoes || ["", "", ""];
+
+            const modalHTML = `
+                <div class="modal-header"><h2>${isEditing ? 'Editar Produto' : 'Novo Produto'}</h2><button type="button" class="btn-icon" id="close-modal-btn">&times;</button></div>
+                <form id="product-form">
+                    <div class="form-grid">
+                        <div class="form-group" style="grid-column: 1 / -1;"><label for="nome">Nome</label><input type="text" id="nome" value="${product.nome}" required></div>
+                        <div class="form-group" style="grid-column: 1 / -1;"><label for="descricao">Descrição</label><textarea id="descricao" rows="3">${product.descricao}</textarea></div>
+                        <div class="form-group"><label for="preco">Preço (R$)</label><input type="number" step="0.01" id="preco" value="${product.preco}" required></div>
+                        <div class="form-group"><label for="categoriaId">Categoria</label><select id="categoriaId">${categoriesOptions}</select></div>
+                        <div class="form-group" style="grid-column: 1 / -1;"><label for="imagem">URL da Imagem</label><input type="text" id="imagem" value="${product.imagem}" required></div>
+                        <div class="form-group"><label for="disponivel">Disponível</label><select id="disponivel"><option value="true" ${product.disponivel ? 'selected' : ''}>Sim</option><option value="false" ${!product.disponivel ? 'selected' : ''}>Não</option></select></div>
+                        <div class="form-group"><label>Ativar Tamanhos</label>
+                            <select id="habilitarTamanhos"><option value="true" ${product.habilitarTamanhos ? 'selected' : ''}>Sim</option><option value="false" ${!product.habilitarTamanhos ? 'selected' : ''}>Não</option></select>
+                        </div>
+                        <div class="form-group"><label>Ativar Cores</label>
+                            <select id="habilitarCores"><option value="true" ${product.habilitarCores ? 'selected' : ''}>Sim</option><option value="false" ${!product.habilitarCores ? 'selected' : ''}>Não</option></select>
+                        </div>
+                        <div class="form-group" style="grid-column: 1 / -1;">
+                            <label>Imagens de Variação</label>
+                            <input type="text" id="imagemVar1" placeholder="URL da Foto 1" value="${imagensVariacoes[0] || ''}" style="margin-bottom:0.5rem;">
+                            <input type="text" id="imagemVar2" placeholder="URL da Foto 2" value="${imagensVariacoes[1] || ''}" style="margin-bottom:0.5rem;">
+                            <input type="text" id="imagemVar3" placeholder="URL da Foto 3" value="${imagensVariacoes[2] || ''}">
+                        </div>
+                        <div class="form-group"><label for="precoPromocional">Preço Promocional</label>
+                            <input type="number" step="0.01" id="precoPromocional" value="${product.precoPromocional !== null ? product.precoPromocional : ''}">
+                        </div>
+                        <div class="form-group"><label>Mostrar Preço Promocional</label>
+                            <select id="mostrarPrecoPromocional"><option value="true" ${product.mostrarPrecoPromocional ? 'selected' : ''}>Sim</option><option value="false" ${!product.mostrarPrecoPromocional ? 'selected' : ''}>Não</option></select>
+                        </div>
+                        <div class="form-group"><label>Ativar Preço Promocional</label>
+                            <select id="precoPromocionalAtivo"><option value="true" ${product.precoPromocionalAtivo ? 'selected' : ''}>Sim</option><option value="false" ${!product.precoPromocionalAtivo ? 'selected' : ''}>Não</option></select>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" id="cancel-modal-btn">Cancelar</button>
+                        <button type="submit" class="btn btn-primary">${isEditing ? 'Salvar' : 'Criar'}</button>
+                    </div>
+                </form>`;
+            showModal(modalHTML);
+            document.getElementById('product-form').addEventListener('submit', e => handleProductFormSubmit(e, id));
+            document.getElementById('close-modal-btn').addEventListener('click', closeModal);
+            document.getElementById('cancel-modal-btn').addEventListener('click', closeModal);
+        };
+        const handleProductFormSubmit = (e, id) => {
+            e.preventDefault();
+            const isEditing = id !== null;
+            const imagensVariacoes = [
+                document.getElementById('imagemVar1').value,
+                document.getElementById('imagemVar2').value,
+                document.getElementById('imagemVar3').value
+            ];
+            const product = {
+                id: isEditing ? id : Date.now(),
+                nome: document.getElementById('nome').value,
+                descricao: document.getElementById('descricao').value,
+                preco: parseFloat(document.getElementById('preco').value),
+                categoriaId: parseInt(document.getElementById('categoriaId').value),
+                imagem: document.getElementById('imagem').value,
+                disponivel: document.getElementById('disponivel').value === 'true',
+                variacoes: isEditing ? state.data.produtos.find(p=>p.id===id).variacoes : {tamanhos:[], cores:[]},
+                estoque: isEditing ? state.data.produtos.find(p=>p.id===id).estoque : {},
+                habilitarTamanhos: document.getElementById('habilitarTamanhos').value === 'true',
+                habilitarCores: document.getElementById('habilitarCores').value === 'true',
+                imagensVariacoes: imagensVariacoes,
+                precoPromocional: document.getElementById('precoPromocional').value !== '' ? parseFloat(document.getElementById('precoPromocional').value) : null,
+                mostrarPrecoPromocional: document.getElementById('mostrarPrecoPromocional').value === 'true',
+                precoPromocionalAtivo: document.getElementById('precoPromocionalAtivo').value === 'true'
+            };
+            if (isEditing) state.data.produtos[state.data.produtos.findIndex(p => p.id === id)] = product;
+            else state.data.produtos.push(product);
+            renderAll();
+            closeModal();
+            showNotification(`Produto ${isEditing ? 'atualizado' : 'criado'}! ✅`);
+        };
+
+        // Listener global para checar mudanças
+        document.body.addEventListener('input', () => setTimeout(checkForChanges, 50));
+        document.body.addEventListener('click', (e) => {
+            // Check for actions that modify state
+            if (e.target.closest('.btn-delete-product, .btn-delete-category, .btn-delete-banner, .btn-move-banner')) {
+                 setTimeout(checkForChanges, 100);
+            }
+        });
+        document.body.addEventListener('submit', () => setTimeout(checkForChanges, 100));
+
+        init();
+    });
+    </script>
+</body>
+</html>
