@@ -1462,7 +1462,7 @@
 
     // Chama o backend Render para gerar o link de pagamento Stone
     try {
-        const response = await fetch('https://cajuia.onrender.com/criar-link-stone', {
+        const response = await fetch('https://cajuia.onrender.com/criar-link-pagarme', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
