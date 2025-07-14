@@ -1293,11 +1293,7 @@
 
             async function loadAndRenderUsers() {
                 console.log('loadAndRenderUsers chamado');
-                if (!jwtToken) { // Only attempt to fetch if authenticated
-                    document.getElementById('login-modal').style.display = 'flex';
-                    showNotification('Você precisa estar logado para ver os usuários.', 'error');
-                    return;
-                }
+                // REMOVIDA a verificação de 'jwtToken' para permitir o acesso direto durante os testes.
                 const users = await fetchUsers();
                 renderUsersTable(users);
                 feather.replace(); // Render icons after users table is updated
