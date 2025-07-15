@@ -1,0 +1,9 @@
+[{
+  "relation": ["delegate_permission/common.handle_all_urls"],
+  "target": {
+    "namespace": "android_app",
+    "package_name": "com.mj.cajuia",
+    "sha256_cert_fingerprints":
+    ["F8:AB:46:EC:4D:2A:A6:05:65:A5:6C:94:22:CB:6E:8F:D2:F2:C6:52:AC:42:46:EE:FB:57:5E:83:DC:9B:F5:81"]
+  }
+}]
