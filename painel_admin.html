@@ -1052,7 +1052,13 @@
             notif.innerHTML = `<i data-feather="${icon}"></i><p>${message}</p>`;
             container.appendChild(notif);
             feather.replace(); // Render icon in notification
-            setTimeout(() => { notif.classList.add('hiding'); notif.addEventListener('animationend', () => notif.remove()); }, 4000);
+            setTimeout(() => {
+    // 1º: Adiciona o "ouvido" para o final da animação.
+    notif.addEventListener('animationend', () => notif.remove());
+    
+    // 2º: SÓ ENTÃO, inicia a animação.
+    notif.classList.add('hiding');
+}, 2000);
         };
 
         document.getElementById('login-btn').onclick = async () => {
@@ -1198,11 +1204,35 @@
             };
 
             const init = async () => {
-                await startLoadingAnimation();
-                await fetchData();
-                finishLoading();
-                setupEventListeners();
-            };
+    await startLoadingAnimation();
+
+    // Pergunta ao Supabase se existe uma sessão ativa
+    const { data: { session } } = await _supabase.auth.getSession();
+
+    if (session) {
+        // SE EXISTIR SESSÃO:
+        console.log('Sessão encontrada! Logado como:', session.user.email);
+        
+        // 1. Carrega os dados da loja
+        await fetchData(); 
+        
+        // 2. Esconde a tela de login e mostra o painel
+        document.getElementById('login-modal').style.display = 'none';
+        document.getElementById('app-wrapper').style.opacity = '1';
+        
+        // 3. Carrega dados específicos do usuário (se necessário)
+        loadAndRenderUsers(); 
+        
+    } else {
+        // SE NÃO EXISTIR SESSÃO:
+        console.log('Nenhuma sessão encontrada. Exibindo tela de login.');
+        // A tela de login já é visível por padrão, então não fazemos nada.
+    }
+
+    // Finaliza a tela de carregamento e configura os eventos
+    finishLoading();
+    setupEventListeners();
+};
 
             const fetchData = async () => {
                 try {
