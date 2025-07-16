@@ -785,6 +785,7 @@
     width: 150px;
     height: auto;
     margin-bottom: 1rem;
+    filter: drop-shadow(0px 0px 10px rgba(255, 255, 255, 0.7));
 }
 
 /* --- Animação "Respiração" para a Logo do Loading --- */
@@ -867,7 +868,7 @@
     <div v-if="authView === 'login'" class="auth-container">
         <div class="glass-card auth-card">
             <img src="https://cdn.shopify.com/s/files/1/0927/1286/1998/files/Sem_nome__200_x_200_px___1_-removebg-preview.png?v=1750269476" alt="Logo" class="auth-logo">
-            <h2 style="margin-bottom: 2rem; color: var(--text-color-primary);">Entrar</h2>
+            <h2 style="margin-bottom: 2rem;">Entrar</h2>
             <form @submit.prevent="login">
                 <div class="form-group">
                     <label for="login-email">E-mail</label>
@@ -879,7 +880,7 @@
                 </div>
                 <button class="save-button" type="submit" :disabled="authLoading">Entrar</button>
             </form>
-            <p style="margin-top:1.5rem; color: var(--text-color-secondary);">Não tem conta? <a href="#" @click.prevent="authView = 'register'" style="color: var(--primary-color); font-weight: 600;">Cadastre-se</a></p>
+            <p style="margin-top:1.5rem;">Não tem conta? <a href="#" @click.prevent="authView = 'register'" style="color: var(--primary-color); font-weight: 600;">Cadastre-se</a></p>
             <div v-if="authError" style="color:#d33a2c; font-weight: 500; margin-top:1rem;">{{ authError }}</div>
         </div>
     </div>
@@ -887,7 +888,7 @@
     <div v-else-if="authView === 'register'" class="auth-container">
         <div class="glass-card auth-card">
             <img src="https://cdn.shopify.com/s/files/1/0927/1286/1998/files/Sem_nome__200_x_200_px___1_-removebg-preview.png?v=1750269476" alt="Logo" class="auth-logo">
-            <h2 style="margin-bottom: 2rem; color: var(--text-color-primary);">Cadastro</h2>
+            <h2 style="margin-bottom: 2rem;">Cadastro</h2>
             <form @submit.prevent="register">
                 <div class="form-group">
                     <label for="register-name">Nome Completo</label>
@@ -903,7 +904,7 @@
                 </div>
                 <button class="save-button" type="submit" :disabled="authLoading">Cadastrar</button>
             </form>
-            <p style="margin-top:1.5rem; color: var(--text-color-secondary);">Já tem conta? <a href="#" @click.prevent="authView = 'login'" style="color: var(--primary-color); font-weight: 600;">Entrar</a></p>
+            <p style="margin-top:1.5rem;">Já tem conta? <a href="#" @click.prevent="authView = 'login'" style="color: var(--primary-color); font-weight: 600;">Entrar</a></p>
             <div v-if="authError" style="color:#d33a2c; font-weight: 500; margin-top:1rem;">{{ authError }}</div>
         </div>
     </div>
