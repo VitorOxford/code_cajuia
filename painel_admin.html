@@ -1037,24 +1037,32 @@
         </div>
     </div>
 
-    <div id="reports-tab-listas" style="display: none; margin-top: -1px;">
-        <div class="card" style="border-top-left-radius: 0; border-top-right-radius: 0;">
-            <h3>Clientes que Mais Compram</h3>
-            <p style="color: var(--text-secondary); margin-bottom: 1.5rem;">Gere uma lista de clientes ordenada por valor total em pedidos.</p>
-            
-            <div style="display:flex; gap: 1rem; margin-bottom: 1.5rem; align-items:center;">
-                <div class="form-group">
-                    <label for="filtro-cidade">Filtrar por Cidade:</label>
-                    <input type="text" id="filtro-cidade" placeholder="Ex: São Paulo" class="form-group">
-                </div>
-                <button id="btn-gerar-relatorio-clientes" class="btn btn-primary" style="align-self: flex-end;">Gerar Lista</button>
-            </div>
+<div id="reports-tab-listas" style="display: none; margin-top: -1px;">
+    <div class="card" style="border-top-left-radius: 0; border-top-right-radius: 0;">
+        <h3>Relatório Avançado de Clientes</h3>
+        <p style="color: var(--text-secondary); margin-bottom: 1.5rem;">Use os filtros para gerar listas e analisar o comportamento dos seus clientes.</p>
 
-            <div id="relatorio-clientes-container" class="table-wrapper">
-                <p style="text-align:center; color: var(--text-secondary);">Clique em "Gerar Lista" para ver os resultados.</p>
+        <div style="display:flex; flex-wrap: wrap; gap: 1.5rem; margin-bottom: 1.5rem; align-items:flex-end; border-bottom: 1px solid var(--border-color); padding-bottom: 1.5rem;">
+            <div class="form-group">
+                <label for="filtro-cidade">Filtrar por Cidade</label>
+                <input type="text" id="filtro-cidade" placeholder="Ex: São Paulo" class="form-group">
             </div>
+            <div class="form-group">
+                <label for="filtro-tipo-relatorio">Tipo de Relatório</label>
+                <select id="filtro-tipo-relatorio" class="form-group">
+                    <option value="valor_gasto">Clientes por Maior Valor Gasto</option>
+                    <option value="mais_pedidos">Clientes por Nº de Pedidos</option>
+                    <option value="mais_recentes">Clientes Mais Recentes</option>
+                </select>
+            </div>
+            <button id="btn-gerar-relatorio-clientes" class="btn btn-primary">Gerar Lista</button>
+        </div>
+
+        <div id="relatorio-clientes-container" class="table-wrapper">
+            <p style="text-align:center; color: var(--text-secondary);">Use os filtros acima e clique em "Gerar Lista".</p>
         </div>
     </div>
+</div>
 </section>
         </main>
     </div>
@@ -1114,6 +1122,29 @@
     } catch (error) {
         console.error("Erro ao converter imagem para Base64:", error);
         return null; // Retorna nulo se houver erro, para não quebrar o PDF
+    }
+}
+
+        async function getLogoData(url) {
+    try {
+        const response = await fetch(url);
+        const blob = await response.blob();
+        const base64 = await new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onloadend = () => resolve(reader.result);
+            reader.onerror = reject;
+            reader.readAsDataURL(blob);
+        });
+
+        const img = new Image();
+        img.src = base64;
+        await new Promise(resolve => img.onload = resolve);
+
+        const aspectRatio = img.naturalWidth / img.naturalHeight;
+        return { base64, aspectRatio };
+    } catch (error) {
+        console.error("Erro ao carregar logo:", error);
+        return { base64: null, aspectRatio: 1 };
     }
 }
         
@@ -1217,71 +1248,89 @@ function desenharGraficoTopProdutos(pedidos) {
 
        async function gerarRelatorioPDF() {
     showModal('<h2>Gerando relatório PDF profissional...</h2>');
-    
+
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF('p', 'pt', 'a4'); // Unidade em 'pontos' para melhor controle
 
     try {
-        // --- PREPARAÇÃO DOS DADOS E IMAGENS ---
-        const [logoBase64, pedidosRes, perfisRes] = await Promise.all([
-            imageUrlToBase64('https://cdn.shopify.com/s/files/1/0927/1286/1998/files/Sem_nome__200_x_200_px___1_-removebg-preview.png?v=1750269476'),
+        // --- PREPARAÇÃO DE DADOS ---
+        const [logoData, pedidosRes, perfisRes] = await Promise.all([
+            getLogoData('https://cdn.shopify.com/s/files/1/0927/1286/1998/files/Sem_nome__200_x_200_px___1_-removebg-preview.png?v=1750269476'),
             _supabase.from('pedidos').select('status, valor_total, itens'),
             _supabase.from('profiles').select('nome, email, cidade, created_at')
         ]);
-        
+
         if (pedidosRes.error) throw pedidosRes.error;
         if (perfisRes.error) throw perfisRes.error;
-
         const todosPedidos = pedidosRes.data;
         const todosPerfis = perfisRes.data;
 
-        // --- INÍCIO DA CRIAÇÃO DO PDF ---
+        // --- FUNÇÃO AUXILIAR PARA CABEÇALHO E RODAPÉ ---
+        const addHeaderFooter = (pageNum, pageCount) => {
+            // Cabeçalho
+            if (logoData.base64) {
+                const logoWidth = 60;
+                const logoHeight = logoWidth / logoData.aspectRatio; // Cálculo para não amassar
+                doc.addImage(logoData.base64, 'PNG', 40, 25, logoWidth, logoHeight);
+            }
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(20);
+            doc.text('Relatório Gerencial - Cajuia', 110, 55);
 
-        // Dados para a tabela principal (vamos usar depois)
-        const head = [['Nome', 'Email', 'Cidade', 'Data de Cadastro']];
-        const body = todosPerfis.map(p => [
-            p.nome, 
-            p.email, 
-            p.cidade || 'N/A', 
-            new Date(p.created_at).toLocaleDateString('pt-BR')
-        ]);
+            // Rodapé
+            doc.setFontSize(10);
+            doc.setTextColor(150);
+            doc.text(`Página ${pageNum} de ${pageCount}`, doc.internal.pageSize.getWidth() - 80, doc.internal.pageSize.getHeight() - 20);
+            doc.text(`Gerado em: ${new Date().toLocaleString('pt-BR')}`, 40, doc.internal.pageSize.getHeight() - 20);
+        };
 
-        // Usando o hook 'didDrawPage' para criar cabeçalho e rodapé em TODAS as páginas
+        // --- PÁGINA 1: DASHBOARD COM GRÁFICOS ---
+        addHeaderFooter(1, 'X'); // Adiciona cabeçalho/rodapé na primeira página
+        doc.setLineWidth(0.5);
+        doc.line(40, 80, doc.internal.pageSize.getWidth() - 40, 80); // Linha separadora
+
+        doc.setFontSize(14);
+        doc.setTextColor(0);
+        doc.setFont('helvetica', 'bold');
+        doc.text('Resumo da Operação', 40, 100);
+
+        doc.setFontSize(11);
+        doc.setFont('helvetica', 'normal');
+        doc.text(`- Total de Usuários Cadastrados: ${todosPerfis.length}`, 45, 115);
+        doc.text(`- Total de Pedidos Registrados: ${todosPedidos.length}`, 45, 130);
+        const totalFaturado = todosPedidos.filter(p => p.status === 'pago').reduce((sum, p) => sum + p.valor_total, 0);
+        doc.text(`- Faturamento Total (Pedidos Pagos): R$ ${totalFaturado.toFixed(2)}`, 45, 145);
+
+        const statusChartCanvas = document.getElementById('pedidosStatusChart');
+        const statusChartImage = statusChartCanvas.toDataURL('image/png', 1.0);
+        doc.addImage(statusChartImage, 'PNG', 40, 170, 250, 250);
+
+        const produtosChartCanvas = document.getElementById('topProdutosChart');
+        const produtosChartImage = produtosChartCanvas.toDataURL('image/png', 1.0);
+        doc.addImage(produtosChartImage, 'PNG', 310, 170, 250, 160);
+
+        // --- PÁGINA 2: TABELA DE CLIENTES ---
+        doc.addPage();
+        addHeaderFooter(2, 'X');
+
         doc.autoTable({
-            head: head,
-            body: body,
-            // Ponto de início do conteúdo da primeira página
-            startY: 85, 
+            startY: 90, // Posição para começar a tabela, abaixo do cabeçalho
+            head: [['Nome', 'Email', 'Cidade', 'Data de Cadastro']],
+            body: todosPerfis.map(p => [ p.nome, p.email, p.cidade || 'N/A', new Date(p.created_at).toLocaleDateString('pt-BR') ]),
             theme: 'grid',
-            headStyles: { fillColor: [0, 122, 255] },
-            
-            // Esta função é a mágica: roda em cada página criada
-            didDrawPage: function (data) {
-                // CABEÇALHO
-                if (logoBase64) {
-                    // Cálculo da proporção da logo para não amassar
-                    const logoWidth = 60; // Largura desejada da logo
-                    const logoRatio = 1; // Proporção da sua logo (é quadrada)
-                    const logoHeight = logoWidth / logoRatio;
-                    doc.addImage(logoBase64, 'PNG', data.settings.margin.left, 15, logoWidth, logoHeight);
-                }
-                doc.setFont('helvetica', 'bold');
-                doc.setFontSize(20);
-                doc.text('Relatório Gerencial - Cajuia', data.settings.margin.left + 70, 45);
-
-                // RODAPÉ
-                const pageCount = doc.internal.getNumberOfPages();
-                doc.setFontSize(10);
-                doc.setTextColor(150);
-                doc.text(`Página ${data.pageNumber} de ${pageCount}`, data.settings.margin.left, doc.internal.pageSize.height - 15);
-                doc.text(`Gerado em: ${new Date().toLocaleString('pt-BR')}`, doc.internal.pageSize.width - data.settings.margin.right, 285, { align: 'right' });
-            },
-            // Margem superior para dar espaço ao cabeçalho que desenhamos
-            margin: { top: 80 } 
+            headStyles: { fillColor: [0, 122, 255] }
         });
 
-        // Salva o arquivo final
-        doc.save(`relatorio-clientes-cajuia-${new Date().toISOString().slice(0,10)}.pdf`);
+        // --- ATUALIZAÇÃO FINAL DOS NÚMEROS DE PÁGINA ---
+        const pageCountFinal = doc.internal.getNumberOfPages();
+        for(let i = 1; i <= pageCountFinal; i++) {
+            doc.setPage(i);
+            doc.setFontSize(10);
+            doc.setTextColor(150);
+            doc.text(`Página ${i} de ${pageCountFinal}`, doc.internal.pageSize.getWidth() - 80, doc.internal.pageSize.getHeight() - 20);
+        }
+
+        doc.save(`relatorio-cajuia-${new Date().toISOString().slice(0,10)}.pdf`);
 
     } catch(err) {
         showNotification('Erro ao gerar PDF: ' + err.message, 'error');
@@ -1333,17 +1382,17 @@ async function gerarRelatorioExcel() {
     document.getElementById(`btn-reports-tab-${tabName}`).classList.add('active');
 }
 
-        async function gerarRelatorioClientes() {
+async function gerarRelatorioClientes() {
     const container = document.getElementById('relatorio-clientes-container');
-    container.innerHTML = '<p>Processando dados...</p>';
+    container.innerHTML = '<p>Processando dados, por favor aguarde...</p>';
 
     const filtroCidade = document.getElementById('filtro-cidade').value.trim();
+    const tipoRelatorio = document.getElementById('filtro-tipo-relatorio').value;
 
     try {
-        // Busca todos os perfis e todos os pedidos pagos
         const [perfisRes, pedidosRes] = await Promise.all([
-            _supabase.from('profiles').select('id, nome, email, cidade'),
-            _supabase.from('pedidos').select('user_id, valor_total').eq('status', 'pago')
+            _supabase.from('profiles').select('*'),
+            _supabase.from('pedidos').select('user_id, valor_total, criado_em').eq('status', 'pago')
         ]);
 
         if (perfisRes.error) throw perfisRes.error;
@@ -1352,35 +1401,45 @@ async function gerarRelatorioExcel() {
         const perfis = perfisRes.data;
         const pedidosPagos = pedidosRes.data;
 
-        // Calcula o total gasto por usuário
-        const gastosPorUsuario = pedidosPagos.reduce((acc, pedido) => {
-            acc[pedido.user_id] = (acc[pedido.user_id] || 0) + pedido.valor_total;
-            return acc;
-        }, {});
+        const dadosClientes = perfis.map(perfil => {
+            const pedidosDoCliente = pedidosPagos.filter(p => p.user_id === perfil.id);
+            const valorTotal = pedidosDoCliente.reduce((sum, p) => sum + p.valor_total, 0);
+            const ultimoPedido = pedidosDoCliente.sort((a,b) => new Date(b.criado_em) - new Date(a.criado_em))[0];
 
-        // Combina os dados de perfil com os gastos
-        let relatorioFinal = perfis.map(perfil => ({
-            ...perfil,
-            valor_gasto: gastosPorUsuario[perfil.id] || 0
-        }));
+            return {
+                ...perfil,
+                total_gasto: valorTotal,
+                total_pedidos: pedidosDoCliente.length,
+                ultimo_pedido_data: ultimoPedido ? new Date(ultimoPedido.criado_em).toLocaleDateString('pt-BR') : 'N/A'
+            };
+        });
 
-        // Aplica o filtro de cidade, se houver
+        let relatorioFinal = dadosClientes;
+
         if (filtroCidade) {
             relatorioFinal = relatorioFinal.filter(p => p.cidade && p.cidade.toLowerCase().includes(filtroCidade.toLowerCase()));
         }
 
-        // Ordena por maior valor gasto
-        relatorioFinal.sort((a, b) => b.valor_gasto - a.valor_gasto);
+        switch(tipoRelatorio) {
+            case 'valor_gasto':
+                relatorioFinal.sort((a, b) => b.total_gasto - a.total_gasto);
+                break;
+            case 'mais_pedidos':
+                relatorioFinal.sort((a, b) => b.total_pedidos - a.total_pedidos);
+                break;
+            case 'mais_recentes':
+                relatorioFinal.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+                break;
+        }
 
-        // Renderiza a tabela de resultados
-        renderRelatorioClientesTable(relatorioFinal);
+        renderRelatorioClientesTable(relatorioFinal, tipoRelatorio);
 
     } catch (err) {
         container.innerHTML = `<p style="color:var(--danger-color)">Erro ao gerar relatório: ${err.message}</p>`;
     }
 }
 
-function renderRelatorioClientesTable(dados) {
+function renderRelatorioClientesTable(dados, tipoRelatorio) {
     const container = document.getElementById('relatorio-clientes-container');
     if (dados.length === 0) {
         container.innerHTML = '<p style="text-align:center; color: var(--text-secondary);">Nenhum cliente encontrado com os filtros aplicados.</p>';
@@ -1390,15 +1449,16 @@ function renderRelatorioClientesTable(dados) {
     const tableRows = dados.map(cliente => `
         <tr>
             <td>${cliente.nome}</td>
-            <td>${cliente.email}</td>
             <td>${cliente.cidade || 'N/A'}</td>
-            <td style="font-weight: bold;">R$ ${cliente.valor_gasto.toFixed(2)}</td>
+            <td style="font-weight: bold; text-align: center;">${cliente.total_pedidos}</td>
+            <td style="font-weight: bold; color: var(--success-color);">R$ ${cliente.total_gasto.toFixed(2)}</td>
+            <td style="text-align: center;">${cliente.ultimo_pedido_data}</td>
         </tr>
     `).join('');
 
     container.innerHTML = `
         <table>
-            <thead><tr><th>Nome</th><th>Email</th><th>Cidade</th><th>Valor Total Gasto</th></tr></thead>
+            <thead><tr><th>Nome do Cliente</th><th>Cidade</th><th>Nº de Pedidos</th><th>Valor Total Gasto</th><th>Último Pedido</th></tr></thead>
             <tbody>${tableRows}</tbody>
         </table>
     `;
