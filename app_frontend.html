@@ -842,6 +842,190 @@
 .splash-screen .glass-card {
     color: var(--white-color);
 }
+
+        /* --- ESTILOS DO CHAT (NOVOS E ATUALIZADOS) --- */
+.chat-page {
+    display: flex;
+    flex-direction: column;
+    height: calc(100vh - var(--footer-height));
+    padding: 0;
+    background-color: var(--chat-bg-color);
+}
+.chat-header {
+    display: flex;
+    align-items: center;
+    padding: 0.75rem 1rem;
+    background-color: var(--white-color);
+    border-bottom: 1px solid var(--border-color);
+    gap: 1rem;
+    flex-shrink: 0;
+}
+.chat-header img {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+.chat-header-info h3 { font-size: 1.1rem; font-weight: 600; }
+.chat-header-info p { font-size: 0.8rem; color: var(--text-color-secondary); }
+
+.chat-messages-container {
+    flex-grow: 1;
+    overflow-y: auto;
+    padding: 1rem;
+    display: flex;
+    flex-direction: column;
+}
+
+.message-bubble {
+    display: flex;
+    flex-direction: column;
+    max-width: 80%;
+    margin-bottom: 0.75rem;
+    position: relative;
+}
+.message-bubble.sent {
+    align-self: flex-end;
+    background-color: var(--chat-bubble-sent-bg);
+    border-radius: 12px 12px 0 12px;
+}
+.message-bubble.received {
+    align-self: flex-start;
+    background-color: var(--chat-bubble-received-bg);
+    border-radius: 12px 12px 12px 0;
+}
+
+.message-content-wrapper {
+    padding: 0.6rem 0.8rem;
+}
+
+.reply-context {
+    padding: 0.5rem 0.8rem;
+    margin: 0.2rem 0.2rem 0 0.2rem;
+    background-color: rgba(0,0,0,0.05);
+    border-left: 3px solid var(--chat-reply-border-color);
+    border-radius: 6px;
+    font-size: 0.9rem;
+    cursor: pointer;
+}
+.reply-context p {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 200px;
+    font-size: 0.85rem;
+    color: var(--text-color-secondary);
+}
+.reply-context strong {
+    color: var(--primary-color);
+    font-weight: 600;
+}
+
+.message-content {
+    font-size: 1rem;
+    line-height: 1.4;
+    white-space: pre-wrap; /* Mantém quebras de linha */
+    word-wrap: break-word;
+}
+
+.message-image-attachment {
+    width: 100%;
+    max-width: 250px;
+    border-radius: 8px;
+    cursor: pointer;
+    margin-top: 0.5rem;
+}
+.message-file-attachment {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    background-color: rgba(0,0,0,0.05);
+    padding: 0.75rem;
+    border-radius: 8px;
+    margin-top: 0.5rem;
+}
+.file-icon {
+    width: 40px;
+    height: 40px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: var(--primary-color);
+    color: white;
+    border-radius: 8px;
+}
+.file-info p {
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+.file-info span {
+    font-size: 0.8rem;
+    color: var(--text-color-secondary);
+}
+
+.message-meta {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.75rem;
+    color: var(--chat-info-text-color);
+    align-self: flex-end;
+    margin: -0.2rem 0.5rem 0.2rem 0;
+}
+.message-meta .edited-indicator { font-style: italic; }
+.message-meta .read-receipts svg { width: 16px; height: 16px; color: #53bdeb; }
+
+.chat-input-area {
+    display: flex;
+    align-items: flex-end; /* Alinha itens na base */
+    gap: 0.5rem;
+    padding: 0.75rem 1rem;
+    background-color: var(--white-color);
+    border-top: 1px solid var(--border-color);
+    flex-shrink: 0;
+}
+.chat-input-area textarea {
+    flex-grow: 1;
+    border: 1.5px solid var(--border-color);
+    border-radius: 22px;
+    padding: 0.75rem 1rem;
+    font-size: 1rem;
+    font-family: var(--font-family-sans);
+    resize: none;
+    max-height: 100px;
+    line-height: 1.4;
+}
+.chat-input-area textarea:focus {
+    outline: none;
+    border-color: var(--primary-color);
+}
+.chat-input-area .icon-button {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    border: none;
+    background-color: var(--primary-color);
+    color: white;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.reply-preview-bar {
+    padding: 0.5rem 1rem;
+    background-color: #f0f0f0;
+    border-bottom: 1px solid #ddd;
+}
+.reply-preview-bar strong { color: var(--primary-color); }
+.reply-preview-bar p {
+    font-size: 0.9em;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
     </style>
 </head>
     
@@ -1567,19 +1751,62 @@
 
     <!-- NOVO: Tela de Suporte (Placeholder) -->
     <transition name="fade">
-        <div v-if="currentView === 'suporte'" class="page chat-page">
-            <div class="page-header"><h2>Suporte ao Cliente</h2></div>
-            <div class="chat-container">
-                <div class="chat-messages">
-                    <div class="message received">Olá! Como podemos te ajudar hoje?</div>
+    <div v-if="currentView === 'suporte'" class="page chat-page">
+        <header class="chat-header">
+            <img src="https://cdn.shopify.com/s/files/1/0927/1286/1998/files/Design_sem_nome_-_2025-06-13T102227.591.png?v=1750256134" alt="Logo Suporte">
+            <div class="chat-header-info">
+                <h3>Suporte Cajuia</h3>
+                <p>Normalmente responde em poucos minutos</p>
+            </div>
+        </header>
+
+        <div class="chat-messages-container" ref="messagesContainer">
+            <div v-for="message in chatMessages" :key="message.id" 
+                 class="message-bubble" 
+                 :class="message.remetente_id === supabaseUser?.id ? 'sent' : 'received'">
+
+                <div class="message-content-wrapper">
+                    <div v-if="message.replyingTo" class="reply-context">
+                        <strong>{{ message.replyingTo.author }}</strong>
+                        <p>{{ message.replyingTo.content }}</p>
+                    </div>
+
+                    <img v-if="message.attachment?.type === 'image'" :src="message.attachment.url" class="message-image-attachment" alt="Anexo de imagem">
+                    
+                    <div v-if="message.attachment?.type === 'file'" class="message-file-attachment">
+                        <div class="file-icon">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zM6 20V4h7v5h5v11H6z"></path></svg>
+                        </div>
+                        <div class="file-info">
+                            <p>{{ message.attachment.name }}</p>
+                            <span>{{ message.attachment.size }}</span>
+                        </div>
+                    </div>
+
+                    <p class="message-content">{{ message.conteudo }}</p>
                 </div>
-                <div class="chat-input-area">
-                    <input type="text" placeholder="Digite sua mensagem...">
-                    <button>Enviar</button>
+                
+                <div class="message-meta">
+                    <span v-if="message.isEdited" class="edited-indicator">editado</span>
+                    <span>{{ formatMessageTime(message.enviada_em) }}</span>
+                    <span v-if="message.remetente_id === supabaseUser?.id" class="read-receipts">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M18 7l-1.41-1.41-6.34 6.34 1.41 1.41L18 7zm4.24-1.41L11.62 16.2a1 1 0 01-1.41 0L5.62 11.62a1 1 0 011.41-1.41L11 13.17l9.83-9.83a1 1 0 011.41 1.41zM.41 13.03l1.41-1.41L7 16.2l-1.41 1.41L.41 13.03z"></path></svg>
+                    </span>
                 </div>
             </div>
         </div>
-    </transition>
+
+        <div class="chat-input-area">
+            <button class="icon-button" @click="openAttachmentMenu">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M16.5 6v11.5c0 2.21-1.79 4-4 4s-4-1.79-4-4V5a2.5 2.5 0 015 0v10.5c0 .83-.67 1.5-1.5 1.5s-1.5-.67-1.5-1.5V6H10v9.5a2.5 2.5 0 005 0V5c-2.21 0-4 1.79-4 4v11.5c0 2.76 2.24 5 5 5s5-2.24 5-5V6h-1.5z"></path></svg>
+            </button>
+            <textarea v-model="newMessageText" @input="adjustTextareaHeight" ref="messageInput" placeholder="Digite uma mensagem..." rows="1"></textarea>
+            <button class="icon-button" @click="sendMessage">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"></path></svg>
+            </button>
+        </div>
+    </div>
+</transition>
     
 </div>
 
@@ -1593,6 +1820,11 @@
     createApp({
         data() {
             return {
+                chatMessages: [], // Será preenchido com dados do Supabase
+                currentConversation: null, // Guarda o ID e status da conversa atual
+                newMessageText: '', // Ligado ao textarea
+                replyingToMessage: null, // Guarda a mensagem que está sendo respondida
+                editingMessage: null, // Guarda a mensagem que está sendo editada
                 isSearchOverlayVisible: false,
                 zoomImage: '',
                 isLoading: true,
@@ -1762,8 +1994,22 @@
     }
         },
         watch: {
-    // O watcher para 'cart' FOI REMOVIDO.
-    // O watcher para 'userProfile.cep' FOI REMOVIDO.
+    currentView(newView, oldView) {
+        if (newView === 'suporte') {
+            this.initializeChat();
+        }
+        // ...seu watch antigo para profile...
+        if (newView === 'profile' && this.supabaseUser) {
+            this.fetchProfile();
+        }
+    },
+    // ...seu watch antigo para userProfile...
+    userProfile: {
+        handler(newProfile) {
+            localStorage.setItem('cajuia-user-profile', JSON.stringify(newProfile));
+        },
+        deep: true
+    },
 
     userProfile: {
         handler(newProfile) {
@@ -1872,6 +2118,69 @@
             this.stopAutoPlay();
         },
         methods: {
+            loadChatExamples() {
+        this.chatMessages = [
+            { id: 1, conversa_id: 'conv-1', remetente_id: 'atendente-ia', conteudo: 'Olá! Sou a assistente virtual da Cajuia. Como posso te ajudar hoje?', enviada_em: new Date(Date.now() - 60000 * 5).toISOString(), isEdited: false, replyingTo: null, attachment: null },
+            { id: 2, conversa_id: 'conv-1', remetente_id: 'user-123', conteudo: 'Oi, eu gostaria de saber o status do meu pedido #12345', enviada_em: new Date(Date.now() - 60000 * 4).toISOString(), isEdited: false, replyingTo: null, attachment: null },
+            { id: 3, conversa_id: 'conv-1', remetente_id: 'atendente-ia', conteudo: 'Claro! Só um momento enquanto verifico para você.', enviada_em: new Date(Date.now() - 60000 * 3).toISOString(), isEdited: false, replyingTo: null, attachment: null },
+            { id: 4, conversa_id: 'conv-1', remetente_id: 'atendente-ia', conteudo: 'Encontrei seu pedido. Ele já foi enviado!', enviada_em: new Date(Date.now() - 60000 * 2).toISOString(), isEdited: false, replyingTo: null, attachment: { type: 'image', url: 'https://placehold.co/600x400/E1F4CB/7A4E2D?text=Seu+Pedido', name: 'pedido.jpg' } },
+            { id: 5, conversa_id: 'conv-1', remetente_id: 'user-123', conteudo: 'Perfeito, obrigado!', enviada_em: new Date(Date.now() - 60000 * 1).toISOString(), isEdited: false, replyingTo: { author: 'Suporte Cajuia', content: 'Encontrei seu pedido. Ele já foi enviado!' } },
+            { id: 6, conversa_id: 'conv-1', remetente_id: 'user-123', conteudo: 'Ah, e aqui está o comprovante que faltava.', enviada_em: new Date(Date.now() - 30000).toISOString(), isEdited: true, replyingTo: null, attachment: { type: 'file', name: 'comprovante.pdf', size: '1.2 MB' } },
+        ];
+        this.$nextTick(() => this.scrollToBottom());
+    },
+    async initializeChat() {
+        console.log("Iniciando o chat...");
+        // Simula o ID do usuário para teste visual
+        if(!this.supabaseUser) this.supabaseUser = { id: 'user-123' };
+        this.loadChatExamples(); // Carrega exemplos para visualização
+        // Futuramente, aqui virá a lógica de criar/carregar conversa do Supabase
+    },
+    async sendMessage() {
+        if (this.newMessageText.trim() === '') return;
+        console.log('Enviando mensagem:', this.newMessageText);
+        // Futuramente, aqui virá a lógica para inserir no Supabase
+        this.newMessageText = '';
+        this.adjustTextareaHeight();
+    },
+    async requestHumanSupport() {
+        console.log('Solicitando atendimento humano...');
+    },
+    openMessageMenu(message) {
+        console.log('Abrindo menu para a mensagem:', message.id);
+    },
+    startReply(message) {
+        console.log('Respondendo à mensagem:', message.id);
+    },
+    startEdit(message) {
+        console.log('Editando a mensagem:', message.id);
+    },
+    deleteMessage(messageId) {
+        console.log('Apagando a mensagem:', messageId);
+    },
+    openAttachmentMenu() {
+        console.log('Abrindo menu de anexos...');
+    },
+    formatMessageTime(timestamp) {
+        return new Date(timestamp).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+    },
+    scrollToBottom() {
+        this.$nextTick(() => {
+            const container = this.$refs.messagesContainer;
+            if (container) {
+                container.scrollTop = container.scrollHeight;
+            }
+        });
+    },
+    adjustTextareaHeight() {
+        this.$nextTick(() => {
+            const textarea = this.$refs.messageInput;
+            if (textarea) {
+                textarea.style.height = 'auto';
+                textarea.style.height = (textarea.scrollHeight) + 'px';
+            }
+        });
+    },
             selectShippingOption(option) {
         this.selectedShipping = option;
         this.valorFrete = parseFloat(option.price);
