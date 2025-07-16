@@ -1442,6 +1442,45 @@ async function deleteUser(userId) {
     }
 }
 
+
+        async function saveEditedUser(userId) {
+    // Coleta todos os valores dos campos do formulário
+    const updatedProfileData = {
+        nome: document.getElementById('edit-nome').value,
+        telefone: document.getElementById('edit-telefone').value,
+        empresa: document.getElementById('edit-empresa').value,
+        cnpj: document.getElementById('edit-cnpj').value,
+        cep: document.getElementById('edit-cep').value,
+        logradouro: document.getElementById('edit-logradouro').value,
+        numero: document.getElementById('edit-numero').value,
+        bairro: document.getElementById('edit-bairro').value,
+        cidade: document.getElementById('edit-cidade').value,
+        uf: document.getElementById('edit-uf').value
+    };
+
+    showModal('<h2>Salvando alterações...</h2>');
+
+    try {
+        // Envia os dados atualizados para a tabela 'profiles' do Supabase
+        const { error } = await _supabase
+            .from('profiles')
+            .update(updatedProfileData)
+            .eq('id', userId);
+
+        if (error) throw error;
+
+        showNotification('Perfil atualizado com sucesso!', 'success');
+        
+        // Recarrega o modal de detalhes para mostrar os dados atualizados
+        await openUserDetailModal(userId); 
+        // Atualiza a tabela principal de usuários em segundo plano
+        loadAndRenderUsers(); 
+
+    } catch (error) {
+        showNotification('Erro ao salvar as alterações: ' + error.message, 'error');
+    }
+}
+        
         document.addEventListener('DOMContentLoaded', () => {
             
             const state = {
