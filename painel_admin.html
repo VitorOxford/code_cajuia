@@ -1045,21 +1045,28 @@
 
         // Notification Function
         const showNotification = (message, type = 'success') => {
-            const container = document.getElementById('notification-container');
-            const notif = document.createElement('div');
-            notif.className = `notification ${type}`;
-            const icon = type === 'success' ? 'check-circle' : 'alert-triangle';
-            notif.innerHTML = `<i data-feather="${icon}"></i><p>${message}</p>`;
-            container.appendChild(notif);
-            feather.replace(); // Render icon in notification
-            setTimeout(() => {
-    // 1º: Adiciona o "ouvido" para o final da animação.
-    notif.addEventListener('animationend', () => notif.remove());
-    
-    // 2º: SÓ ENTÃO, inicia a animação.
-    notif.classList.add('hiding');
-}, 2000);
-        };
+    const container = document.getElementById('notification-container');
+    const notif = document.createElement('div');
+    notif.className = `notification ${type}`;
+    const icon = type === 'success' ? 'check-circle' : 'alert-triangle';
+    notif.innerHTML = `<i data-feather="${icon}"></i><p>${message}</p>`;
+    container.appendChild(notif);
+    feather.replace();
+
+    // Adiciona a classe para a animação de sumiço após 4 segundos
+    setTimeout(() => {
+        notif.classList.add('hiding');
+    }, 4000);
+
+    // Remove o elemento do DOM após a animação de 0.4s terminar
+    // 4000ms (tempo de espera) + 400ms (duração da animação 'slideOut')
+    setTimeout(() => {
+        // Checa se a notificação ainda existe antes de tentar remover
+        if (notif.parentNode) {
+            notif.remove();
+        }
+    }, 4400); 
+};
 
         document.getElementById('login-btn').onclick = async () => {
     const email = document.getElementById('login-email').value;
@@ -1274,7 +1281,7 @@
                     }
                 } catch (error) {
                     showNotification('Erro ao carregar os dados. Verifique a conexão ou o backend.', 'error');
-                    document.getElementById('login-modal').style.display = 'flex'; // Ensure login modal is visible if data fetch fails
+                    
                 }
             };
             
