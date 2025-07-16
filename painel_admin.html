@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
     
     <meta charset="UTF-8">
@@ -883,6 +884,10 @@
                     <i data-feather="users"></i>
                     <span>Usuários</span>
                 </a>
+                <a href="#reports" class="nav-link" data-view="reports-view">
+                    <i data-feather="bar-chart-2"></i>
+                    <span>Relatórios</span>
+                </a>
             </nav>
             <div class="theme-switch-container">
                 <span>Modo Escuro</span>
@@ -998,6 +1003,25 @@
                     </div>
                 </div>
             </section>
+            <section id="reports-view" style="display: none;">
+    <header>
+        <h1>Relatórios da Loja</h1>
+    </header>
+
+    <div class="form-grid" style="gap: 2rem;">
+        <div class="card" style="grid-column: 1 / -1;">
+            <h3>Pedidos por Status</h3>
+            <div style="max-width: 400px; margin: 1rem auto;">
+                <canvas id="pedidosStatusChart"></canvas>
+            </div>
+        </div>
+
+        <div class="card" style="grid-column: 1 / -1;">
+            <h3>Top 5 Produtos Mais Vendidos</h3>
+            <canvas id="topProdutosChart"></canvas>
+        </div>
+    </div>
+</section>
         </main>
     </div>
 
@@ -1043,7 +1067,103 @@
             feather.replace(); // Re-render icons with new colors
         });
 
+async function renderizarGraficos() {
+    showModal('<h2>Gerando relatórios...</h2>');
 
+    try {
+        // Busca todos os pedidos para análise
+        const { data: todosPedidos, error } = await _supabase.from('pedidos').select('status, itens');
+        if (error) throw error;
+
+        // Chama as funções que desenham cada gráfico
+        desenharGraficoStatusPedidos(todosPedidos);
+        desenharGraficoTopProdutos(todosPedidos);
+
+    } catch (err) {
+        showNotification('Erro ao gerar relatórios: ' + err.message, 'error');
+    } finally {
+        closeModal();
+    }
+}
+
+        // GRÁFICO 1: PEDIDOS POR STATUS
+function desenharGraficoStatusPedidos(pedidos) {
+    const ctx = document.getElementById('pedidosStatusChart');
+    if (!ctx) return;
+
+    // Conta quantos pedidos existem para cada status
+    const contagemStatus = pedidos.reduce((acc, pedido) => {
+        const status = pedido.status || 'desconhecido';
+        acc[status] = (acc[status] || 0) + 1;
+        return acc;
+    }, {});
+
+    // Evita que um gráfico antigo seja renderizado sobre o novo
+    if (window.graficoStatus) window.graficoStatus.destroy();
+
+    window.graficoStatus = new Chart(ctx, {
+        type: 'doughnut', // Tipo do gráfico
+        data: {
+            labels: Object.keys(contagemStatus), // Ex: ['pendente', 'pago']
+            datasets: [{
+                label: 'Pedidos por Status',
+                data: Object.values(contagemStatus), // Ex: [15, 30]
+                backgroundColor: [
+                    'rgba(255, 99, 132, 0.8)',  // Vermelho para 'pendente'
+                    'rgba(75, 192, 192, 0.8)',  // Verde para 'pago'
+                    'rgba(255, 206, 86, 0.8)',  // Amarelo para outros
+                    'rgba(153, 102, 255, 0.8)' // Roxo para outros
+                ],
+                borderColor: 'var(--card-bg)',
+                borderWidth: 2
+            }]
+        }
+    });
+}
+
+// GRÁFICO 2: TOP 5 PRODUTOS
+function desenharGraficoTopProdutos(pedidos) {
+    const ctx = document.getElementById('topProdutosChart');
+    if (!ctx) return;
+
+    // Conta a quantidade vendida de cada produto
+    const contagemProdutos = pedidos
+        .flatMap(pedido => Array.isArray(pedido.itens) ? pedido.itens : []) // Garante que itens seja um array
+        .reduce((acc, item) => {
+            const nome = item.nome || 'Produto desconhecido';
+            const qtd = item.quantidade || 0;
+            acc[nome] = (acc[nome] || 0) + qtd;
+            return acc;
+        }, {});
+
+    // Pega os 5 produtos mais vendidos
+    const top5 = Object.entries(contagemProdutos)
+        .sort(([,a],[,b]) => b - a)
+        .slice(0, 5);
+
+    // Evita que um gráfico antigo seja renderizado sobre o novo
+    if (window.graficoProdutos) window.graficoProdutos.destroy();
+
+    window.graficoProdutos = new Chart(ctx, {
+        type: 'bar', // Tipo do gráfico
+        data: {
+            labels: top5.map(item => item[0]), // Nomes dos produtos
+            datasets: [{
+                label: 'Unidades Vendidas',
+                data: top5.map(item => item[1]), // Quantidades
+                backgroundColor: 'rgba(0, 122, 255, 0.7)',
+                borderColor: 'rgba(0, 122, 255, 1)',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            indexAxis: 'y', // Deixa as barras na horizontal para melhor leitura
+            scales: {
+                x: { beginAtZero: true }
+            }
+        }
+    });
+}
         // Modal Functions
         function showModal(content) {
             document.getElementById('modal-content').innerHTML = content;
@@ -1836,6 +1956,9 @@ async function deleteUser(userId) {
 
                         if (viewId === 'users-view') {
                             loadAndRenderUsers();
+                        }
+                         if (viewId === 'reports-view') {
+                            renderizarGraficos(); // Nova função que vamos criar
                         }
                         feather.replace(); // Re-render icons on tab change
                     });
