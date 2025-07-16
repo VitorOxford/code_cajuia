@@ -4,7 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Cajuia</title>
-    
+
+    <script src="https://cdn.jsdelivr.net/npm/tsparticles@3/tsparticles.bundle.min.js"></script>
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
@@ -718,24 +719,117 @@
 .active-thumb {
   border-color: var(--primary-color) !important;
 }
+        /* --- Fundo Dinâmico (Vídeo e Partículas) --- */
+#background-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 1; /* Fica atrás de todo o conteúdo */
+}
+#bg-video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover; /* Cobre toda a tela sem distorcer */
+}
+#particles-container {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+}
+
+/* Garante que o app fique na frente do fundo */
+#app {
+    position: relative;
+    z-index: 2;
+}
+
+/* --- Novo Estilo de Card "Glassmorphism" --- */
+.glass-card {
+    background: rgba(255, 255, 255, 0.1); /* Cor de fundo semi-transparente */
+    backdrop-filter: blur(25px); /* O efeito de vidro embaçado */
+    -webkit-backdrop-filter: blur(25px);
+    border-radius: 20px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
+    padding: 2.5rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+/* --- Ajustes nas Telas de Carregamento e Auth --- */
+.splash-screen, .auth-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 2000;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 1rem;
+    /* Remove a cor de fundo antiga para que o vídeo apareça */
+    background: none; 
+}
+.auth-card {
+    width: 100%;
+    max-width: 420px;
+    color: var(--text-color-primary);
+}
+.auth-card .auth-logo {
+    width: 150px;
+    height: auto;
+    margin-bottom: 1rem;
+}
+
+/* --- Animação "Respiração" para a Logo do Loading --- */
+.loading-logo {
+    width: 160px;
+    margin-bottom: 25px;
+    animation: breathing 3s ease-in-out infinite;
+}
+
+@keyframes breathing {
+    0%   { transform: scale(0.95); opacity: 0.8; }
+    50%  { transform: scale(1.05); opacity: 1; }
+    100% { transform: scale(0.95); opacity: 0.8; }
+}
+        
     </style>
 </head>
+
 <body>
+    <div id="background-container">
+        <video autoplay muted loop playsinline id="bg-video">
+            <source src="https://cdn.shopify.com/videos/c/o/v/efca50839f7642a49b9479497519db32.mp4" type="video/mp4">
+        </video>
+        <div id="particles-container"></div>
+    </div>
+    
+<body>
+    
 <div id="app">
 
     <transition name="fade">
-        <div v-if="isLoading" class="splash-screen">
-            <img src="https://cdn.shopify.com/s/files/1/0927/1286/1998/files/Design_sem_nome_-_2025-06-13T102227.591.png?v=1750256134" alt="Logo da Loja" class="logo">
+    <div v-if="isLoading" class="splash-screen">
+        <div class="glass-card">
+            <img src="https://cdn.shopify.com/s/files/1/0927/1286/1998/files/Design_sem_nome_-_2025-06-13T102227.591.png?v=1750256134" alt="Logo da Loja" class="loading-logo">
             <div class="loading-bar-container"><div class="loading-bar"></div></div>
-            <div class="error-message" v-if="errorOnLoad"><p>Não foi possível carregar os produtos.</p></div>
         </div>
-    </transition>
+    </div>
+</transition>
 
-  <transition name="fade">
-    <div v-if="authView === 'login'" class="page auth-page" style="max-width: 400px; margin: 0 auto; padding-top: 60px;">
-        <img src="https://cdn.shopify.com/s/files/1/0927/1286/1998/files/Sem_nome__200_x_200_px___1_-removebg-preview.png?v=1750269476" alt="Logo" class="auth-logo">
-        <h2 style="margin-bottom: 2rem;">Entrar</h2>
-        <form @submit.prevent="login">
+ <transition name="fade">
+    <div v-if="authView === 'login'" class="auth-container">
+        <div class="glass-card auth-card">
+            <img src="https://cdn.shopify.com/s/files/1/0927/1286/1998/files/Sem_nome__200_x_200_px___1_-removebg-preview.png?v=1750269476" alt="Logo" class="auth-logo">
+            <h2 style="margin-bottom: 2rem; color: var(--text-color-primary);">Entrar</h2>
+            <form @submit.prevent="login">
                 <div class="form-group">
                     <label for="login-email">E-mail</label>
                     <input id="login-email" v-model="loginForm.email" type="email" required autocomplete="username">
@@ -746,13 +840,16 @@
                 </div>
                 <button class="save-button" type="submit" :disabled="authLoading">Entrar</button>
             </form>
-            <p style="margin-top:1.5rem;">Não tem conta? <a href="#7A4E2D" @click.prevent="authView = 'register'">Cadastre-se</a></p>
-            <div v-if="authError" style="color:#e74c3c; margin-top:1rem;">{{ authError }}</div>
+            <p style="margin-top:1.5rem; color: var(--text-color-secondary);">Não tem conta? <a href="#" @click.prevent="authView = 'register'" style="color: var(--primary-color); font-weight: 600;">Cadastre-se</a></p>
+            <div v-if="authError" style="color:#d33a2c; font-weight: 500; margin-top:1rem;">{{ authError }}</div>
         </div>
-        <div v-else-if="authView === 'register'" class="page auth-page" style="max-width: 400px; margin: 0 auto; padding-top: 60px;">
-        <img src="https://cdn.shopify.com/s/files/1/0927/1286/1998/files/Sem_nome__200_x_200_px___1_-removebg-preview.png?v=1750269476" alt="Logo" class="auth-logo">
-        <h2 style="margin-bottom: 2rem;">Cadastro</h2>
-        <form @submit.prevent="register">
+    </div>
+
+    <div v-else-if="authView === 'register'" class="auth-container">
+        <div class="glass-card auth-card">
+            <img src="https://cdn.shopify.com/s/files/1/0927/1286/1998/files/Sem_nome__200_x_200_px___1_-removebg-preview.png?v=1750269476" alt="Logo" class="auth-logo">
+            <h2 style="margin-bottom: 2rem; color: var(--text-color-primary);">Cadastro</h2>
+            <form @submit.prevent="register">
                 <div class="form-group">
                     <label for="register-name">Nome Completo</label>
                     <input id="register-name" v-model="registerForm.nome" type="text" required>
@@ -767,10 +864,11 @@
                 </div>
                 <button class="save-button" type="submit" :disabled="authLoading">Cadastrar</button>
             </form>
-            <p style="margin-top:1.5rem;">Já tem conta? <a href="#" @click.prevent="authView = 'login'">Entrar</a></p>
-            <div v-if="authError" style="color:#e74c3c; margin-top:1rem;">{{ authError }}</div>
+            <p style="margin-top:1.5rem; color: var(--text-color-secondary);">Já tem conta? <a href="#" @click.prevent="authView = 'login'" style="color: var(--primary-color); font-weight: 600;">Entrar</a></p>
+            <div v-if="authError" style="color:#d33a2c; font-weight: 500; margin-top:1rem;">{{ authError }}</div>
         </div>
-    </transition>
+    </div>
+</transition>
 
     <main v-if="!isLoading && !errorOnLoad && authView === null">
         
@@ -1638,6 +1736,39 @@
         async mounted() {
             
 
+            tsParticles.load({
+        id: "particles-container", // ID do contêiner que colocamos no HTML
+        options: {
+            background: { color: { value: "transparent" } },
+            fpsLimit: 60,
+            interactivity: {
+                events: {
+                    onHover: { enable: true, mode: "repulse" },
+                },
+                modes: {
+                    repulse: { distance: 100, duration: 0.4 },
+                },
+            },
+            particles: {
+                color: { value: "#ffffff" },
+                links: { color: "#ffffff", distance: 150, enable: true, opacity: 0.1, width: 1 },
+                move: {
+                    direction: "none",
+                    enable: true,
+                    outModes: { default: "bounce" },
+                    random: false,
+                    speed: 0.5,
+                    straight: false,
+                },
+                number: { density: { enable: true }, value: 80 },
+                opacity: { value: 0.2 },
+                shape: { type: "circle" },
+                size: { value: { min: 1, max: 3 } },
+            },
+            detectRetina: true,
+        },
+    });
+            
             const savedProfile = localStorage.getItem('cajuia-user-profile');
             if (savedProfile) { this.userProfile = JSON.parse(savedProfile); }
 
@@ -2274,6 +2405,6 @@ sendOrderToWhatsApp() {
         }
     }).mount('#app');
 </script>
-
+</body>    
 </body>
 </html>
