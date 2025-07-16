@@ -838,6 +838,12 @@
             .product-image-sm { width: 40px; height: 40px; }
             .notification { padding: 1rem 1.2rem; }
         }
+
+        .modal-submenu .btn.active {
+    background-color: var(--primary-color);
+    color: white;
+    border-color: var(--primary-color);
+}
     </style>
 </head>
 <body data-theme="light"> <div id="loading-screen">
@@ -1286,16 +1292,13 @@ async function deleteUser(userId) {
 }
 
 
-        async function openUserDetailModal(userId) {
-    // Mostra um feedback de carregamento no modal
+       async function openUserDetailModal(userId) {
     showModal('<h2>Carregando dados do usuário...</h2>');
 
     try {
-        // Busca os dados do perfil, pedidos e pagamentos em paralelo
         const [profileRes, pedidosRes] = await Promise.all([
             _supabase.from('profiles').select('*').eq('id', userId).single(),
             _supabase.from('pedidos').select('*').eq('user_id', userId).order('criado_em', { ascending: false })
-            // Nota: a tabela 'pagamentos' pode ser buscada aqui também se necessário
         ]);
 
         if (profileRes.error) throw profileRes.error;
@@ -1303,36 +1306,59 @@ async function deleteUser(userId) {
         const profileData = profileRes.data;
         const pedidosData = pedidosRes.data || [];
 
-        // Estrutura do Modal com abas
+        // --- MUDANÇA PRINCIPAL AQUI ---
         const modalHTML = `
             <div class="modal-header">
                 <div style="display:flex; align-items:center; gap:1rem;">
-                    <img src="${profileData.foto_url || 'URL_IMAGEM_PADRAO'}" style="width:50px; height:50px; border-radius:50%; object-fit:cover;">
+                    <img src="${profileData.foto_url || 'https://i.pravatar.cc/150'}" style="width:50px; height:50px; border-radius:50%; object-fit:cover;">
                     <h2>${profileData.nome || 'Usuário Sem Nome'}</h2>
                 </div>
                 <button type="button" class="btn-icon" onclick="closeModal()"><i data-feather="x"></i></button>
             </div>
             
-            <div class="modal-submenu" style="display:flex; gap:0.5rem; border-bottom:1px solid var(--border-color); padding-bottom:1rem; margin-bottom:1rem;">
-                <button class="btn btn-secondary btn-sm" onclick="alert('Função Editar em desenvolvimento')">Editar</button>
-                <button class="btn btn-danger btn-sm" onclick="confirmDeleteUser('${profileData.id}', '${profileData.nome}')">Excluir</button>
-                <button class="btn btn-secondary btn-sm" onclick="alert('Função Extratos em desenvolvimento')">Extratos</button>
+            <div class="modal-submenu" style="display:flex; justify-content: space-between; align-items: center; border-bottom:1px solid var(--border-color); padding-bottom:1rem; margin-bottom:1rem;">
+                <div style="display:flex; gap:0.5rem;">
+                    <button id="btn-tab-profile" class="btn btn-secondary btn-sm active" onclick="showUserModalTab('profile')">Perfil</button>
+                    <button id="btn-tab-pedidos" class="btn btn-secondary btn-sm" onclick="showUserModalTab('pedidos')">Pedidos</button>
+                </div>
+                 <button class="btn btn-primary btn-sm" onclick="openEditUserForm('${profileData.id}')">Editar Perfil</button>
             </div>
 
             <div class="modal-body">
-                ${renderProfileTab(profileData)}
-                ${renderPedidosTab(pedidosData)}
+                <div id="user-modal-tab-profile" style="display: block;">
+                    ${renderProfileTab(profileData)}
+                </div>
+                <div id="user-modal-tab-pedidos" style="display: none;">
+                    ${renderPedidosTab(pedidosData)}
+                </div>
             </div>
         `;
 
-        // Atualiza o modal com o conteúdo final
         document.getElementById('modal-content').innerHTML = modalHTML;
-        feather.replace(); // Re-renderiza os ícones
+        feather.replace();
 
     } catch (error) {
         showNotification('Erro ao carregar dados do usuário: ' + error.message, 'error');
         closeModal();
     }
+}
+
+        function showUserModalTab(tabName) {
+    // Esconde todas as abas de conteúdo
+    document.getElementById('user-modal-tab-profile').style.display = 'none';
+    document.getElementById('user-modal-tab-pedidos').style.display = 'none';
+
+    // Remove a classe 'active' de todos os botões de aba
+    document.getElementById('btn-tab-profile').classList.remove('active');
+    document.getElementById('btn-tab-pedidos').classList.remove('active');
+    
+    // Mostra a aba de conteúdo correta e ativa o botão correspondente
+    document.getElementById(`user-modal-tab-${tabName}`).style.display = 'block';
+    document.getElementById(`btn-tab-${tabName}`).classList.add('active');
+}
+
+        function openEditUserForm(userId) {
+    alert(`A função para editar o usuário ${userId} será implementada no próximo passo!`);
 }
 
         document.addEventListener('DOMContentLoaded', () => {
