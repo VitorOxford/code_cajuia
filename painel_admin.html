@@ -1236,27 +1236,27 @@ async function renderizarGraficos() {
     showModal('<h2>Gerando todos os gráficos...</h2>');
 
     try {
-        // Busca todos os dados necessários em paralelo para mais performance
-        const [pedidosRes, cartRes, wishlistRes, produtosRes] = await Promise.all([
+        // CORREÇÃO: Removemos a busca pela tabela 'produtos' daqui.
+        const [pedidosRes, cartRes, wishlistRes] = await Promise.all([
             _supabase.from('pedidos').select('status, itens'),
             _supabase.from('user_cart').select('product_id, quantity'),
-            _supabase.from('user_wishlist').select('product_id'),
-            _supabase.from('produtos').select('id, nome') // Precisamos dos nomes dos produtos
+            _supabase.from('user_wishlist').select('product_id')
         ]);
 
         if (pedidosRes.error) throw pedidosRes.error;
         if (cartRes.error) throw cartRes.error;
         if (wishlistRes.error) throw wishlistRes.error;
-        if (produtosRes.error) throw produtosRes.error;
 
         const todosPedidos = pedidosRes.data;
         const todosItensCarrinho = cartRes.data;
         const todosItensWishlist = wishlistRes.data;
-        const todosProdutos = produtosRes.data;
 
-        // Chama as funções que desenham cada gráfico
+        // CORREÇÃO: Pegamos a lista de produtos do 'state' que já foi carregado.
+        const todosProdutos = state.data.produtos;
+
+        // Chama as funções que desenham cada gráfico, agora passando a lista de produtos
         desenharGraficoStatusPedidos(todosPedidos);
-        desenharGraficoTopProdutos(todosPedidos);
+        desenharGraficoTopProdutos(todosPedidos, todosProdutos); // Passando 'todosProdutos'
         desenharGraficoProdutosNoCarrinho(todosItensCarrinho, todosProdutos);
         desenharGraficoProdutosNaWishlist(todosItensWishlist, todosProdutos);
 
@@ -1303,45 +1303,43 @@ function desenharGraficoStatusPedidos(pedidos) {
 }
 
 // GRÁFICO 2: TOP 5 PRODUTOS
-function desenharGraficoTopProdutos(pedidos) {
+function desenharGraficoTopProdutos(pedidos, produtos) {
     const ctx = document.getElementById('topProdutosChart');
     if (!ctx) return;
 
-    // Conta a quantidade vendida de cada produto
+    // Mapeia IDs para nomes, para consulta rápida
+    const mapaProdutos = new Map(produtos.map(p => [p.id, p.nome]));
+
+    // Processa os itens dos pedidos para contar as vendas
     const contagemProdutos = pedidos
-        .flatMap(pedido => Array.isArray(pedido.itens) ? pedido.itens : []) // Garante que itens seja um array
+        .filter(p => p.status === 'pago') // Apenas de pedidos pagos
+        .flatMap(pedido => Array.isArray(pedido.itens) ? pedido.itens : [])
         .reduce((acc, item) => {
-            const nome = item.nome || 'Produto desconhecido';
-            const qtd = item.quantidade || 0;
-            acc[nome] = (acc[nome] || 0) + qtd;
+            // Usa o mapa para obter o nome do produto a partir do ID
+            const nomeProduto = mapaProdutos.get(item.id) || `Produto Desconhecido`;
+            acc[nomeProduto] = (acc[nomeProduto] || 0) + item.quantidade;
             return acc;
         }, {});
 
-    // Pega os 5 produtos mais vendidos
-    const top5 = Object.entries(contagemProdutos)
-        .sort(([,a],[,b]) => b - a)
-        .slice(0, 5);
+    const top5 = Object.entries(contagemProdutos).sort(([,a],[,b]) => b - a).slice(0, 5);
 
-    // Evita que um gráfico antigo seja renderizado sobre o novo
     if (window.graficoProdutos) window.graficoProdutos.destroy();
 
     window.graficoProdutos = new Chart(ctx, {
-        type: 'bar', // Tipo do gráfico
+        type: 'bar',
         data: {
-            labels: top5.map(item => item[0]), // Nomes dos produtos
+            labels: top5.map(item => item[0]),
             datasets: [{
                 label: 'Unidades Vendidas',
-                data: top5.map(item => item[1]), // Quantidades
+                data: top5.map(item => item[1]),
                 backgroundColor: 'rgba(0, 122, 255, 0.7)',
                 borderColor: 'rgba(0, 122, 255, 1)',
                 borderWidth: 1
             }]
         },
         options: {
-            indexAxis: 'y', // Deixa as barras na horizontal para melhor leitura
-            scales: {
-                x: { beginAtZero: true }
-            }
+            indexAxis: 'y',
+            scales: { x: { beginAtZero: true } }
         }
     });
 }
