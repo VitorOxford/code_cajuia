@@ -1307,23 +1307,46 @@ function desenharGraficoTopProdutos(pedidos, produtos) {
     const ctx = document.getElementById('topProdutosChart');
     if (!ctx) return;
 
-    // Mapeia IDs para nomes, para consulta rápida
-    const mapaProdutos = new Map(produtos.map(p => [p.id, p.nome]));
-
-    // Processa os itens dos pedidos para contar as vendas
+    // A contagem agora é mais direta, pois o nome do produto já está nos itens do pedido.
     const contagemProdutos = pedidos
-        .filter(p => p.status === 'pago') // Apenas de pedidos pagos
-        .flatMap(pedido => Array.isArray(pedido.itens) ? pedido.itens : [])
-        .reduce((acc, item) => {
-            // Usa o mapa para obter o nome do produto a partir do ID
-            const nomeProduto = mapaProdutos.get(item.id) || `Produto Desconhecido`;
-            acc[nomeProduto] = (acc[nomeProduto] || 0) + item.quantidade;
+        .filter(p => p.status === 'pago') // 1. Filtra apenas pedidos com status 'pago'
+        .flatMap(pedido => Array.isArray(pedido.itens) ? pedido.itens : []) // 2. Junta todos os itens de todos os pedidos em uma única lista
+        .reduce((acc, item) => { // 3. Conta a quantidade para cada item
+            const nomeProduto = item.nome || 'Produto Sem Nome'; // Usa o nome que já existe no item
+            const qtd = item.quantidade || 0;
+            acc[nomeProduto] = (acc[nomeProduto] || 0) + qtd; // Soma a quantidade
             return acc;
         }, {});
 
-    const top5 = Object.entries(contagemProdutos).sort(([,a],[,b]) => b - a).slice(0, 5);
+    const top5 = Object.entries(contagemProdutos)
+        .sort(([,a],[,b]) => b - a)
+        .slice(0, 5);
 
-    if (window.graficoProdutos) window.graficoProdutos.destroy();
+    if (window.graficoProdutos) {
+        window.graficoProdutos.destroy();
+    }
+    
+    // Se não houver produtos vendidos, exibe uma mensagem em vez de um gráfico vazio
+    if (top5.length === 0) {
+        ctx.style.display = 'none'; // Esconde o canvas
+        // Adiciona uma mensagem (opcional, mas melhora a experiência)
+        const container = ctx.parentElement;
+        let msgElement = container.querySelector('.empty-chart-msg');
+        if (!msgElement) {
+            msgElement = document.createElement('p');
+            msgElement.className = 'empty-chart-msg';
+            msgElement.style.textAlign = 'center';
+            msgElement.style.color = 'var(--text-secondary)';
+            container.appendChild(msgElement);
+        }
+        msgElement.innerText = 'Nenhum produto vendido encontrado para exibir.';
+        return;
+    } else {
+         ctx.style.display = 'block';
+         const msgElement = ctx.parentElement.querySelector('.empty-chart-msg');
+         if(msgElement) msgElement.remove();
+    }
+
 
     window.graficoProdutos = new Chart(ctx, {
         type: 'bar',
@@ -1339,7 +1362,14 @@ function desenharGraficoTopProdutos(pedidos, produtos) {
         },
         options: {
             indexAxis: 'y',
-            scales: { x: { beginAtZero: true } }
+            scales: {
+                x: { 
+                    beginAtZero: true,
+                    ticks: {
+                        precision: 0 // Garante que o eixo X mostre apenas números inteiros
+                    }
+                }
+            }
         }
     });
 }
