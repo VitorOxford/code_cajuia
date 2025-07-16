@@ -1137,6 +1137,77 @@
         const { createClient } = window.supabase;
         const _supabase = createClient(supabaseUrl, supabaseKey);
 
+        const state = {
+                data: { produtos: [], categorias: [], personalizacao: { heroAtivo: false, heroBanners: [] } },
+                originalData: {},
+                apiUrl: 'https://cajuia.onrender.com/backend_cajuia.json',
+                updateUrl: 'https://cajuia.onrender.com/atualizar-json' 
+            };
+
+        function renderUsersTable(users) {
+                console.log('Renderizando usuários:', users);
+                const tbody = document.getElementById('users-table-body');
+                tbody.innerHTML = '';
+                if (users.length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: var(--text-secondary); padding: 2rem;">Nenhum usuário encontrado.</td></tr>`;
+                    return;
+                }
+                users.forEach(user => {
+                    tbody.innerHTML += `
+                        <tr data-id="${user.id}">
+                            <td>
+                                <span class="user-link" 
+                                    onclick="openUserDetailModal('${user.id}')">
+                                    ${user.nome || 'N/A'}
+                                </span>
+                            </td>
+                            <td>${user.email || 'N/A'}</td>
+                            <td>${user.telefone || 'N/A'}</td>
+                            <td>${user.empresa || 'N/A'}</td>
+                            <td>${user.cnpj || 'N/A'}</td>
+                            <td class="actions-cell">
+                                <button class="btn-icon btn-delete-user" title="Excluir"><i data-feather="trash-2"></i></button>
+                            </td>
+                        </tr>
+                    `;
+                });
+            }
+
+        async function loadAndRenderUsers() {
+    console.log('Iniciando busca de usuários com filtros...');
+    const searchTerm = document.getElementById('user-search-input').value;
+    const sortValue = document.getElementById('user-sort-select').value.split(','); // Ex: "criado_em,desc"
+
+    const sortColumn = sortValue[0];
+    const sortAscending = sortValue[1] === 'asc';
+
+    // Inicia a construção da query no Supabase
+    let query = _supabase.from('profiles').select('*');
+
+    // Se o campo de pesquisa tiver algum texto, adiciona o filtro
+    if (searchTerm) {
+        // Usa .or() para buscar em múltiplas colunas (nome OU email)
+        // Usa .ilike() para busca "case-insensitive" (não diferencia maiúsculas de minúsculas)
+        query = query.or(`nome.ilike.%${searchTerm}%,email.ilike.%${searchTerm}%`);
+    }
+
+    // Adiciona a ordenação à query
+    query = query.order(sortColumn, { ascending: sortAscending });
+
+    // Executa a query construída
+    const { data, error } = await query;
+
+    if (error) {
+        showNotification('Erro ao buscar usuários: ' + error.message, 'error');
+        renderUsersTable([]); // Mostra a tabela vazia em caso de erro
+        return;
+    }
+    
+    // Renderiza a tabela com os dados filtrados e ordenados
+    renderUsersTable(data); 
+    feather.replace();
+}
+
 
         // Fetch Users (Backend)
         async function fetchUsers() {
@@ -1485,12 +1556,7 @@ async function deleteUser(userId) {
         
         document.addEventListener('DOMContentLoaded', () => {
             
-            const state = {
-                data: { produtos: [], categorias: [], personalizacao: { heroAtivo: false, heroBanners: [] } },
-                originalData: {},
-                apiUrl: 'https://cajuia.onrender.com/backend_cajuia.json',
-                updateUrl: 'https://cajuia.onrender.com/atualizar-json' 
-            };
+            
 
             const init = async () => {
     await startLoadingAnimation();
@@ -1610,41 +1676,6 @@ async function deleteUser(userId) {
                 feather.replace(); // Render icons after content is loaded
             };
 
-            async function loadAndRenderUsers() {
-    console.log('Iniciando busca de usuários com filtros...');
-    const searchTerm = document.getElementById('user-search-input').value;
-    const sortValue = document.getElementById('user-sort-select').value.split(','); // Ex: "criado_em,desc"
-
-    const sortColumn = sortValue[0];
-    const sortAscending = sortValue[1] === 'asc';
-
-    // Inicia a construção da query no Supabase
-    let query = _supabase.from('profiles').select('*');
-
-    // Se o campo de pesquisa tiver algum texto, adiciona o filtro
-    if (searchTerm) {
-        // Usa .or() para buscar em múltiplas colunas (nome OU email)
-        // Usa .ilike() para busca "case-insensitive" (não diferencia maiúsculas de minúsculas)
-        query = query.or(`nome.ilike.%${searchTerm}%,email.ilike.%${searchTerm}%`);
-    }
-
-    // Adiciona a ordenação à query
-    query = query.order(sortColumn, { ascending: sortAscending });
-
-    // Executa a query construída
-    const { data, error } = await query;
-
-    if (error) {
-        showNotification('Erro ao buscar usuários: ' + error.message, 'error');
-        renderUsersTable([]); // Mostra a tabela vazia em caso de erro
-        return;
-    }
-    
-    // Renderiza a tabela com os dados filtrados e ordenados
-    renderUsersTable(data); 
-    feather.replace();
-}
-
             function renderProductsTable() {
                 const tbody = document.getElementById('products-table-body');
                 tbody.innerHTML = '';
@@ -1685,34 +1716,7 @@ async function deleteUser(userId) {
                 });
             }
 
-            function renderUsersTable(users) {
-                console.log('Renderizando usuários:', users);
-                const tbody = document.getElementById('users-table-body');
-                tbody.innerHTML = '';
-                if (users.length === 0) {
-                    tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: var(--text-secondary); padding: 2rem;">Nenhum usuário encontrado.</td></tr>`;
-                    return;
-                }
-                users.forEach(user => {
-                    tbody.innerHTML += `
-                        <tr data-id="${user.id}">
-                            <td>
-                                <span class="user-link" 
-                                    onclick="openUserDetailModal('${user.id}')">
-                                    ${user.nome || 'N/A'}
-                                </span>
-                            </td>
-                            <td>${user.email || 'N/A'}</td>
-                            <td>${user.telefone || 'N/A'}</td>
-                            <td>${user.empresa || 'N/A'}</td>
-                            <td>${user.cnpj || 'N/A'}</td>
-                            <td class="actions-cell">
-                                <button class="btn-icon btn-delete-user" title="Excluir"><i data-feather="trash-2"></i></button>
-                            </td>
-                        </tr>
-                    `;
-                });
-            }
+            
 
             const renderPersonalizacaoView = () => {
                 const { heroAtivo, heroBanners } = state.data.personalizacao;
