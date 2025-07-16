@@ -1415,7 +1415,7 @@
                 
                 this.personalizacao = data.personalizacao || { heroAtivo: false, heroBanners: [] };
                 this.categories = data.categorias;
-                this.products = data.produtos.map(p => ({ ...p, tipo: p.tipo || 'T-Shirt' }));
+                this.products = data.produtos.map(p => ({ ...p, tipo: p.tipo || 'Vestuário' }));
 
                 if (this.personalizacao.heroAtivo && this.personalizacao.heroBanners) {
                    this.startAutoPlay();
