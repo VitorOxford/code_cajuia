@@ -843,18 +843,16 @@
 }
     </style>
 </head>
-
+    
 <body>
-    <div id="background-container">
+    
+<div id="app">
+    <div v-if="showVideoBackground" id="background-container">
         <video autoplay muted loop playsinline id="bg-video">
             <source src="https://cdn.shopify.com/videos/c/o/v/efca50839f7642a49b9479497519db32.mp4" type="video/mp4">
         </video>
         <div id="particles-container"></div>
     </div>
-    
-<body>
-    
-<div id="app">
 
     <transition name="fade">
     <div v-if="isLoading" class="splash-screen">
@@ -1646,6 +1644,10 @@
             
         },
         computed: {
+            showVideoBackground() {
+        // Mostra o vídeo se estiver carregando OU se a tela for de login/registro
+        return this.isLoading || this.authView !== null;
+    },
             hasActiveFilters() {
         return this.searchQuery.length > 0 ||
                this.searchFilters.category !== null ||
@@ -2446,6 +2448,5 @@ sendOrderToWhatsApp() {
         }
     }).mount('#app');
 </script>
-</body>    
 </body>
 </html>
