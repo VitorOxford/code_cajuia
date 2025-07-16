@@ -1207,9 +1207,11 @@ function desenharGraficoTopProdutos(pedidos) {
     const doc = new jsPDF();
 
     try {
+        // Busca os dados mais recentes
         const [pedidosRes, perfisRes] = await Promise.all([
             _supabase.from('pedidos').select('status, valor_total, itens'),
-            _supabase.from('profiles').select('nome, email, cidade, criado_em')
+            // CORREÇÃO 1: Trocado 'criado_em' por 'created_at'
+            _supabase.from('profiles').select('nome, email, cidade, created_at') 
         ]);
         
         if (pedidosRes.error) throw pedidosRes.error;
@@ -1222,15 +1224,12 @@ function desenharGraficoTopProdutos(pedidos) {
         const pageCount = doc.internal.getNumberOfPages();
         for(let i = 1; i <= pageCount; i++) {
             doc.setPage(i);
-            // Cabeçalho
             doc.addImage(logoCajuiaBase64, 'PNG', 14, 10, 25, 25);
             doc.setFont('helvetica', 'bold');
             doc.setFontSize(18);
             doc.text('Relatório Gerencial - Cajuia', 75, 22);
             doc.setLineWidth(0.5);
             doc.line(14, 38, 196, 38);
-
-            // Rodapé
             doc.setFontSize(10);
             doc.setTextColor(150);
             doc.text(`Página ${i} de ${pageCount}`, 175, 285);
@@ -1250,15 +1249,13 @@ function desenharGraficoTopProdutos(pedidos) {
         const totalFaturado = todosPedidos.filter(p => p.status === 'pago').reduce((sum, p) => sum + p.valor_total, 0);
         doc.text(`- Faturamento Total (Pedidos Pagos): R$ ${totalFaturado.toFixed(2)}`, 16, 70);
 
-        // Gráfico de Status
         const statusChartCanvas = document.getElementById('pedidosStatusChart');
         const statusChartImage = statusChartCanvas.toDataURL('image/png', 1.0);
         doc.setFontSize(14);
         doc.setFont('helvetica', 'bold');
-        doc.text('Pedidos por Status', 14, 90);
+        doc.text('Gráfico: Pedidos por Status', 14, 90);
         doc.addImage(statusChartImage, 'PNG', 14, 95, 80, 80);
 
-        // Gráfico de Produtos
         const produtosChartCanvas = document.getElementById('topProdutosChart');
         const produtosChartImage = produtosChartCanvas.toDataURL('image/png', 1.0);
         doc.text('Top Produtos Vendidos', 105, 90);
@@ -1277,13 +1274,13 @@ function desenharGraficoTopProdutos(pedidos) {
                 p.nome, 
                 p.email, 
                 p.cidade || 'N/A', 
-                new Date(p.criado_em).toLocaleDateString('pt-BR')
+                // CORREÇÃO 2: Trocado 'p.criado_em' por 'p.created_at'
+                new Date(p.created_at).toLocaleDateString('pt-BR') 
             ]),
             theme: 'grid',
             headStyles: { fillColor: [0, 122, 255] }
         });
 
-        // Atualiza o rodapé na nova página
         for(let i = 1; i <= doc.internal.getNumberOfPages(); i++) {
              doc.setPage(i);
              doc.setFontSize(10);
@@ -1291,7 +1288,6 @@ function desenharGraficoTopProdutos(pedidos) {
              doc.text(`Página ${i} de ${doc.internal.getNumberOfPages()}`, 175, 285);
         }
 
-        // Salva o arquivo
         doc.save(`relatorio-cajuia-${new Date().toISOString().slice(0,10)}.pdf`);
 
     } catch(err) {
