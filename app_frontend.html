@@ -189,6 +189,38 @@
         .wishlist-page { padding: 1rem; min-height: calc(100vh - var(--footer-height)); background-color: #F7F3ED; }
         .wishlist-empty { text-align: center; color: var(--text-color-secondary); margin-top: 3rem; }
         .wishlist-list { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; }
+
+        .empty-results-textured {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding-top: 4rem;
+    user-select: none; /* Impede que o texto seja selecionado */
+}
+.empty-results-textured span {
+    font-size: 5rem; /* Tamanho do emoticon */
+    font-weight: 600;
+    color: var(--border-color);
+    text-shadow: 1px 1px 3px rgba(0,0,0,0.05);
+}
+.empty-results-textured p {
+    font-size: 1.2rem;
+    font-weight: 500;
+    line-height: 1.4;
+    color: #cccccc; /* Cor ainda mais suave */
+    text-shadow: 1px 1px 3px rgba(0,0,0,0.05);
+    margin-top: 1rem;
+}
+        .close-overlay-btn {
+    background: none;
+    border: none;
+    padding: 0.5rem;
+    cursor: pointer;
+    color: var(--text-color-primary);
+    line-height: 0; /* Alinha o ícone perfeitamente */
+}
         
 .filters-container-overlay {
     padding-bottom: 1rem;
@@ -1345,7 +1377,9 @@
         <div v-if="isSearchOverlayVisible" class="search-overlay">
             <div class="search-overlay-header">
                 <input type="text" v-model="searchQuery" placeholder="Pesquisar produtos..." class="search-input-overlay" autofocus>
-                <button class="close-overlay-btn" @click="closeSearchOverlay">Cancelar</button>
+                <button class="close-overlay-btn" @click="closeSearchOverlay">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                </button>
             </div>
 <div class="search-overlay-content">
     <div class="filters-container-overlay">
@@ -1353,12 +1387,7 @@
             <h3>Categorias</h3>
             <div class="filter-options">
                 <button class="filter-button" :class="{ active: searchFilters.category === null }" @click="searchFilters.category = null">Todas</button>
-                <button v-for="category in categories" :key="category.id" 
-                        class="filter-button" 
-                        :class="{ active: searchFilters.category === category.id }" 
-                        @click="searchFilters.category = category.id">
-                    {{ category.nome }}
-                </button>
+                <button v-for="category in categories" :key="category.id" class="filter-button" :class="{ active: searchFilters.category === category.id }" @click="searchFilters.category = category.id">{{ category.nome }}</button>
             </div>
         </div>
         <div class="filter-group">
@@ -1370,6 +1399,7 @@
             </div>
         </div>
     </div>
+
     <div v-if="filteredAndSearchedProducts.length > 0" class="search-results-grid">
         <div v-for="product in filteredAndSearchedProducts" :key="product.id" @click="showProductDetail(product); closeSearchOverlay();" class="product-card">
             <div class="product-card-image-wrapper"><img :src="getActiveProductImage(product)" :alt="product.nome" loading="lazy"></div>
@@ -1384,8 +1414,9 @@
         </div>
     </div>
     
-    <div v-if="filteredAndSearchedProducts.length === 0" class="search-placeholder">
-        <p>Nenhum resultado encontrado para "<strong>{{ searchQuery }}</strong>"</p>
+    <div v-if="hasActiveFilters && filteredAndSearchedProducts.length === 0" class="empty-results-textured">
+        <span>=(</span>
+        <p>Nenhum resultado<br>encontrado</p>
     </div>
 </div>
         </div>
@@ -1471,6 +1502,12 @@
             
         },
         computed: {
+            hasActiveFilters() {
+        return this.searchQuery.length > 0 ||
+               this.searchFilters.category !== null ||
+               this.searchFilters.minPrice !== null ||
+               this.searchFilters.maxPrice > 0;
+    },
             shippingOptionsSorted() {
         return [...this.shippingOptions].sort((a, b) => parseFloat(a.price) - parseFloat(b.price));
     },
