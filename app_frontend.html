@@ -1543,6 +1543,65 @@
                     <p>Nenhum produto encontrado com os filtros e termos de pesquisa atuais.</p>
                 </div>
             </div>
+
+              <!-- NOVO: Tela de Suporte (Placeholder) -->
+    <transition name="fade">
+    <div v-else-if="currentView === 'suporte'" class="page chat-page">
+        <header class="chat-header">
+            <img src="https://cdn.shopify.com/s/files/1/0927/1286/1998/files/Design_sem_nome_-_2025-06-13T102227.591.png?v=1750256134" alt="Logo Suporte">
+            <div class="chat-header-info">
+                <h3>Suporte Cajuia</h3>
+                <p>Normalmente responde em poucos minutos</p>
+            </div>
+        </header>
+
+        <div class="chat-messages-container" ref="messagesContainer">
+            <div v-for="message in chatMessages" :key="message.id" 
+                 class="message-bubble" 
+                 :class="message.remetente_id === supabaseUser?.id ? 'sent' : 'received'">
+
+                <div class="message-content-wrapper">
+                    <div v-if="message.replyingTo" class="reply-context">
+                        <strong>{{ message.replyingTo.author }}</strong>
+                        <p>{{ message.replyingTo.content }}</p>
+                    </div>
+
+                    <img v-if="message.attachment?.type === 'image'" :src="message.attachment.url" class="message-image-attachment" alt="Anexo de imagem">
+                    
+                    <div v-if="message.attachment?.type === 'file'" class="message-file-attachment">
+                        <div class="file-icon">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zM6 20V4h7v5h5v11H6z"></path></svg>
+                        </div>
+                        <div class="file-info">
+                            <p>{{ message.attachment.name }}</p>
+                            <span>{{ message.attachment.size }}</span>
+                        </div>
+                    </div>
+
+                    <p class="message-content">{{ message.conteudo }}</p>
+                </div>
+                
+                <div class="message-meta">
+                    <span v-if="message.isEdited" class="edited-indicator">editado</span>
+                    <span>{{ formatMessageTime(message.enviada_em) }}</span>
+                    <span v-if="message.remetente_id === supabaseUser?.id" class="read-receipts">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M18 7l-1.41-1.41-6.34 6.34 1.41 1.41L18 7zm4.24-1.41L11.62 16.2a1 1 0 01-1.41 0L5.62 11.62a1 1 0 011.41-1.41L11 13.17l9.83-9.83a1 1 0 011.41 1.41zM.41 13.03l1.41-1.41L7 16.2l-1.41 1.41L.41 13.03z"></path></svg>
+                    </span>
+                </div>
+            </div>
+        </div>
+
+        <div class="chat-input-area">
+            <button class="icon-button" @click="openAttachmentMenu">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M16.5 6v11.5c0 2.21-1.79 4-4 4s-4-1.79-4-4V5a2.5 2.5 0 015 0v10.5c0 .83-.67 1.5-1.5 1.5s-1.5-.67-1.5-1.5V6H10v9.5a2.5 2.5 0 005 0V5c-2.21 0-4 1.79-4 4v11.5c0 2.76 2.24 5 5 5s5-2.24 5-5V6h-1.5z"></path></svg>
+            </button>
+            <textarea v-model="newMessageText" @input="adjustTextareaHeight" ref="messageInput" placeholder="Digite uma mensagem..." rows="1"></textarea>
+            <button class="icon-button" @click="sendMessage">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"></path></svg>
+            </button>
+        </div>
+    </div>
+</transition>
             
             <div v-else class="page" style="text-align: center; padding-top: 100px;">
                 <h2 style="text-transform: capitalize;">{{ currentView }}</h2>
@@ -1749,64 +1808,7 @@
         </div>
     </transition>
 
-    <!-- NOVO: Tela de Suporte (Placeholder) -->
-    <transition name="fade">
-    <div v-if="currentView === 'suporte'" class="page chat-page">
-        <header class="chat-header">
-            <img src="https://cdn.shopify.com/s/files/1/0927/1286/1998/files/Design_sem_nome_-_2025-06-13T102227.591.png?v=1750256134" alt="Logo Suporte">
-            <div class="chat-header-info">
-                <h3>Suporte Cajuia</h3>
-                <p>Normalmente responde em poucos minutos</p>
-            </div>
-        </header>
-
-        <div class="chat-messages-container" ref="messagesContainer">
-            <div v-for="message in chatMessages" :key="message.id" 
-                 class="message-bubble" 
-                 :class="message.remetente_id === supabaseUser?.id ? 'sent' : 'received'">
-
-                <div class="message-content-wrapper">
-                    <div v-if="message.replyingTo" class="reply-context">
-                        <strong>{{ message.replyingTo.author }}</strong>
-                        <p>{{ message.replyingTo.content }}</p>
-                    </div>
-
-                    <img v-if="message.attachment?.type === 'image'" :src="message.attachment.url" class="message-image-attachment" alt="Anexo de imagem">
-                    
-                    <div v-if="message.attachment?.type === 'file'" class="message-file-attachment">
-                        <div class="file-icon">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zM6 20V4h7v5h5v11H6z"></path></svg>
-                        </div>
-                        <div class="file-info">
-                            <p>{{ message.attachment.name }}</p>
-                            <span>{{ message.attachment.size }}</span>
-                        </div>
-                    </div>
-
-                    <p class="message-content">{{ message.conteudo }}</p>
-                </div>
-                
-                <div class="message-meta">
-                    <span v-if="message.isEdited" class="edited-indicator">editado</span>
-                    <span>{{ formatMessageTime(message.enviada_em) }}</span>
-                    <span v-if="message.remetente_id === supabaseUser?.id" class="read-receipts">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M18 7l-1.41-1.41-6.34 6.34 1.41 1.41L18 7zm4.24-1.41L11.62 16.2a1 1 0 01-1.41 0L5.62 11.62a1 1 0 011.41-1.41L11 13.17l9.83-9.83a1 1 0 011.41 1.41zM.41 13.03l1.41-1.41L7 16.2l-1.41 1.41L.41 13.03z"></path></svg>
-                    </span>
-                </div>
-            </div>
-        </div>
-
-        <div class="chat-input-area">
-            <button class="icon-button" @click="openAttachmentMenu">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M16.5 6v11.5c0 2.21-1.79 4-4 4s-4-1.79-4-4V5a2.5 2.5 0 015 0v10.5c0 .83-.67 1.5-1.5 1.5s-1.5-.67-1.5-1.5V6H10v9.5a2.5 2.5 0 005 0V5c-2.21 0-4 1.79-4 4v11.5c0 2.76 2.24 5 5 5s5-2.24 5-5V6h-1.5z"></path></svg>
-            </button>
-            <textarea v-model="newMessageText" @input="adjustTextareaHeight" ref="messageInput" placeholder="Digite uma mensagem..." rows="1"></textarea>
-            <button class="icon-button" @click="sendMessage">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"></path></svg>
-            </button>
-        </div>
-    </div>
-</transition>
+  
     
 </div>
 
@@ -1994,33 +1996,19 @@
     }
         },
         watch: {
-    currentView(newView, oldView) {
+    currentView(newView) {
         if (newView === 'suporte') {
             this.initializeChat();
         }
-        // ...seu watch antigo para profile...
         if (newView === 'profile' && this.supabaseUser) {
             this.fetchProfile();
         }
     },
-    // ...seu watch antigo para userProfile...
     userProfile: {
         handler(newProfile) {
             localStorage.setItem('cajuia-user-profile', JSON.stringify(newProfile));
         },
         deep: true
-    },
-
-    userProfile: {
-        handler(newProfile) {
-            localStorage.setItem('cajuia-user-profile', JSON.stringify(newProfile));
-        },
-        deep: true
-    },
-    currentView(newView) {
-        if (newView === 'profile' && this.supabaseUser) {
-            this.fetchProfile();
-        }
     }
 },
         async mounted() {
