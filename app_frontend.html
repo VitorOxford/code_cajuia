@@ -1049,7 +1049,17 @@
                         <div class="product-card-image-wrapper"><img :src="product.imagem" :alt="product.nome" loading="lazy"></div>
                         <div class="product-info">
                             <h3>{{ product.nome }}</h3>
-                            <p>{{ formatCurrency(product.preco) }}</p>
+                            <template v-if="product.precoPromocionalAtivo && product.mostrarPrecoPromocional && product.precoPromocional !== null">
+                                <span style="text-decoration:line-through; opacity:0.5; font-size:0.9em; margin-right:0.5em;">
+                                    {{ formatCurrency(product.preco) }}
+                                </span>
+                                <span style="color:var(--primary-color); font-weight:700;">
+                                    {{ formatCurrency(product.precoPromocional) }}
+                                </span>
+                            </template>
+                            <template v-else>
+                                <p>{{ formatCurrency(product.preco) }}</p>
+                            </template>
                         </div>
                     </div>
                 </div>
@@ -1361,18 +1371,21 @@
                 }
 
                 // Filtrar por preço mínimo
-                if (this.searchFilters.minPrice !== null && this.searchFilters.minPrice >= 0) {
-                    tempProducts = tempProducts.filter(product => 
-                        product.preco >= this.searchFilters.minPrice
-                    );
-                }
-
-                // Filtrar por preço máximo
-                if (this.searchFilters.maxPrice !== null && this.searchFilters.maxPrice >= 0) {
-                    tempProducts = tempProducts.filter(product => 
-                        product.preco <= this.searchFilters.maxPrice
-                    );
-                }
+                // Novo bloco do Preço Mínimo
+                    if (this.searchFilters.minPrice !== null && this.searchFilters.minPrice >= 0) {
+                        tempProducts = tempProducts.filter(product => 
+                            // Agora usa o preço ativo (normal ou promocional) para a comparação
+                            this.getActiveProductPrice(product) >= this.searchFilters.minPrice
+                        );
+                    }
+                    
+                    // Novo bloco do Preço Máximo
+                    if (this.searchFilters.maxPrice !== null && this.searchFilters.maxPrice >= 0) {
+                        tempProducts = tempProducts.filter(product => 
+                            // Agora usa o preço ativo (normal ou promocional) para a comparação
+                            this.getActiveProductPrice(product) <= this.searchFilters.maxPrice
+                        );
+                    }
 
                 return tempProducts;
             },
