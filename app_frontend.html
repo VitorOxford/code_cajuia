@@ -28,6 +28,11 @@
             --header-height: 60px;
             --footer-height: 70px;
             --white-color: #FFFFFF;
+            --chat-bg-color: #EAE6DF; /* Cor de fundo que combina com o wallpaper */
+            --chat-bubble-sent-bg: #7A4E2D; /* Seu marrom primário */
+            --chat-bubble-received-bg: #FFFFFF;
+            --chat-reply-border-color: #83C57A;
+            --chat-info-text-color: #667781;
         }
 
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -850,6 +855,9 @@
     height: calc(100vh - var(--footer-height));
     padding: 0;
     background-color: var(--chat-bg-color);
+    background-image: url('https://cdn.shopify.com/s/files/1/0927/1286/1998/files/Design_sem_nome_13.jpg?v=1752694469');
+    background-blend-mode: multiply;
+    background-size: 200%;
 }
 .chat-header {
     display: flex;
@@ -886,13 +894,23 @@
 }
 .message-bubble.sent {
     align-self: flex-end;
-    background-color: var(--chat-bubble-sent-bg);
+    background-color: var(--primary-color); /* Marrom */
+    color: var(--white-color); /* Texto branco */
     border-radius: 12px 12px 0 12px;
 }
 .message-bubble.received {
     align-self: flex-start;
-    background-color: var(--chat-bubble-received-bg);
+    background-color: var(--chat-bubble-received-bg); /* Branco/Creme */
+    color: var(--text-color-primary); /* Texto preto */
     border-radius: 12px 12px 12px 0;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+}
+
+        .message-bubble.sent .message-meta {
+    color: rgba(255, 255, 255, 0.7);
+}
+.message-bubble.sent .message-meta .read-receipts svg {
+    color: #53bdeb; /* Mantém o azul para o "lido" */
 }
 
 .message-content-wrapper {
@@ -1546,7 +1564,45 @@
 
               <!-- NOVO: Tela de Suporte (Placeholder) -->
     <transition name="fade">
-    <div v-else-if="currentView === 'suporte'" class="page chat-page">
+    Sem problemas. Entendi perfeitamente. Chega de enrolação.
+
+Aqui está o código completo e editado apenas para o bloco da tela de suporte. Copie este código e substitua todo o conteúdo dentro do seu v-else-if="currentView === 'suporte'" por ele.
+
+HTML
+
+<!-- TELA DE SUPORTE COMPLETA - SUBSTITUA O BLOCO v-else-if="currentView === 'suporte'" INTEIRO POR ISTO -->
+<div v-if="currentView === 'suporte'" class="page chat-page">
+    
+    <!-- TELA DE SELEÇÃO DE SUPORTE -->
+    <div v-if="supportView === 'selection'" style="display: flex; flex-direction: column; justify-content: center; align-items: center; height: 100%; padding: 2rem 1rem; text-align: center;">
+        <img src="https://cdn.shopify.com/s/files/1/0927/1286/1998/files/Design_sem_nome_-_2025-06-13T102227.591.png?v=1750256134" alt="Logo Suporte" style="width: 120px; margin-bottom: 2rem;">
+        <h2 style="font-size: 1.5rem; margin-bottom: 0.5rem;">Como podemos ajudar?</h2>
+        <p style="color: var(--text-color-secondary); margin-bottom: 2.5rem;">Escolha uma das opções abaixo para iniciar.</p>
+
+        <div style="display: flex; flex-direction: column; gap: 1rem; width: 100%; max-width: 400px;">
+            <!-- Botão Falar com IA -->
+            <button @click="startChat('ia')" class="profile-menu-item">
+                <div class="menu-item-icon"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-12h2v2h-2zm0 4h2v6h-2z"/></svg></div>
+                <span class="menu-item-label">Falar com a IA (Rápido)</span>
+                <div class="menu-item-chevron"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M9.29 15.88L13.17 12 9.29 8.12a.996.996 0 111.41-1.41l4.59 4.59c.39.39.39 1.02 0 1.41L10.7 17.3a.996.996 0 01-1.41 0c-.38-.39-.39-1.03 0-1.42z"></path></svg></div>
+            </button>
+            <!-- Botão Falar com Especialista -->
+            <button @click="startChat('humano')" class="profile-menu-item">
+                <div class="menu-item-icon"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M21 11.01L3 11v2h18zM3 16h12v2H3zM21 6H3v2.01L21 8z"/></svg></div>
+                <span class="menu-item-label">Falar com um Especialista</span>
+                <div class="menu-item-chevron"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M9.29 15.88L13.17 12 9.29 8.12a.996.996 0 111.41-1.41l4.59 4.59c.39.39.39 1.02 0 1.41L10.7 17.3a.996.996 0 01-1.41 0c-.38-.39-.39-1.03 0-1.42z"></path></svg></div>
+            </button>
+            <!-- Botão WhatsApp -->
+            <button @click="openWhatsAppChat" class="profile-menu-item">
+                <div class="menu-item-icon" style="color: #25D366;"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M12.04 2c-5.46 0-9.91 4.45-9.91 9.91 0 1.75.46 3.45 1.32 4.95L2 22l5.25-1.38c1.45.79 3.08 1.21 4.79 1.21 5.46 0 9.91-4.45 9.91-9.91S17.5 2 12.04 2zM12.04 20.1c-1.53 0-3.03-.39-4.36-1.12l-.31-.18-3.24.85.87-3.17-.2-.33c-.8-1.37-1.22-2.94-1.22-4.57 0-4.54 3.69-8.23 8.24-8.23 4.54 0 8.23 3.69 8.23 8.23s-3.69 8.23-8.23 8.23zm4.49-5.49c-.25-.12-1.47-.72-1.7-.82s-.39-.12-.56.12c-.17.25-.64.82-.79.98s-.29.17-.54.06c-.25-.12-1.06-.39-2.02-1.25s-1.45-1.95-1.62-2.29c-.17-.34-.02-.53.11-.65.11-.11.25-.29.37-.43s.17-.25.25-.42c.08-.17.04-.31-.02-.43s-.56-1.34-.76-1.84c-.2-.48-.41-.42-.56-.42h-.48c-.17 0-.43.06-.66.31s-.87.85-1.07 2.07c-.2 1.22.89 2.4 1.01 2.56s1.76 2.67 4.27 3.77c.59.26 1.05.41 1.41.52.59.19 1.13.16 1.56.1.48-.06 1.47-.6 1.68-1.18s.21-1.09.15-1.18c-.06-.09-.17-.15-.25-.2z"/></svg></div>
+                <span class="menu-item-label">Falar no WhatsApp</span>
+                <div class="menu-item-chevron"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M9.29 15.88L13.17 12 9.29 8.12a.996.996 0 111.41-1.41l4.59 4.59c.39.39.39 1.02 0 1.41L10.7 17.3a.996.996 0 01-1.41 0c-.38-.39-.39-1.03 0-1.42z"></path></svg></div>
+            </button>
+        </div>
+    </div>
+
+    <!-- TELA DE CHAT (VISÍVEL APÓS SELEÇÃO) -->
+    <div v-else-if="supportView === 'chat'" style="display: flex; flex-direction: column; height: 100%;">
         <header class="chat-header">
             <img src="https://cdn.shopify.com/s/files/1/0927/1286/1998/files/Design_sem_nome_-_2025-06-13T102227.591.png?v=1750256134" alt="Logo Suporte">
             <div class="chat-header-info">
@@ -1561,13 +1617,16 @@
                  :class="message.remetente_id === supabaseUser?.id ? 'sent' : 'received'">
 
                 <div class="message-content-wrapper">
+                    <!-- Contexto de Resposta -->
                     <div v-if="message.replyingTo" class="reply-context">
                         <strong>{{ message.replyingTo.author }}</strong>
                         <p>{{ message.replyingTo.content }}</p>
                     </div>
 
+                    <!-- Anexo de Imagem -->
                     <img v-if="message.attachment?.type === 'image'" :src="message.attachment.url" class="message-image-attachment" alt="Anexo de imagem">
                     
+                    <!-- Anexo de Arquivo -->
                     <div v-if="message.attachment?.type === 'file'" class="message-file-attachment">
                         <div class="file-icon">
                             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zM6 20V4h7v5h5v11H6z"></path></svg>
@@ -1578,6 +1637,7 @@
                         </div>
                     </div>
 
+                    <!-- Conteúdo de Texto -->
                     <p class="message-content">{{ message.conteudo }}</p>
                 </div>
                 
@@ -1596,11 +1656,15 @@
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M16.5 6v11.5c0 2.21-1.79 4-4 4s-4-1.79-4-4V5a2.5 2.5 0 015 0v10.5c0 .83-.67 1.5-1.5 1.5s-1.5-.67-1.5-1.5V6H10v9.5a2.5 2.5 0 005 0V5c-2.21 0-4 1.79-4 4v11.5c0 2.76 2.24 5 5 5s5-2.24 5-5V6h-1.5z"></path></svg>
             </button>
             <textarea v-model="newMessageText" @input="adjustTextareaHeight" ref="messageInput" placeholder="Digite uma mensagem..." rows="1"></textarea>
-            <button class="icon-button" @click="sendMessage">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"></path></svg>
+            
+            <!-- Botão dinâmico: Enviar ou Gravar Áudio -->
+            <button class="icon-button" @click="newMessageText ? sendMessage() : startRecordingAudio()">
+                <svg v-if="newMessageText" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"></path></svg>
+                <svg v-else xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm5.3-3c0 3-2.54 5.1-5.3 5.1S6.7 14 6.7 11H5c0 3.41 2.72 6.23 6 6.72V21h2v-3.28c3.28-.49 6-3.31 6-6.72h-1.7z"></path></svg>
             </button>
         </div>
     </div>
+</div>
 </transition>
             
             <div v-else class="page" style="text-align: center; padding-top: 100px;">
@@ -1822,6 +1886,7 @@
     createApp({
         data() {
             return {
+                supportView: 'selection', // Pode ser 'selection' ou 'chat'
                 chatMessages: [], // Será preenchido com dados do Supabase
                 currentConversation: null, // Guarda o ID e status da conversa atual
                 newMessageText: '', // Ligado ao textarea
@@ -2106,6 +2171,15 @@
             this.stopAutoPlay();
         },
         methods: {
+            startChat(type) {
+    console.log('Iniciando chat com:', type);
+    this.supportView = 'chat';
+    // Aqui virá a lógica para iniciar com IA ou humano
+},
+openWhatsAppChat() {
+    const defaultMessage = "Olá! Preciso de ajuda com um pedido.";
+    window.location.href = `https://wa.me/${this.phoneNumber}?text=${encodeURIComponent(defaultMessage)}`;
+},
             loadChatExamples() {
         this.chatMessages = [
             { id: 1, conversa_id: 'conv-1', remetente_id: 'atendente-ia', conteudo: 'Olá! Sou a assistente virtual da Cajuia. Como posso te ajudar hoje?', enviada_em: new Date(Date.now() - 60000 * 5).toISOString(), isEdited: false, replyingTo: null, attachment: null },
