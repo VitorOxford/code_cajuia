@@ -1299,13 +1299,18 @@
                 }, 0);
             },
             isSelectionValid() {
-                if (!this.selectedProduct) return false;
-                const hasSizes = this.selectedProduct.variacoes.tamanhos && this.selectedProduct.variacoes.tamanhos.length > 0;
-                const hasColors = this.selectedProduct.variacoes.cores && this.selectedProduct.variacoes.cores.length > 0;
-                const sizeIsValid = !hasSizes || this.selection.size !== null;
-                const colorIsValid = !hasColors || this.selection.color !== null;
-                return sizeIsValid && colorIsValid;
-            },
+    if (!this.selectedProduct) return false;
+
+    // VERIFICAÇÃO ATUALIZADA: A seleção SÓ É NECESSÁRIA se a variação estiver HABILITADA e tiver OPÇÕES.
+    const needsSizeSelection = this.selectedProduct.habilitarTamanhos && this.selectedProduct.variacoes.tamanhos && this.selectedProduct.variacoes.tamanhos.length > 0;
+    const needsColorSelection = this.selectedProduct.habilitarCores && this.selectedProduct.variacoes.cores && this.selectedProduct.variacoes.cores.length > 0;
+
+    // A lógica de validação agora checa se a seleção é necessária.
+    const sizeIsValid = !needsSizeSelection || this.selection.size !== null;
+    const colorIsValid = !needsColorSelection || this.selection.color !== null;
+
+    return sizeIsValid && colorIsValid;
+},
             wishlistProducts() {
                 return this.products.filter(p => this.wishlist.includes(p.id));
             },
