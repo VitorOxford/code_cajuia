@@ -1033,6 +1033,15 @@
                     <h3>Top 5 Produtos Mais Vendidos</h3>
                     <canvas id="topProdutosChart"></canvas>
                 </div>
+                 <div style="grid-column: 1 / -1; border-top: 1px solid var(--border-color); padding-top: 2rem;">
+            <h3>Produtos Mais Adicionados ao Carrinho (Ativos)</h3>
+            <canvas id="produtosCarrinhoChart"></canvas>
+        </div>
+
+        <div style="grid-column: 1 / -1; border-top: 1px solid var(--border-color); padding-top: 2rem;">
+            <h3>Produtos Mais Desejados (Wishlist)</h3>
+            <canvas id="produtosWishlistChart"></canvas>
+        </div>
             </div>
         </div>
     </div>
@@ -1147,21 +1156,112 @@
         return { base64: null, aspectRatio: 1 };
     }
 }
+
+        // GRÁFICO 3: PRODUTOS NO CARRINHO
+function desenharGraficoProdutosNoCarrinho(itensCarrinho, produtos) {
+    const ctx = document.getElementById('produtosCarrinhoChart');
+    if (!ctx) return;
+
+    // Mapeia ID para nome para facilitar a busca
+    const mapaProdutos = new Map(produtos.map(p => [p.id, p.nome]));
+
+    // Conta a quantidade de cada produto no carrinho
+    const contagemCarrinho = itensCarrinho.reduce((acc, item) => {
+        const nomeProduto = mapaProdutos.get(item.product_id) || `ID ${item.product_id}`;
+        acc[nomeProduto] = (acc[nomeProduto] || 0) + item.quantity;
+        return acc;
+    }, {});
+
+    const topItens = Object.entries(contagemCarrinho).sort(([,a],[,b]) => b - a).slice(0, 10); // Top 10
+
+    if (window.graficoCarrinho) window.graficoCarrinho.destroy();
+
+    window.graficoCarrinho = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: topItens.map(item => item[0]),
+            datasets: [{
+                label: 'Unidades em Carrinhos Ativos',
+                data: topItens.map(item => item[1]),
+                backgroundColor: 'rgba(255, 159, 64, 0.7)',
+                borderColor: 'rgba(255, 159, 64, 1)',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            indexAxis: 'y',
+            scales: { x: { beginAtZero: true } }
+        }
+    });
+}
+
+// GRÁFICO 4: PRODUTOS NA WISHLIST
+function desenharGraficoProdutosNaWishlist(itensWishlist, produtos) {
+    const ctx = document.getElementById('produtosWishlistChart');
+    if (!ctx) return;
+
+    const mapaProdutos = new Map(produtos.map(p => [p.id, p.nome]));
+
+    // Conta quantas vezes cada produto aparece na wishlist
+    const contagemWishlist = itensWishlist.reduce((acc, item) => {
+        const nomeProduto = mapaProdutos.get(item.product_id) || `ID ${item.product_id}`;
+        acc[nomeProduto] = (acc[nomeProduto] || 0) + 1;
+        return acc;
+    }, {});
+
+    const topItens = Object.entries(contagemWishlist).sort(([,a],[,b]) => b - a).slice(0, 10); // Top 10
+
+    if (window.graficoWishlist) window.graficoWishlist.destroy();
+
+    window.graficoWishlist = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: topItens.map(item => item[0]),
+            datasets: [{
+                label: 'Nº de Vezes na Wishlist',
+                data: topItens.map(item => item[1]),
+                backgroundColor: 'rgba(239, 68, 68, 0.7)',
+                borderColor: 'rgba(239, 68, 68, 1)',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            indexAxis: 'y',
+            scales: { x: { beginAtZero: true } }
+        }
+    });
+}
         
 async function renderizarGraficos() {
-    showModal('<h2>Gerando relatórios...</h2>');
+    showModal('<h2>Gerando todos os gráficos...</h2>');
 
     try {
-        // Busca todos os pedidos para análise
-        const { data: todosPedidos, error } = await _supabase.from('pedidos').select('status, itens');
-        if (error) throw error;
+        // Busca todos os dados necessários em paralelo para mais performance
+        const [pedidosRes, cartRes, wishlistRes, produtosRes] = await Promise.all([
+            _supabase.from('pedidos').select('status, itens'),
+            _supabase.from('user_cart').select('product_id, quantity'),
+            _supabase.from('user_wishlist').select('product_id'),
+            _supabase.from('produtos').select('id, nome') // Precisamos dos nomes dos produtos
+        ]);
+
+        if (pedidosRes.error) throw pedidosRes.error;
+        if (cartRes.error) throw cartRes.error;
+        if (wishlistRes.error) throw wishlistRes.error;
+        if (produtosRes.error) throw produtosRes.error;
+
+        const todosPedidos = pedidosRes.data;
+        const todosItensCarrinho = cartRes.data;
+        const todosItensWishlist = wishlistRes.data;
+        const todosProdutos = produtosRes.data;
 
         // Chama as funções que desenham cada gráfico
         desenharGraficoStatusPedidos(todosPedidos);
         desenharGraficoTopProdutos(todosPedidos);
+        desenharGraficoProdutosNoCarrinho(todosItensCarrinho, todosProdutos);
+        desenharGraficoProdutosNaWishlist(todosItensWishlist, todosProdutos);
 
     } catch (err) {
-        showNotification('Erro ao gerar relatórios: ' + err.message, 'error');
+        showNotification('Erro ao gerar gráficos: ' + err.message, 'error');
     } finally {
         closeModal();
     }
