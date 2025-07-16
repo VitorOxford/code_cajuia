@@ -1290,14 +1290,19 @@
             },
             cartItemCount() { return this.cart.reduce((total, item) => total + item.quantity, 0); },
             cartTotalPrice() {
-                return this.cart.reduce((total, item) => {
-                    if (item.selected) {
-                        const product = this.getProductById(item.product_id);
-                        return product ? total + (product.preco * item.quantity) : total;
-                    }
-                    return total;
-                }, 0);
-            },
+    return this.cart.reduce((total, item) => {
+        if (item.selected) {
+            const product = this.getProductById(item.product_id);
+            if (product) {
+                // USA A FUNÇÃO INTELIGENTE PARA PEGAR O PREÇO CORRETO
+                const priceToUse = this.getActiveProductPrice(product);
+                return total + (priceToUse * item.quantity);
+            }
+            return total;
+        }
+        return total;
+    }, 0);
+},
             isSelectionValid() {
     if (!this.selectedProduct) return false;
 
