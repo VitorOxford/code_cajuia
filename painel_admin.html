@@ -1010,26 +1010,49 @@
     <header>
         <h1>Relatórios da Loja</h1>
         <div style="display: flex; gap: 1rem;">
-            <button id="btn-gerar-pdf" class="btn btn-secondary">
-                <i data-feather="file-text"></i> Gerar PDF
-            </button>
-            <button id="btn-gerar-excel" class="btn btn-primary">
-                <i data-feather="grid"></i> Gerar Excel
-            </button>
+            <button id="btn-gerar-pdf" class="btn btn-secondary"><i data-feather="file-text"></i> Gerar PDF</button>
+            <button id="btn-gerar-excel" class="btn btn-primary"><i data-feather="grid"></i> Gerar Excel</button>
         </div>
     </header>
 
-    <div class="form-grid" style="gap: 2rem;">
-        <div class="card" style="grid-column: 1 / -1;">
-            <h3>Pedidos por Status</h3>
-            <div style="max-width: 400px; margin: 1rem auto;">
-                <canvas id="pedidosStatusChart"></canvas>
+    <div class="modal-submenu" style="margin-top: 2rem; border-radius: 0.5rem;">
+        <button id="btn-reports-tab-graficos" class="btn btn-secondary btn-sm active" onclick="showReportsTab('graficos')">Gráficos</button>
+        <button id="btn-reports-tab-listas" class="btn btn-secondary btn-sm" onclick="showReportsTab('listas')">Relatórios de Clientes</button>
+    </div>
+
+    <div id="reports-tab-graficos" style="display: block; margin-top: -1px;">
+        <div class="card" style="border-top-left-radius: 0; border-top-right-radius: 0;">
+            <div class="form-grid" style="gap: 2rem;">
+                <div style="grid-column: 1 / -1;">
+                    <h3>Pedidos por Status</h3>
+                    <div style="max-width: 400px; margin: 1rem auto;">
+                        <canvas id="pedidosStatusChart"></canvas>
+                    </div>
+                </div>
+                <div style="grid-column: 1 / -1;">
+                    <h3>Top 5 Produtos Mais Vendidos</h3>
+                    <canvas id="topProdutosChart"></canvas>
+                </div>
             </div>
         </div>
+    </div>
 
-        <div class="card" style="grid-column: 1 / -1;">
-            <h3>Top 5 Produtos Mais Vendidos</h3>
-            <canvas id="topProdutosChart"></canvas>
+    <div id="reports-tab-listas" style="display: none; margin-top: -1px;">
+        <div class="card" style="border-top-left-radius: 0; border-top-right-radius: 0;">
+            <h3>Clientes que Mais Compram</h3>
+            <p style="color: var(--text-secondary); margin-bottom: 1.5rem;">Gere uma lista de clientes ordenada por valor total em pedidos.</p>
+            
+            <div style="display:flex; gap: 1rem; margin-bottom: 1.5rem; align-items:center;">
+                <div class="form-group">
+                    <label for="filtro-cidade">Filtrar por Cidade:</label>
+                    <input type="text" id="filtro-cidade" placeholder="Ex: São Paulo" class="form-group">
+                </div>
+                <button id="btn-gerar-relatorio-clientes" class="btn btn-primary" style="align-self: flex-end;">Gerar Lista</button>
+            </div>
+
+            <div id="relatorio-clientes-container" class="table-wrapper">
+                <p style="text-align:center; color: var(--text-secondary);">Clique em "Gerar Lista" para ver os resultados.</p>
+            </div>
         </div>
     </div>
 </section>
@@ -1059,6 +1082,7 @@
         // Initialize Feather Icons
         feather.replace();
 
+        const logoCajuiaBase64 = 'data:image/png;base64,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';
         // Theme Toggle Logic
         const themeToggle = document.getElementById('theme-toggle');
         const currentTheme = localStorage.getItem('theme') || 'light';
@@ -1176,55 +1200,98 @@ function desenharGraficoTopProdutos(pedidos) {
     });
 }
 
-        async function gerarRelatorioPDF() {
-    showModal('<h2>Gerando relatório PDF...</h2>');
+       async function gerarRelatorioPDF() {
+    showModal('<h2>Gerando relatório PDF profissional...</h2>');
     
-    // jsPDF é carregado globalmente a partir do script que adicionamos
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF();
 
     try {
-        // Busca os dados mais recentes
-        const { data: todosPedidos, error: pedidosError } = await _supabase.from('pedidos').select('status, itens');
-        if (pedidosError) throw pedidosError;
-
-        const { data: todosPerfis, error: perfisError } = await _supabase.from('profiles').select('nome, email, empresa');
-        if (perfisError) throw perfisError;
+        const [pedidosRes, perfisRes] = await Promise.all([
+            _supabase.from('pedidos').select('status, valor_total, itens'),
+            _supabase.from('profiles').select('nome, email, cidade, criado_em')
+        ]);
         
-        // 1. Título e Data
-        doc.setFontSize(18);
-        doc.text('Relatório da Loja Cajuia', 14, 22);
-        doc.setFontSize(11);
-        doc.setTextColor(100);
-        doc.text(`Gerado em: ${new Date().toLocaleDateString('pt-BR')}`, 14, 29);
+        if (pedidosRes.error) throw pedidosRes.error;
+        if (perfisRes.error) throw perfisRes.error;
 
-        // 2. Resumo Geral
+        const todosPedidos = pedidosRes.data;
+        const todosPerfis = perfisRes.data;
+
+        // --- Lógica do Cabeçalho e Rodapé ---
+        const pageCount = doc.internal.getNumberOfPages();
+        for(let i = 1; i <= pageCount; i++) {
+            doc.setPage(i);
+            // Cabeçalho
+            doc.addImage(logoCajuiaBase64, 'PNG', 14, 10, 25, 25);
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(18);
+            doc.text('Relatório Gerencial - Cajuia', 75, 22);
+            doc.setLineWidth(0.5);
+            doc.line(14, 38, 196, 38);
+
+            // Rodapé
+            doc.setFontSize(10);
+            doc.setTextColor(150);
+            doc.text(`Página ${i} de ${pageCount}`, 175, 285);
+            doc.text(`Gerado em: ${new Date().toLocaleString('pt-BR')}`, 14, 285);
+        }
+
+        // --- CONTEÚDO DA PRIMEIRA PÁGINA ---
         doc.setFontSize(14);
-        doc.text('Resumo Geral', 14, 45);
+        doc.setTextColor(0);
+        doc.setFont('helvetica', 'bold');
+        doc.text('Resumo da Operação', 14, 50);
+
         doc.setFontSize(11);
-        doc.text(`- Total de Usuários Cadastrados: ${todosPerfis.length}`, 16, 52);
-        doc.text(`- Total de Pedidos Registrados: ${todosPedidos.length}`, 16, 58);
-        
-        // 3. Adiciona o Gráfico de Status de Pedidos como Imagem
+        doc.setFont('helvetica', 'normal');
+        doc.text(`- Total de Usuários Cadastrados: ${todosPerfis.length}`, 16, 58);
+        doc.text(`- Total de Pedidos Registrados: ${todosPedidos.length}`, 16, 64);
+        const totalFaturado = todosPedidos.filter(p => p.status === 'pago').reduce((sum, p) => sum + p.valor_total, 0);
+        doc.text(`- Faturamento Total (Pedidos Pagos): R$ ${totalFaturado.toFixed(2)}`, 16, 70);
+
+        // Gráfico de Status
         const statusChartCanvas = document.getElementById('pedidosStatusChart');
-        const statusChartImage = statusChartCanvas.toDataURL('image/png');
+        const statusChartImage = statusChartCanvas.toDataURL('image/png', 1.0);
         doc.setFontSize(14);
-        doc.text('Gráfico: Pedidos por Status', 14, 75);
-        doc.addImage(statusChartImage, 'PNG', 14, 80, 80, 80); // x, y, largura, altura
+        doc.setFont('helvetica', 'bold');
+        doc.text('Pedidos por Status', 14, 90);
+        doc.addImage(statusChartImage, 'PNG', 14, 95, 80, 80);
 
-        // 4. Adiciona tabela com os últimos usuários cadastrados
-        doc.addPage(); // Cria uma nova página para a tabela
-        doc.setFontSize(18);
-        doc.text('Lista de Usuários', 14, 22);
+        // Gráfico de Produtos
+        const produtosChartCanvas = document.getElementById('topProdutosChart');
+        const produtosChartImage = produtosChartCanvas.toDataURL('image/png', 1.0);
+        doc.text('Top Produtos Vendidos', 105, 90);
+        doc.addImage(produtosChartImage, 'PNG', 105, 95, 90, 60);
 
+        // --- CONTEÚDO DA SEGUNDA PÁGINA (TABELA) ---
+        doc.addPage();
+        doc.setFontSize(16);
+        doc.setFont('helvetica', 'bold');
+        doc.text('Lista Completa de Clientes', 14, 22);
+        
         doc.autoTable({
             startY: 30,
-            head: [['Nome', 'Email', 'Empresa']],
-            body: todosPerfis.map(p => [p.nome, p.email, p.empresa]),
-            theme: 'striped'
+            head: [['Nome', 'Email', 'Cidade', 'Data de Cadastro']],
+            body: todosPerfis.map(p => [
+                p.nome, 
+                p.email, 
+                p.cidade || 'N/A', 
+                new Date(p.criado_em).toLocaleDateString('pt-BR')
+            ]),
+            theme: 'grid',
+            headStyles: { fillColor: [0, 122, 255] }
         });
 
-        // 5. Salva o arquivo
+        // Atualiza o rodapé na nova página
+        for(let i = 1; i <= doc.internal.getNumberOfPages(); i++) {
+             doc.setPage(i);
+             doc.setFontSize(10);
+             doc.setTextColor(150);
+             doc.text(`Página ${i} de ${doc.internal.getNumberOfPages()}`, 175, 285);
+        }
+
+        // Salva o arquivo
         doc.save(`relatorio-cajuia-${new Date().toISOString().slice(0,10)}.pdf`);
 
     } catch(err) {
@@ -1262,6 +1329,92 @@ async function gerarRelatorioExcel() {
         closeModal();
     }
 }
+
+        function showReportsTab(tabName) {
+    // Esconde todos os conteúdos
+    document.getElementById('reports-tab-graficos').style.display = 'none';
+    document.getElementById('reports-tab-listas').style.display = 'none';
+
+    // Remove a classe 'active' de todos os botões
+    document.getElementById('btn-reports-tab-graficos').classList.remove('active');
+    document.getElementById('btn-reports-tab-listas').classList.remove('active');
+    
+    // Mostra o conteúdo e ativa o botão da aba clicada
+    document.getElementById(`reports-tab-${tabName}`).style.display = 'block';
+    document.getElementById(`btn-reports-tab-${tabName}`).classList.add('active');
+}
+
+        async function gerarRelatorioClientes() {
+    const container = document.getElementById('relatorio-clientes-container');
+    container.innerHTML = '<p>Processando dados...</p>';
+
+    const filtroCidade = document.getElementById('filtro-cidade').value.trim();
+
+    try {
+        // Busca todos os perfis e todos os pedidos pagos
+        const [perfisRes, pedidosRes] = await Promise.all([
+            _supabase.from('profiles').select('id, nome, email, cidade'),
+            _supabase.from('pedidos').select('user_id, valor_total').eq('status', 'pago')
+        ]);
+
+        if (perfisRes.error) throw perfisRes.error;
+        if (pedidosRes.error) throw pedidosRes.error;
+
+        const perfis = perfisRes.data;
+        const pedidosPagos = pedidosRes.data;
+
+        // Calcula o total gasto por usuário
+        const gastosPorUsuario = pedidosPagos.reduce((acc, pedido) => {
+            acc[pedido.user_id] = (acc[pedido.user_id] || 0) + pedido.valor_total;
+            return acc;
+        }, {});
+
+        // Combina os dados de perfil com os gastos
+        let relatorioFinal = perfis.map(perfil => ({
+            ...perfil,
+            valor_gasto: gastosPorUsuario[perfil.id] || 0
+        }));
+
+        // Aplica o filtro de cidade, se houver
+        if (filtroCidade) {
+            relatorioFinal = relatorioFinal.filter(p => p.cidade && p.cidade.toLowerCase().includes(filtroCidade.toLowerCase()));
+        }
+
+        // Ordena por maior valor gasto
+        relatorioFinal.sort((a, b) => b.valor_gasto - a.valor_gasto);
+
+        // Renderiza a tabela de resultados
+        renderRelatorioClientesTable(relatorioFinal);
+
+    } catch (err) {
+        container.innerHTML = `<p style="color:var(--danger-color)">Erro ao gerar relatório: ${err.message}</p>`;
+    }
+}
+
+function renderRelatorioClientesTable(dados) {
+    const container = document.getElementById('relatorio-clientes-container');
+    if (dados.length === 0) {
+        container.innerHTML = '<p style="text-align:center; color: var(--text-secondary);">Nenhum cliente encontrado com os filtros aplicados.</p>';
+        return;
+    }
+
+    const tableRows = dados.map(cliente => `
+        <tr>
+            <td>${cliente.nome}</td>
+            <td>${cliente.email}</td>
+            <td>${cliente.cidade || 'N/A'}</td>
+            <td style="font-weight: bold;">R$ ${cliente.valor_gasto.toFixed(2)}</td>
+        </tr>
+    `).join('');
+
+    container.innerHTML = `
+        <table>
+            <thead><tr><th>Nome</th><th>Email</th><th>Cidade</th><th>Valor Total Gasto</th></tr></thead>
+            <tbody>${tableRows}</tbody>
+        </table>
+    `;
+}
+        
         // Modal Functions
         function showModal(content) {
             document.getElementById('modal-content').innerHTML = content;
@@ -2037,7 +2190,8 @@ async function deleteUser(userId) {
                         document.getElementById('app-wrapper').classList.remove('sidebar-open'); // Close sidebar if open
                     }
                 });
-                
+
+                document.getElementById('btn-gerar-relatorio-clientes').addEventListener('click', gerarRelatorioClientes);
                 document.getElementById('btn-gerar-pdf').addEventListener('click', gerarRelatorioPDF);
                 document.getElementById('btn-gerar-excel').addEventListener('click', gerarRelatorioExcel);
 
