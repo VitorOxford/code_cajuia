@@ -523,6 +523,52 @@
             border-top: 1px solid var(--border-color); 
             padding-top: 1.5rem; 
         }
+
+        .reports-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr; /* Cria duas colunas de tamanho igual */
+    gap: 2rem;
+}
+
+.chart-container {
+    position: relative;
+    min-height: 350px; /* Garante uma altura mínima para não 'amassar' */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-top: 1rem;
+}
+
+.empty-chart-placeholder {
+    display: flex; /* Começa como 'flex' para ser controlado pelo JS */
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background-color: var(--bg-color);
+    color: var(--text-secondary);
+    text-align: center;
+    border: 2px dashed var(--border-color);
+    border-radius: var(--radius-lg);
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    top: 0;
+    left: 0;
+}
+
+.empty-chart-placeholder svg {
+    width: 48px;
+    height: 48px;
+    margin-bottom: 1rem;
+    opacity: 0.5;
+}
+
+/* Responsividade: em telas menores, volta para uma coluna */
+@media (max-width: 1024px) {
+    .reports-grid {
+        grid-template-columns: 1fr;
+    }
+}
         
         /* --- Notifications --- */
         #notification-container { 
@@ -1021,29 +1067,53 @@
     </div>
 
     <div id="reports-tab-graficos" style="display: block; margin-top: -1px;">
-        <div class="card" style="border-top-left-radius: 0; border-top-right-radius: 0;">
-            <div class="form-grid" style="gap: 2rem;">
-                <div style="grid-column: 1 / -1;">
-                    <h3>Pedidos por Status</h3>
-                    <div style="max-width: 400px; margin: 1rem auto;">
-                        <canvas id="pedidosStatusChart"></canvas>
-                    </div>
-                </div>
-                <div style="grid-column: 1 / -1;">
-                    <h3>Top 5 Produtos Mais Vendidos</h3>
-                    <canvas id="topProdutosChart"></canvas>
-                </div>
-                 <div style="grid-column: 1 / -1; border-top: 1px solid var(--border-color); padding-top: 2rem;">
-            <h3>Produtos Mais Adicionados ao Carrinho (Ativos)</h3>
-            <canvas id="produtosCarrinhoChart"></canvas>
-        </div>
+<div class="reports-grid">
 
-        <div style="grid-column: 1 / -1; border-top: 1px solid var(--border-color); padding-top: 2rem;">
-            <h3>Produtos Mais Desejados (Wishlist)</h3>
-            <canvas id="produtosWishlistChart"></canvas>
-        </div>
+    <div class="card">
+        <h3>Pedidos por Status</h3>
+        <div class="chart-container">
+            <canvas id="pedidosStatusChart"></canvas>
+            <div class="empty-chart-placeholder" style="display: none;">
+                <i data-feather="pie-chart"></i>
+                <p>Nenhum pedido encontrado para exibir.</p>
             </div>
         </div>
+    </div>
+
+    <div class="card">
+        <h3>Top Produtos Vendidos</h3>
+        <div class="chart-container">
+            <canvas id="topProdutosChart"></canvas>
+            <div class="empty-chart-placeholder" style="display: none;">
+                <i data-feather="bar-chart-2"></i>
+                <p>Nenhum produto vendido encontrado para exibir.</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <h3>Produtos nos Carrinhos</h3>
+        <div class="chart-container">
+            <canvas id="produtosCarrinhoChart"></canvas>
+            <div class="empty-chart-placeholder" style="display: none;">
+                <i data-feather="shopping-cart"></i>
+                <p>Nenhum item encontrado nos carrinhos.</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <h3>Produtos Desejados (Wishlist)</h3>
+        <div class="chart-container">
+            <canvas id="produtosWishlistChart"></canvas>
+            <div class="empty-chart-placeholder" style="display: none;">
+                <i data-feather="heart"></i>
+                <p>Nenhum item encontrado nas listas de desejos.</p>
+            </div>
+        </div>
+    </div>
+
+</div>
     </div>
 
 <div id="reports-tab-listas" style="display: none; margin-top: -1px;">
@@ -1159,76 +1229,73 @@
 
         // GRÁFICO 3: PRODUTOS NO CARRINHO
 function desenharGraficoProdutosNoCarrinho(itensCarrinho, produtos) {
-    const ctx = document.getElementById('produtosCarrinhoChart');
-    if (!ctx) return;
+    const canvas = document.getElementById('produtosCarrinhoChart');
+    const placeholder = canvas.parentElement.querySelector('.empty-chart-placeholder');
+    if (!canvas || !placeholder) return;
 
-    // Mapeia ID para nome para facilitar a busca
     const mapaProdutos = new Map(produtos.map(p => [p.id, p.nome]));
-
-    // Conta a quantidade de cada produto no carrinho
     const contagemCarrinho = itensCarrinho.reduce((acc, item) => {
         const nomeProduto = mapaProdutos.get(item.product_id) || `ID ${item.product_id}`;
         acc[nomeProduto] = (acc[nomeProduto] || 0) + item.quantity;
         return acc;
     }, {});
+    const topItens = Object.entries(contagemCarrinho).sort(([,a],[,b]) => b - a).slice(0, 10);
 
-    const topItens = Object.entries(contagemCarrinho).sort(([,a],[,b]) => b - a).slice(0, 10); // Top 10
-
+    if (topItens.length === 0) {
+        canvas.style.display = 'none';
+        placeholder.style.display = 'flex';
+        feather.replace();
+        if (window.graficoCarrinho) window.graficoCarrinho.destroy();
+        return;
+    }
+    
+    canvas.style.display = 'block';
+    placeholder.style.display = 'none';
     if (window.graficoCarrinho) window.graficoCarrinho.destroy();
 
-    window.graficoCarrinho = new Chart(ctx, {
+    window.graficoCarrinho = new Chart(canvas, {
         type: 'bar',
         data: {
             labels: topItens.map(item => item[0]),
-            datasets: [{
-                label: 'Unidades em Carrinhos Ativos',
-                data: topItens.map(item => item[1]),
-                backgroundColor: 'rgba(255, 159, 64, 0.7)',
-                borderColor: 'rgba(255, 159, 64, 1)',
-                borderWidth: 1
-            }]
+            datasets: [{ label: 'Unidades em Carrinhos', data: topItens.map(item => item[1]), backgroundColor: 'rgba(255, 159, 64, 0.7)' }]
         },
-        options: {
-            indexAxis: 'y',
-            scales: { x: { beginAtZero: true } }
-        }
+        options: { indexAxis: 'y', scales: { x: { beginAtZero: true, ticks: { precision: 0 } } } }
     });
 }
 
 // GRÁFICO 4: PRODUTOS NA WISHLIST
 function desenharGraficoProdutosNaWishlist(itensWishlist, produtos) {
-    const ctx = document.getElementById('produtosWishlistChart');
-    if (!ctx) return;
+    const canvas = document.getElementById('produtosWishlistChart');
+    const placeholder = canvas.parentElement.querySelector('.empty-chart-placeholder');
+    if (!canvas || !placeholder) return;
 
     const mapaProdutos = new Map(produtos.map(p => [p.id, p.nome]));
-
-    // Conta quantas vezes cada produto aparece na wishlist
     const contagemWishlist = itensWishlist.reduce((acc, item) => {
         const nomeProduto = mapaProdutos.get(item.product_id) || `ID ${item.product_id}`;
         acc[nomeProduto] = (acc[nomeProduto] || 0) + 1;
         return acc;
     }, {});
+    const topItens = Object.entries(contagemWishlist).sort(([,a],[,b]) => b - a).slice(0, 10);
 
-    const topItens = Object.entries(contagemWishlist).sort(([,a],[,b]) => b - a).slice(0, 10); // Top 10
+    if (topItens.length === 0) {
+        canvas.style.display = 'none';
+        placeholder.style.display = 'flex';
+        feather.replace();
+        if (window.graficoWishlist) window.graficoWishlist.destroy();
+        return;
+    }
 
+    canvas.style.display = 'block';
+    placeholder.style.display = 'none';
     if (window.graficoWishlist) window.graficoWishlist.destroy();
 
-    window.graficoWishlist = new Chart(ctx, {
+    window.graficoWishlist = new Chart(canvas, {
         type: 'bar',
         data: {
             labels: topItens.map(item => item[0]),
-            datasets: [{
-                label: 'Nº de Vezes na Wishlist',
-                data: topItens.map(item => item[1]),
-                backgroundColor: 'rgba(239, 68, 68, 0.7)',
-                borderColor: 'rgba(239, 68, 68, 1)',
-                borderWidth: 1
-            }]
+            datasets: [{ label: 'Nº de Vezes na Wishlist', data: topItens.map(item => item[1]), backgroundColor: 'rgba(239, 68, 68, 0.7)' }]
         },
-        options: {
-            indexAxis: 'y',
-            scales: { x: { beginAtZero: true } }
-        }
+        options: { indexAxis: 'y', scales: { x: { beginAtZero: true, ticks: { precision: 0 } } } }
     });
 }
         
@@ -1269,34 +1336,38 @@ async function renderizarGraficos() {
 
         // GRÁFICO 1: PEDIDOS POR STATUS
 function desenharGraficoStatusPedidos(pedidos) {
-    const ctx = document.getElementById('pedidosStatusChart');
-    if (!ctx) return;
+    const canvas = document.getElementById('pedidosStatusChart');
+    const placeholder = canvas.parentElement.querySelector('.empty-chart-placeholder');
+    if (!canvas || !placeholder) return;
 
-    // Conta quantos pedidos existem para cada status
     const contagemStatus = pedidos.reduce((acc, pedido) => {
         const status = pedido.status || 'desconhecido';
         acc[status] = (acc[status] || 0) + 1;
         return acc;
     }, {});
 
-    // Evita que um gráfico antigo seja renderizado sobre o novo
+    if (Object.keys(contagemStatus).length === 0) {
+        canvas.style.display = 'none';
+        placeholder.style.display = 'flex';
+        feather.replace();
+        if (window.graficoStatus) window.graficoStatus.destroy();
+        return;
+    }
+    
+    canvas.style.display = 'block';
+    placeholder.style.display = 'none';
     if (window.graficoStatus) window.graficoStatus.destroy();
 
-    window.graficoStatus = new Chart(ctx, {
-        type: 'doughnut', // Tipo do gráfico
+    window.graficoStatus = new Chart(canvas, {
+        type: 'doughnut',
         data: {
-            labels: Object.keys(contagemStatus), // Ex: ['pendente', 'pago']
+            labels: Object.keys(contagemStatus),
             datasets: [{
-                label: 'Pedidos por Status',
-                data: Object.values(contagemStatus), // Ex: [15, 30]
-                backgroundColor: [
-                    'rgba(255, 99, 132, 0.8)',  // Vermelho para 'pendente'
-                    'rgba(75, 192, 192, 0.8)',  // Verde para 'pago'
-                    'rgba(255, 206, 86, 0.8)',  // Amarelo para outros
-                    'rgba(153, 102, 255, 0.8)' // Roxo para outros
-                ],
+                label: 'Pedidos',
+                data: Object.values(contagemStatus),
+                backgroundColor: ['rgba(255, 99, 132, 0.8)', 'rgba(75, 192, 192, 0.8)', 'rgba(255, 206, 86, 0.8)'],
                 borderColor: 'var(--card-bg)',
-                borderWidth: 2
+                borderWidth: 4
             }]
         }
     });
@@ -1304,73 +1375,37 @@ function desenharGraficoStatusPedidos(pedidos) {
 
 // GRÁFICO 2: TOP 5 PRODUTOS
 function desenharGraficoTopProdutos(pedidos, produtos) {
-    const ctx = document.getElementById('topProdutosChart');
-    if (!ctx) return;
-
-    // A contagem agora é mais direta, pois o nome do produto já está nos itens do pedido.
-    const contagemProdutos = pedidos
-        .filter(p => p.status === 'pago') // 1. Filtra apenas pedidos com status 'pago'
-        .flatMap(pedido => Array.isArray(pedido.itens) ? pedido.itens : []) // 2. Junta todos os itens de todos os pedidos em uma única lista
-        .reduce((acc, item) => { // 3. Conta a quantidade para cada item
-            const nomeProduto = item.nome || 'Produto Sem Nome'; // Usa o nome que já existe no item
-            const qtd = item.quantidade || 0;
-            acc[nomeProduto] = (acc[nomeProduto] || 0) + qtd; // Soma a quantidade
-            return acc;
-        }, {});
-
-    const top5 = Object.entries(contagemProdutos)
-        .sort(([,a],[,b]) => b - a)
-        .slice(0, 5);
-
-    if (window.graficoProdutos) {
-        window.graficoProdutos.destroy();
-    }
+    const canvas = document.getElementById('topProdutosChart');
+    const placeholder = canvas.parentElement.querySelector('.empty-chart-placeholder');
+    if (!canvas || !placeholder) return;
     
-    // Se não houver produtos vendidos, exibe uma mensagem em vez de um gráfico vazio
+    const mapaProdutos = new Map(produtos.map(p => [p.id, p.nome]));
+    const contagemProdutos = pedidos.filter(p => p.status === 'pago').flatMap(p => Array.isArray(p.itens) ? p.itens : []).reduce((acc, item) => {
+        const nomeProduto = item.nome || 'Produto Sem Nome';
+        acc[nomeProduto] = (acc[nomeProduto] || 0) + (item.quantidade || 0);
+        return acc;
+    }, {});
+    const top5 = Object.entries(contagemProdutos).sort(([,a],[,b]) => b - a).slice(0, 5);
+
     if (top5.length === 0) {
-        ctx.style.display = 'none'; // Esconde o canvas
-        // Adiciona uma mensagem (opcional, mas melhora a experiência)
-        const container = ctx.parentElement;
-        let msgElement = container.querySelector('.empty-chart-msg');
-        if (!msgElement) {
-            msgElement = document.createElement('p');
-            msgElement.className = 'empty-chart-msg';
-            msgElement.style.textAlign = 'center';
-            msgElement.style.color = 'var(--text-secondary)';
-            container.appendChild(msgElement);
-        }
-        msgElement.innerText = 'Nenhum produto vendido encontrado para exibir.';
+        canvas.style.display = 'none';
+        placeholder.style.display = 'flex';
+        feather.replace();
+        if (window.graficoProdutos) window.graficoProdutos.destroy();
         return;
-    } else {
-         ctx.style.display = 'block';
-         const msgElement = ctx.parentElement.querySelector('.empty-chart-msg');
-         if(msgElement) msgElement.remove();
     }
 
+    canvas.style.display = 'block';
+    placeholder.style.display = 'none';
+    if (window.graficoProdutos) window.graficoProdutos.destroy();
 
-    window.graficoProdutos = new Chart(ctx, {
+    window.graficoProdutos = new Chart(canvas, {
         type: 'bar',
         data: {
             labels: top5.map(item => item[0]),
-            datasets: [{
-                label: 'Unidades Vendidas',
-                data: top5.map(item => item[1]),
-                backgroundColor: 'rgba(0, 122, 255, 0.7)',
-                borderColor: 'rgba(0, 122, 255, 1)',
-                borderWidth: 1
-            }]
+            datasets: [{ label: 'Unidades Vendidas', data: top5.map(item => item[1]), backgroundColor: 'rgba(0, 122, 255, 0.7)' }]
         },
-        options: {
-            indexAxis: 'y',
-            scales: {
-                x: { 
-                    beginAtZero: true,
-                    ticks: {
-                        precision: 0 // Garante que o eixo X mostre apenas números inteiros
-                    }
-                }
-            }
-        }
+        options: { indexAxis: 'y', scales: { x: { beginAtZero: true, ticks: { precision: 0 } } } }
     });
 }
 
