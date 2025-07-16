@@ -200,10 +200,15 @@
     user-select: none; /* Impede que o texto seja selecionado */
 }
 .empty-results-textured span {
-    font-size: 5rem; /* Tamanho do emoticon */
+    font-size: 5rem;
     font-weight: 600;
     color: var(--border-color);
     text-shadow: 1px 1px 3px rgba(0,0,0,0.05);
+
+    /* --- ADICIONE ESTAS 3 LINHAS --- */
+    transform: rotate(-90deg); /* Gira o emoticon 90 graus para a esquerda */
+    display: inline-block;     /* Garante que a transformação seja aplicada corretamente */
+    margin-bottom: 1rem;       /* Adiciona um pequeno espaço abaixo do emoticon girado */
 }
 .empty-results-textured p {
     font-size: 1.2rem;
