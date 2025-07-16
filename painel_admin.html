@@ -1287,6 +1287,8 @@ async function deleteUser(userId) {
         loadAndRenderUsers();
 
     } catch (error) {
+        console.error('ERRO COMPLETO DO SUPABASE:', error); 
+        
         showNotification('Erro ao excluir usuário: ' + error.message, 'error');
     }
 }
