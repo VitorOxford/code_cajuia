@@ -1881,18 +1881,18 @@ async function deleteUser(userId) {
                 document.querySelector('#categories-table-body').addEventListener('click', handleTableClick);
                 
                 // User table delete and refresh
-                document.getElementById('users-table-body').addEventListener('click', async (e) => {
-                    const button = e.target.closest('.btn-delete-user');
-                    if (!button) return;
-                    const id = button.closest('tr').dataset.id;
-                    if (confirm('Tem certeza que deseja excluir este usuário? Esta ação é irreversível.')) {
-                        const ok = await deleteUserProfile(id);
-                        if (ok) {
-                            loadAndRenderUsers();
-                            showNotification('Usuário excluído com sucesso! 👋');
-                        }
-                    }
-                });
+                document.getElementById('users-table-body').addEventListener('click', (e) => {
+    const button = e.target.closest('.btn-delete-user');
+    if (!button) return;
+
+    // Encontra o nome do usuário na própria linha da tabela para a mensagem de confirmação
+    const row = button.closest('tr');
+    const userId = row.dataset.id;
+    const userName = row.cells[0].innerText; // Pega o texto da primeira célula (Nome)
+
+    // Chama a função de confirmação que já criamos, que por sua vez chama deleteUser()
+    confirmDeleteUser(userId, userName);
+});
                 document.getElementById('btn-apply-filters').addEventListener('click', loadAndRenderUsers);
             };
             
