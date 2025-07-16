@@ -189,7 +189,24 @@
         .wishlist-page { padding: 1rem; min-height: calc(100vh - var(--footer-height)); background-color: #F7F3ED; }
         .wishlist-empty { text-align: center; color: var(--text-color-secondary); margin-top: 3rem; }
         .wishlist-list { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; }
-
+        
+.filters-container-overlay {
+    padding-bottom: 1rem;
+    margin-bottom: 1rem;
+    border-bottom: 1px solid var(--border-color);
+}
+/* Reutilizando os estilos que já tínhamos para os filtros */
+.filter-group {
+    background-color: transparent;
+    padding: 0.5rem 0;
+    margin-bottom: 1rem;
+    box-shadow: none;
+}
+.filter-group h3 {
+    font-size: 1rem;
+    margin-bottom: 0.75rem;
+}
+        
         /* --- Estilos para o Novo Cabeçalho --- */
 .home-top-bar {
     display: flex;
@@ -488,40 +505,11 @@
             border: 2px solid var(--border-color);
             cursor: pointer;
         }
-        /* Estilos adicionados para a página de busca */
-        .search-page {
-            padding-top: 0;
-            background-color: #F7F3ED;
-        }
-        .search-header {
-            display: flex;
-            align-items: center;
-            padding: 1rem;
-            background-color: var(--white-color);
-            border-bottom: 1px solid var(--border-color);
-        }
-        .search-header h2 {
+            .search-header h2 {
             font-size: 1.5rem;
             font-weight: 600;
             text-align: center;
             flex-grow: 1;
-        }
-        .search-input-container {
-            padding: 1rem;
-            background-color: var(--white-color);
-            margin-bottom: 1rem;
-            border-bottom: 1px solid var(--border-color);
-            border-radius: 0px 0px 15px 15px;
-        }
-        .search-input {
-            width: 100%;
-            padding: 0.9rem;
-            border: 1.5px solid var(--border-color);
-            border-radius: 10px;
-            font-size: 1rem;
-            font-family: var(--font-family-sans);
-            transition: border-color 0.3s;
-            background-color: var(--secondary-bg-color);
         }
         .search-input:focus {
             outline: none;
@@ -589,12 +577,6 @@
             display: grid;
             grid-template-columns: repeat(2, 1fr);
             gap: 1rem;
-        }
-        .empty-search-results {
-            text-align: center;
-            color: var(--text-color-secondary);
-            margin-top: 2rem;
-            padding: 2rem;
         }
 
         .auth-page {
@@ -775,6 +757,16 @@
                         </div>
                     </header>
 
+                <div class="greeting-header">
+    <div class="greeting-text">
+        <h2>Olá, {{ userFirstName }} 👋</h2>
+        <p>{{ timeBasedGreeting.text }} {{ timeBasedGreeting.emoji }}</p>
+    </div>
+    <img :src="userProfile.fotoUrl || 'https://i.pravatar.cc/150'" 
+         alt="Foto do Perfil" 
+         class="greeting-profile-pic" 
+         @click="changeView('profile')">
+</div>
                     
                 <section v-if="personalizacao.heroAtivo && personalizacao.heroBanners && personalizacao.heroBanners.length > 0" class="hero-carousel-container">
                     <div class="hero-carousel-wrapper" :style="{ transform: 'translateX(' + (-currentSlide * 100) + '%)' }">
@@ -1355,28 +1347,47 @@
                 <input type="text" v-model="searchQuery" placeholder="Pesquisar produtos..." class="search-input-overlay" autofocus>
                 <button class="close-overlay-btn" @click="closeSearchOverlay">Cancelar</button>
             </div>
-            <div class="search-overlay-content">
-                <div v-if="searchQuery" class="search-results-grid">
-                    <div v-for="product in filteredAndSearchedProducts" :key="product.id" @click="showProductDetail(product); closeSearchOverlay();" class="product-card">
-                        <!-- Card do produto (igual ao da home) -->
-                        <div class="product-card-image-wrapper"><img :src="product.imagem" :alt="product.nome" loading="lazy"></div>
-                        <div class="product-info">
-                            <h3>{{ product.nome }}</h3>
-                            <template v-if="product.precoPromocionalAtivo && product.mostrarPrecoPromocional && product.precoPromocional !== null">
-                                <span style="text-decoration:line-through; opacity:0.5;">{{ formatCurrency(product.preco) }}</span>
-                                <span style="color:var(--primary-color); font-weight:700;">{{ formatCurrency(product.precoPromocional) }}</span>
-                            </template>
-                            <template v-else><p>{{ formatCurrency(product.preco) }}</p></template>
-                        </div>
-                    </div>
-                </div>
-                <div v-if="!searchQuery" class="search-placeholder">
-                    <p>Busque por produtos, marcas e muito mais...</p>
-                </div>
-                 <div v-if="searchQuery && filteredAndSearchedProducts.length === 0" class="search-placeholder">
-                    <p>Nenhum resultado encontrado para "<strong>{{ searchQuery }}</strong>"</p>
-                </div>
+<div class="search-overlay-content">
+    <div class="filters-container-overlay">
+        <div class="filter-group">
+            <h3>Categorias</h3>
+            <div class="filter-options">
+                <button class="filter-button" :class="{ active: searchFilters.category === null }" @click="searchFilters.category = null">Todas</button>
+                <button v-for="category in categories" :key="category.id" 
+                        class="filter-button" 
+                        :class="{ active: searchFilters.category === category.id }" 
+                        @click="searchFilters.category = category.id">
+                    {{ category.nome }}
+                </button>
             </div>
+        </div>
+        <div class="filter-group">
+            <h3>Preço (R$)</h3>
+            <div class="filter-price-inputs">
+                <input type="number" v-model.number="searchFilters.minPrice" placeholder="Mín." min="0">
+                <span>-</span>
+                <input type="number" v-model.number="searchFilters.maxPrice" placeholder="Máx." min="0">
+            </div>
+        </div>
+    </div>
+    <div v-if="filteredAndSearchedProducts.length > 0" class="search-results-grid">
+        <div v-for="product in filteredAndSearchedProducts" :key="product.id" @click="showProductDetail(product); closeSearchOverlay();" class="product-card">
+            <div class="product-card-image-wrapper"><img :src="getActiveProductImage(product)" :alt="product.nome" loading="lazy"></div>
+            <div class="product-info">
+                <h3>{{ product.nome }}</h3>
+                <template v-if="product.precoPromocionalAtivo && product.mostrarPrecoPromocional && product.precoPromocional !== null">
+                    <span style="text-decoration:line-through; opacity:0.5;">{{ formatCurrency(product.preco) }}</span>
+                    <span style="color:var(--primary-color); font-weight:700;">{{ formatCurrency(product.precoPromocional) }}</span>
+                </template>
+                <template v-else><p>{{ formatCurrency(product.preco) }}</p></template>
+            </div>
+        </div>
+    </div>
+    
+    <div v-if="filteredAndSearchedProducts.length === 0" class="search-placeholder">
+        <p>Nenhum resultado encontrado para "<strong>{{ searchQuery }}</strong>"</p>
+    </div>
+</div>
         </div>
     </transition>
 
@@ -1579,8 +1590,6 @@
     currentView(newView) {
         if (newView === 'profile' && this.supabaseUser) {
             this.fetchProfile();
-        } else if (newView === 'search') {
-            this.resetSearchState();
         }
     }
 },
@@ -2209,14 +2218,6 @@ sendOrderToWhatsApp() {
                     this.searchFilters.minPrice = this.searchFilters.maxPrice;
                 }
             },
-            resetSearchState() {
-                this.searchQuery = '';
-                this.searchFilters = {
-                    category: null,
-                    minPrice: null,
-                    maxPrice: null
-                };
-            }
         }
     }).mount('#app');
 </script>
