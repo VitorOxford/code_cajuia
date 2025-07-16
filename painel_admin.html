@@ -1219,11 +1219,10 @@ function desenharGraficoTopProdutos(pedidos) {
     showModal('<h2>Gerando relatório PDF profissional...</h2>');
     
     const { jsPDF } = window.jspdf;
-    const doc = new jsPDF();
+    const doc = new jsPDF('p', 'pt', 'a4'); // Unidade em 'pontos' para melhor controle
 
     try {
-        // --- PREPARAÇÃO DOS DADOS ---
-        // 1. Converte a logo em paralelo com a busca dos dados
+        // --- PREPARAÇÃO DOS DADOS E IMAGENS ---
         const [logoBase64, pedidosRes, perfisRes] = await Promise.all([
             imageUrlToBase64('https://cdn.shopify.com/s/files/1/0927/1286/1998/files/Sem_nome__200_x_200_px___1_-removebg-preview.png?v=1750269476'),
             _supabase.from('pedidos').select('status, valor_total, itens'),
@@ -1236,72 +1235,53 @@ function desenharGraficoTopProdutos(pedidos) {
         const todosPedidos = pedidosRes.data;
         const todosPerfis = perfisRes.data;
 
-        // --- LÓGICA DO CABEÇALHO E RODAPÉ ---
-        const addHeaderAndFooter = () => {
-            for (let i = 1; i <= doc.internal.getNumberOfPages(); i++) {
-                doc.setPage(i);
-                // Cabeçalho
-                if (logoBase64) { // Só adiciona a logo se ela foi carregada com sucesso
-                    doc.addImage(logoBase64, 'PNG', 14, 10, 25, 25);
+        // --- INÍCIO DA CRIAÇÃO DO PDF ---
+
+        // Dados para a tabela principal (vamos usar depois)
+        const head = [['Nome', 'Email', 'Cidade', 'Data de Cadastro']];
+        const body = todosPerfis.map(p => [
+            p.nome, 
+            p.email, 
+            p.cidade || 'N/A', 
+            new Date(p.created_at).toLocaleDateString('pt-BR')
+        ]);
+
+        // Usando o hook 'didDrawPage' para criar cabeçalho e rodapé em TODAS as páginas
+        doc.autoTable({
+            head: head,
+            body: body,
+            // Ponto de início do conteúdo da primeira página
+            startY: 85, 
+            theme: 'grid',
+            headStyles: { fillColor: [0, 122, 255] },
+            
+            // Esta função é a mágica: roda em cada página criada
+            didDrawPage: function (data) {
+                // CABEÇALHO
+                if (logoBase64) {
+                    // Cálculo da proporção da logo para não amassar
+                    const logoWidth = 60; // Largura desejada da logo
+                    const logoRatio = 1; // Proporção da sua logo (é quadrada)
+                    const logoHeight = logoWidth / logoRatio;
+                    doc.addImage(logoBase64, 'PNG', data.settings.margin.left, 15, logoWidth, logoHeight);
                 }
                 doc.setFont('helvetica', 'bold');
-                doc.setFontSize(18);
-                doc.text('Relatório Gerencial - Cajuia', 75, 22);
-                doc.setLineWidth(0.5);
-                doc.line(14, 38, 196, 38);
+                doc.setFontSize(20);
+                doc.text('Relatório Gerencial - Cajuia', data.settings.margin.left + 70, 45);
 
-                // Rodapé
+                // RODAPÉ
+                const pageCount = doc.internal.getNumberOfPages();
                 doc.setFontSize(10);
                 doc.setTextColor(150);
-                doc.text(`Página ${i} de ${doc.internal.getNumberOfPages()}`, 175, 285);
-                doc.text(`Gerado em: ${new Date().toLocaleString('pt-BR')}`, 14, 285);
-            }
-        };
-
-        // --- CONTEÚDO DA PRIMEIRA PÁGINA ---
-        doc.setFontSize(14);
-        doc.setTextColor(0);
-        doc.setFont('helvetica', 'bold');
-        doc.text('Resumo da Operação', 14, 50);
-
-        doc.setFontSize(11);
-        doc.setFont('helvetica', 'normal');
-        doc.text(`- Total de Usuários Cadastrados: ${todosPerfis.length}`, 16, 58);
-        doc.text(`- Total de Pedidos Registrados: ${todosPedidos.length}`, 16, 64);
-        const totalFaturado = todosPedidos.filter(p => p.status === 'pago').reduce((sum, p) => sum + p.valor_total, 0);
-        doc.text(`- Faturamento Total (Pedidos Pagos): R$ ${totalFaturado.toFixed(2)}`, 16, 70);
-
-        const statusChartCanvas = document.getElementById('pedidosStatusChart');
-        const statusChartImage = statusChartCanvas.toDataURL('image/png', 1.0);
-        doc.setFontSize(14);
-        doc.setFont('helvetica', 'bold');
-        doc.text('Gráfico: Pedidos por Status', 14, 90);
-        doc.addImage(statusChartImage, 'PNG', 14, 95, 80, 80);
-
-        const produtosChartCanvas = document.getElementById('topProdutosChart');
-        const produtosChartImage = produtosChartCanvas.toDataURL('image/png', 1.0);
-        doc.text('Top Produtos Vendidos', 105, 90);
-        doc.addImage(produtosChartImage, 'PNG', 105, 95, 90, 60);
-
-        // --- CONTEÚDO DA SEGUNDA PÁGINA (TABELA) ---
-        doc.addPage();
-        doc.setFontSize(16);
-        doc.setFont('helvetica', 'bold');
-        doc.text('Lista Completa de Clientes', 14, 22);
-        
-        doc.autoTable({
-            startY: 30,
-            head: [['Nome', 'Email', 'Cidade', 'Data de Cadastro']],
-            body: todosPerfis.map(p => [p.nome, p.email, p.cidade || 'N/A', new Date(p.created_at).toLocaleDateString('pt-BR')]),
-            theme: 'grid',
-            headStyles: { fillColor: [0, 122, 255] }
+                doc.text(`Página ${data.pageNumber} de ${pageCount}`, data.settings.margin.left, doc.internal.pageSize.height - 15);
+                doc.text(`Gerado em: ${new Date().toLocaleString('pt-BR')}`, doc.internal.pageSize.width - data.settings.margin.right, 285, { align: 'right' });
+            },
+            // Margem superior para dar espaço ao cabeçalho que desenhamos
+            margin: { top: 80 } 
         });
 
-        // Adiciona cabeçalho e rodapé em todas as páginas criadas
-        addHeaderAndFooter();
-
-        // Salva o arquivo
-        doc.save(`relatorio-cajuia-${new Date().toISOString().slice(0,10)}.pdf`);
+        // Salva o arquivo final
+        doc.save(`relatorio-clientes-cajuia-${new Date().toISOString().slice(0,10)}.pdf`);
 
     } catch(err) {
         showNotification('Erro ao gerar PDF: ' + err.message, 'error');
