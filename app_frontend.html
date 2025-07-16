@@ -743,7 +743,7 @@
                                         <h3>{{ getProductById(item.product_id).nome }}</h3>
                                         <p>{{ getProductById(item.product_id).tipo }}</p>
                                     </div>
-                                    <span class="cart-item-price">{{ formatCurrency(getProductById(item.product_id).preco) }}</span>
+                                    <span class="cart-item-price">{{ formatCurrency(getActiveProductPrice(getProductById(item.product_id))) }}</span>
                                 </div>
                                 <div class="cart-item-controls">
                                     <div class="cart-item-quantity-selector">
