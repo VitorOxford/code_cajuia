@@ -1667,6 +1667,17 @@
     closeSearchOverlay() {
         this.isSearchOverlayVisible = false;
     },
+            getActiveProductImage(product) {
+        if (!product) {
+            return ''; // Retorna uma string vazia se o produto for inválido
+        }
+        // Prioriza a primeira imagem de variação, se ela existir e não for uma string vazia
+        if (product.imagensVariacoes && product.imagensVariacoes.length > 0 && product.imagensVariacoes[0]) {
+            return product.imagensVariacoes[0];
+        }
+        // Caso contrário, retorna a imagem principal
+        return product.imagem;
+    },
             // Lógica do Carrossel movida para os methods
             startAutoPlay() {
                 const bannerCount = this.personalizacao.heroBanners.length;
