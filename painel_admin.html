@@ -967,11 +967,18 @@
 
             <section id="users-view" style="display: none;">
                 <header>
-                    <h1>Usuários</h1>
-                    <button id="btn-refresh-users" class="btn btn-secondary">
-                        <i data-feather="refresh-cw"></i> Atualizar Lista
-                    </button>
-                </header>
+    <h1>Usuários</h1>
+    <div style="display:flex; align-items:center; gap:1rem;">
+        <input type="search" id="user-search-input" placeholder="Pesquisar por nome ou email..." class="form-group" style="padding: 0.75rem 1rem; min-width: 250px;">
+        <select id="user-sort-select" class="form-group" style="padding: 0.75rem 1rem;">
+            <option value="criado_em,desc">Mais Recentes</option>
+            <option value="nome,asc">Nome (A-Z)</option>
+        </select>
+        <button id="btn-apply-filters" class="btn btn-primary">
+             <i data-feather="search"></i> Buscar
+        </button>
+    </div>
+</header>
                 <div class="card">
                     <div class="table-wrapper">
                         <table>
@@ -1201,6 +1208,133 @@
             }
         }
 
+        function renderProfileTab(profile) {
+    return `
+        <h3>Dados do Perfil</h3>
+        <div class="form-grid" style="margin-top:1rem;">
+            <p><strong>Email:</strong> ${profile.email || 'N/A'}</p>
+            <p><strong>Telefone:</strong> ${profile.telefone || 'N/A'}</p>
+            <p><strong>Empresa:</strong> ${profile.empresa || 'N/A'}</p>
+            <p><strong>CNPJ:</strong> ${profile.cnpj || 'N/A'}</p>
+            <p><strong>Endereço:</strong> ${profile.logradouro || ''}, ${profile.numero || ''} - ${profile.bairro || ''}, ${profile.cidade || ''} - ${profile.uf || ''}</p>
+            <p><strong>CEP:</strong> ${profile.cep || 'N/A'}</p>
+        </div>
+    `;
+}
+
+// Função para renderizar a tabela de pedidos
+function renderPedidosTab(pedidos) {
+    if (pedidos.length === 0) {
+        return '<h3 style="margin-top:1.5rem;">Pedidos</h3><p>Nenhum pedido encontrado.</p>';
+    }
+
+    let itemsHTML = pedidos.map(p => {
+        const statusColor = p.status === 'pago' ? 'var(--success-color)' : (p.status === 'pendente' ? 'var(--danger-color)' : 'var(--text-secondary)');
+        // Corrigindo o erro que aconteceria aqui: p.itens pode não ser um array.
+        const itensNomes = Array.isArray(p.itens) ? p.itens.map(item => item.nome).join(', ') : 'Itens inválidos';
+        
+        return `
+            <tr>
+                <td>${new Date(p.criado_em).toLocaleDateString()}</td>
+                <td>R$ ${Number(p.valor_total).toFixed(2)}</td>
+                <td><span style="color:${statusColor}; font-weight:bold;">${p.status}</span></td>
+                <td>${itensNomes}</td>
+            </tr>
+        `;
+    }).join('');
+
+    return `
+        <h3 style="margin-top:1.5rem;">Pedidos</h3>
+        <div class="table-wrapper" style="margin-top:1rem;">
+            <table>
+                <thead><tr><th>Data</th><th>Valor</th><th>Status</th><th>Itens</th></tr></thead>
+                <tbody>${itemsHTML}</tbody>
+            </table>
+        </div>
+    `;
+}
+
+        function confirmDeleteUser(userId, userName) {
+    // Esta função apenas mostra a caixa de diálogo de confirmação do navegador
+    if (confirm(`Tem certeza que deseja excluir o usuário "${userName}"? Esta ação é irreversível.`)) {
+        // Se o admin clicar "OK", a função de exclusão real é chamada
+        deleteUser(userId);
+    }
+}
+
+async function deleteUser(userId) {
+    showModal('<h2>Excluindo usuário...</h2>'); // Feedback para o admin
+
+    try {
+        // Deleta o perfil do usuário da sua tabela 'profiles'
+        const { error } = await _supabase.from('profiles').delete().eq('id', userId);
+
+        if (error) {
+            // Se o Supabase retornar um erro, joga ele para o bloco 'catch'
+            throw error;
+        }
+
+        showNotification('Usuário excluído com sucesso!', 'success');
+        
+        // Fecha o modal e recarrega a lista de usuários para refletir a mudança
+        closeModal();
+        loadAndRenderUsers();
+
+    } catch (error) {
+        showNotification('Erro ao excluir usuário: ' + error.message, 'error');
+    }
+}
+
+
+        async function openUserDetailModal(userId) {
+    // Mostra um feedback de carregamento no modal
+    showModal('<h2>Carregando dados do usuário...</h2>');
+
+    try {
+        // Busca os dados do perfil, pedidos e pagamentos em paralelo
+        const [profileRes, pedidosRes] = await Promise.all([
+            _supabase.from('profiles').select('*').eq('id', userId).single(),
+            _supabase.from('pedidos').select('*').eq('user_id', userId).order('criado_em', { ascending: false })
+            // Nota: a tabela 'pagamentos' pode ser buscada aqui também se necessário
+        ]);
+
+        if (profileRes.error) throw profileRes.error;
+
+        const profileData = profileRes.data;
+        const pedidosData = pedidosRes.data || [];
+
+        // Estrutura do Modal com abas
+        const modalHTML = `
+            <div class="modal-header">
+                <div style="display:flex; align-items:center; gap:1rem;">
+                    <img src="${profileData.foto_url || 'URL_IMAGEM_PADRAO'}" style="width:50px; height:50px; border-radius:50%; object-fit:cover;">
+                    <h2>${profileData.nome || 'Usuário Sem Nome'}</h2>
+                </div>
+                <button type="button" class="btn-icon" onclick="closeModal()"><i data-feather="x"></i></button>
+            </div>
+            
+            <div class="modal-submenu" style="display:flex; gap:0.5rem; border-bottom:1px solid var(--border-color); padding-bottom:1rem; margin-bottom:1rem;">
+                <button class="btn btn-secondary btn-sm" onclick="alert('Função Editar em desenvolvimento')">Editar</button>
+                <button class="btn btn-danger btn-sm" onclick="confirmDeleteUser('${profileData.id}', '${profileData.nome}')">Excluir</button>
+                <button class="btn btn-secondary btn-sm" onclick="alert('Função Extratos em desenvolvimento')">Extratos</button>
+            </div>
+
+            <div class="modal-body">
+                ${renderProfileTab(profileData)}
+                ${renderPedidosTab(pedidosData)}
+            </div>
+        `;
+
+        // Atualiza o modal com o conteúdo final
+        document.getElementById('modal-content').innerHTML = modalHTML;
+        feather.replace(); // Re-renderiza os ícones
+
+    } catch (error) {
+        showNotification('Erro ao carregar dados do usuário: ' + error.message, 'error');
+        closeModal();
+    }
+}
+
         document.addEventListener('DOMContentLoaded', () => {
             
             const state = {
@@ -1329,12 +1463,39 @@
             };
 
             async function loadAndRenderUsers() {
-                console.log('loadAndRenderUsers chamado');
-                // REMOVIDA a verificação de 'jwtToken' para permitir o acesso direto durante os testes.
-                const users = await fetchUsers();
-                renderUsersTable(users);
-                feather.replace(); // Render icons after users table is updated
-            }
+    console.log('Iniciando busca de usuários com filtros...');
+    const searchTerm = document.getElementById('user-search-input').value;
+    const sortValue = document.getElementById('user-sort-select').value.split(','); // Ex: "criado_em,desc"
+
+    const sortColumn = sortValue[0];
+    const sortAscending = sortValue[1] === 'asc';
+
+    // Inicia a construção da query no Supabase
+    let query = _supabase.from('profiles').select('*');
+
+    // Se o campo de pesquisa tiver algum texto, adiciona o filtro
+    if (searchTerm) {
+        // Usa .or() para buscar em múltiplas colunas (nome OU email)
+        // Usa .ilike() para busca "case-insensitive" (não diferencia maiúsculas de minúsculas)
+        query = query.or(`nome.ilike.%${searchTerm}%,email.ilike.%${searchTerm}%`);
+    }
+
+    // Adiciona a ordenação à query
+    query = query.order(sortColumn, { ascending: sortAscending });
+
+    // Executa a query construída
+    const { data, error } = await query;
+
+    if (error) {
+        showNotification('Erro ao buscar usuários: ' + error.message, 'error');
+        renderUsersTable([]); // Mostra a tabela vazia em caso de erro
+        return;
+    }
+    
+    // Renderiza a tabela com os dados filtrados e ordenados
+    renderUsersTable(data); 
+    feather.replace();
+}
 
             function renderProductsTable() {
                 const tbody = document.getElementById('products-table-body');
@@ -1389,7 +1550,7 @@
                         <tr data-id="${user.id}">
                             <td>
                                 <span class="user-link" 
-                                    onclick="openPedidosModal('${user.id}', '${user.nome || ''}')">
+                                    onclick="openUserDetailModal('${user.id}')">
                                     ${user.nome || 'N/A'}
                                 </span>
                             </td>
@@ -1586,7 +1747,7 @@
                         }
                     }
                 });
-                document.getElementById('btn-refresh-users').addEventListener('click', loadAndRenderUsers);
+                document.getElementById('btn-apply-filters').addEventListener('click', loadAndRenderUsers);
             };
             
             // Modal Functions (Banner)
