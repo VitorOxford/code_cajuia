@@ -2,6 +2,9 @@
 <html lang="pt-br">
 <head>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://unpkg.com/jspdf@latest/dist/jspdf.umd.min.js"></script>
+    <script src="https://unpkg.com/jspdf-autotable@3.5.23/dist/jspdf.plugin.autotable.js"></script>
+    <script src="https://unpkg.com/xlsx/dist/xlsx.full.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
     
     <meta charset="UTF-8">
@@ -1006,6 +1009,14 @@
             <section id="reports-view" style="display: none;">
     <header>
         <h1>Relatórios da Loja</h1>
+        <div style="display: flex; gap: 1rem;">
+            <button id="btn-gerar-pdf" class="btn btn-secondary">
+                <i data-feather="file-text"></i> Gerar PDF
+            </button>
+            <button id="btn-gerar-excel" class="btn btn-primary">
+                <i data-feather="grid"></i> Gerar Excel
+            </button>
+        </div>
     </header>
 
     <div class="form-grid" style="gap: 2rem;">
@@ -1163,6 +1174,93 @@ function desenharGraficoTopProdutos(pedidos) {
             }
         }
     });
+}
+
+        async function gerarRelatorioPDF() {
+    showModal('<h2>Gerando relatório PDF...</h2>');
+    
+    // jsPDF é carregado globalmente a partir do script que adicionamos
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+
+    try {
+        // Busca os dados mais recentes
+        const { data: todosPedidos, error: pedidosError } = await _supabase.from('pedidos').select('status, itens');
+        if (pedidosError) throw pedidosError;
+
+        const { data: todosPerfis, error: perfisError } = await _supabase.from('profiles').select('nome, email, empresa');
+        if (perfisError) throw perfisError;
+        
+        // 1. Título e Data
+        doc.setFontSize(18);
+        doc.text('Relatório da Loja Cajuia', 14, 22);
+        doc.setFontSize(11);
+        doc.setTextColor(100);
+        doc.text(`Gerado em: ${new Date().toLocaleDateString('pt-BR')}`, 14, 29);
+
+        // 2. Resumo Geral
+        doc.setFontSize(14);
+        doc.text('Resumo Geral', 14, 45);
+        doc.setFontSize(11);
+        doc.text(`- Total de Usuários Cadastrados: ${todosPerfis.length}`, 16, 52);
+        doc.text(`- Total de Pedidos Registrados: ${todosPedidos.length}`, 16, 58);
+        
+        // 3. Adiciona o Gráfico de Status de Pedidos como Imagem
+        const statusChartCanvas = document.getElementById('pedidosStatusChart');
+        const statusChartImage = statusChartCanvas.toDataURL('image/png');
+        doc.setFontSize(14);
+        doc.text('Gráfico: Pedidos por Status', 14, 75);
+        doc.addImage(statusChartImage, 'PNG', 14, 80, 80, 80); // x, y, largura, altura
+
+        // 4. Adiciona tabela com os últimos usuários cadastrados
+        doc.addPage(); // Cria uma nova página para a tabela
+        doc.setFontSize(18);
+        doc.text('Lista de Usuários', 14, 22);
+
+        doc.autoTable({
+            startY: 30,
+            head: [['Nome', 'Email', 'Empresa']],
+            body: todosPerfis.map(p => [p.nome, p.email, p.empresa]),
+            theme: 'striped'
+        });
+
+        // 5. Salva o arquivo
+        doc.save(`relatorio-cajuia-${new Date().toISOString().slice(0,10)}.pdf`);
+
+    } catch(err) {
+        showNotification('Erro ao gerar PDF: ' + err.message, 'error');
+    } finally {
+        closeModal();
+    }
+}
+
+
+async function gerarRelatorioExcel() {
+    showModal('<h2>Gerando planilha Excel...</h2>');
+
+    try {
+        // Busca os dados para a planilha
+        const { data: perfis, error } = await _supabase
+            .from('profiles')
+            .select('nome, email, telefone, empresa, cnpj, cep, logradouro, numero, bairro, cidade, uf');
+            
+        if (error) throw error;
+        
+        // 1. Cria uma nova "planilha" (worksheet) a partir dos seus dados JSON
+        const ws = XLSX.utils.json_to_sheet(perfis);
+
+        // 2. Cria um novo "livro" (workbook) e adiciona a planilha a ele
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, 'Clientes'); // 'Clientes' será o nome da aba
+
+        // 3. Força o download do arquivo .xlsx
+        XLSX.writeFile(wb, `clientes-cajuia-${new Date().toISOString().slice(0,10)}.xlsx`);
+
+    } catch(err) {
+        showNotification('Erro ao gerar Excel: ' + err.message, 'error');
+    } finally {
+        closeModal();
+    }
 }
         // Modal Functions
         function showModal(content) {
@@ -1939,6 +2037,9 @@ async function deleteUser(userId) {
                         document.getElementById('app-wrapper').classList.remove('sidebar-open'); // Close sidebar if open
                     }
                 });
+                
+                document.getElementById('btn-gerar-pdf').addEventListener('click', gerarRelatorioPDF);
+                document.getElementById('btn-gerar-excel').addEventListener('click', gerarRelatorioExcel);
 
 
                 // Main Navigation
