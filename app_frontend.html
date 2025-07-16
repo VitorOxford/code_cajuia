@@ -51,7 +51,7 @@
         .splash-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: #F7F3ED; display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 2000; }
         .splash-screen .logo { width: 160px; margin-bottom: 25px; }
         .loading-bar-container { width: 180px; height: 6px; background-color: #EFEAE2; border-radius: 3px; overflow: hidden; }
-        .loading-bar { height: 100%; width: 0%; background-color: var(--primary-color); border-radius: 3px; animation: fill-bar 5s ease-out forwards; }
+        .loading-bar { height: 100%; width: 0%; background-color: var(--primary-color); border-radius: 3px; animation: fill-bar 6s ease-out forwards; }
         
         #app { padding-bottom: var(--footer-height); overflow-x: hidden; }
         .page {
@@ -799,7 +799,48 @@
     50%  { transform: scale(1.05); opacity: 1; }
     100% { transform: scale(0.95); opacity: 0.8; }
 }
-        
+
+        /* Título (Entrar, Cadastro) */
+.auth-card h2 {
+    color: var(--white-color);
+    text-shadow: 1px 1px 3px rgba(0,0,0,0.2); /* Sombra para melhor legibilidade */
+}
+
+/* Labels dos campos (E-mail, Senha, etc.) */
+.auth-card .form-group label {
+    color: rgba(255, 255, 255, 0.9);
+}
+
+/* Parágrafo ("Não tem conta?") */
+.auth-card p {
+    color: rgba(255, 255, 255, 0.8);
+}
+
+/* Link ("Cadastre-se") */
+.auth-card p a {
+    color: var(--white-color);
+    font-weight: 600;
+    text-decoration: underline;
+}
+
+/* Deixa os campos de input com efeito de vidro também */
+.auth-card input {
+    background-color: rgba(255, 255, 255, 0.2) !important;
+    color: var(--white-color) !important;
+    border-color: rgba(255, 255, 255, 0.3) !important;
+}
+
+/* Cor do texto de placeholder (Ex: "Digite seu e-mail") */
+.auth-card input::placeholder {
+    color: rgba(255, 255, 255, 0.7);
+}
+
+/* --- TELA DE LOADING --- */
+
+/* Garante que qualquer texto dentro do card de loading seja branco */
+.splash-screen .glass-card {
+    color: var(--white-color);
+}
     </style>
 </head>
 
@@ -1788,7 +1829,7 @@
                 this.errorOnLoad = true; 
                 console.error("Falha ao carregar dados:", error); 
             } finally { 
-                setTimeout(() => { this.isLoading = false; }, 2000); 
+                setTimeout(() => { this.isLoading = false; }, 6500); 
             }
 
             // Autenticação Supabase
