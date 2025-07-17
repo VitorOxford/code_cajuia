@@ -195,7 +195,10 @@
         .wishlist-page { padding: 1rem; min-height: calc(100vh - var(--footer-height)); background-color: #F7F3ED; }
         .wishlist-empty { text-align: center; color: var(--text-color-secondary); margin-top: 3rem; }
         .wishlist-list { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; }
-
+        
+[v-cloak] {
+  display: none;
+}
         .empty-results-textured {
     display: flex;
     flex-direction: column;
@@ -1049,14 +1052,11 @@
     
 <body>
     
-<div id="app">
+<div id="app" v-cloak>
     <div v-if="showVideoBackground" id="background-container">
-        <video autoplay muted loop playsinline id="bg-video">
+        <video autoplay muted loop playsinline id="bg-video" poster="https://cdn.shopify.com/s/files/1/0927/1286/1998/files/Sem_titulo.jpg?v=1752751633">
             <source src="https://cdn.shopify.com/videos/c/o/v/efca50839f7642a49b9479497519db32.mp4" type="video/mp4">
         </video>
-        <video autoplay muted loop playsinline id="bg-video" poster="https://cdn.shopify.com/s/files/1/0927/1286/1998/files/Sem_titulo.jpg?v=1752751633">
-    <source src="https://cdn.shopify.com/videos/c/o/v/efca50839f7642a49b9479497519db32.mp4" type="video/mp4">
-</video>
         <div id="particles-container"></div>
     </div>
 
