@@ -2211,18 +2211,52 @@
         this.scrollToBottom();
     },
     async sendMessage() {
-        if (this.newMessageText.trim() === '' || !this.currentConversation) return;
-        const messageToSend = { conversa_id: this.currentConversation.id, remetente_id: this.supabaseUser.id, conteudo: this.newMessageText };
-        const textToProcess = this.newMessageText;
-        this.newMessageText = '';
-        this.adjustTextareaHeight();
-        const { error } = await supabase.from('mensagens').insert(messageToSend);
-        if (error) {
-            console.error("Erro ao enviar mensagem:", error);
-            this.newMessageText = textToProcess;
-            alert("Sua mensagem não pôde ser enviada. Tente novamente.");
-        }
-    },
+    // 1. Validar se há texto e uma conversa ativa.
+    if (this.newMessageText.trim() === '' || !this.currentConversation) {
+        return;
+    }
+
+    // 2. [ATUALIZAÇÃO OTIMISTA] Criar um objeto temporário para a UI.
+    // Isso faz o balão da mensagem aparecer INSTANTANEAMENTE na tela.
+    const optimisticMessage = {
+        id: Date.now(), // ID temporário apenas para o Vue renderizar
+        conversa_id: this.currentConversation.id,
+        remetente_id: this.supabaseUser.id,
+        conteudo: this.newMessageText.trim(),
+        enviada_em: new Date().toISOString() // Data/hora local para exibição imediata
+    };
+
+    // Adiciona a mensagem à lista local para o usuário ver na hora.
+    this.chatMessages.push(optimisticMessage);
+    this.scrollToBottom();
+
+    // 3. Preparar dados e limpar o campo de texto.
+    const textToSave = this.newMessageText.trim();
+    this.newMessageText = '';
+    this.adjustTextareaHeight();
+    
+    // 4. [PERSISTÊNCIA] Tentar salvar a mensagem no Supabase.
+    // Esta é a linha que provavelmente foi removida ou quebrada.
+    const { error } = await supabase.from('mensagens').insert({
+        conversa_id: optimisticMessage.conversa_id,
+        remetente_id: optimisticMessage.remetente_id,
+        conteudo: textToSave // Usa o conteúdo salvo
+    });
+
+    // 5. Lidar com erros.
+    if (error) {
+        console.error("Erro ao enviar mensagem:", error);
+        alert("Sua mensagem não pôde ser enviada. Tente novamente.");
+
+        // Se deu erro, remove a mensagem otimista da tela.
+        this.chatMessages = this.chatMessages.filter(
+            msg => msg.id !== optimisticMessage.id
+        );
+
+        // Devolve o texto ao campo de input para o usuário não perder.
+        this.newMessageText = textToSave;
+    }
+},
     subscribeToMessages() {
         if (this.messageSubscription) { supabase.removeChannel(this.messageSubscription); }
         this.messageSubscription = supabase.channel(`chat:${this.currentConversation.id}`)
