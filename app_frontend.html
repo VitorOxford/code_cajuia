@@ -1883,6 +1883,8 @@
     createApp({
         data() {
             return {
+                
+                messageSubscription: null,
                 supportView: 'selection', // Pode ser 'selection' ou 'chat'
                 chatMessages: [], // Será preenchido com dados do Supabase
                 currentConversation: null, // Guarda o ID e status da conversa atual
@@ -2168,67 +2170,113 @@
             this.stopAutoPlay();
         },
         methods: {
-            startChat(type) {
-    console.log('Iniciando chat com:', type);
-    this.supportView = 'chat';
-    // Aqui virá a lógica para iniciar com IA ou humano
-},
-openWhatsAppChat() {
-    const defaultMessage = "Olá! Preciso de ajuda com um pedido.";
-    window.location.href = `https://wa.me/${this.phoneNumber}?text=${encodeURIComponent(defaultMessage)}`;
-},
-            loadChatExamples() {
-        this.chatMessages = [
-            { id: 1, conversa_id: 'conv-1', remetente_id: 'atendente-ia', conteudo: 'Olá! Sou a assistente virtual da Cajuia. Como posso te ajudar hoje?', enviada_em: new Date(Date.now() - 60000 * 5).toISOString(), isEdited: false, replyingTo: null, attachment: null },
-            { id: 2, conversa_id: 'conv-1', remetente_id: 'user-123', conteudo: 'Oi, eu gostaria de saber o status do meu pedido #12345', enviada_em: new Date(Date.now() - 60000 * 4).toISOString(), isEdited: false, replyingTo: null, attachment: null },
-            { id: 3, conversa_id: 'conv-1', remetente_id: 'atendente-ia', conteudo: 'Claro! Só um momento enquanto verifico para você.', enviada_em: new Date(Date.now() - 60000 * 3).toISOString(), isEdited: false, replyingTo: null, attachment: null },
-            { id: 4, conversa_id: 'conv-1', remetente_id: 'atendente-ia', conteudo: 'Encontrei seu pedido. Ele já foi enviado!', enviada_em: new Date(Date.now() - 60000 * 2).toISOString(), isEdited: false, replyingTo: null, attachment: { type: 'image', url: 'https://placehold.co/600x400/E1F4CB/7A4E2D?text=Seu+Pedido', name: 'pedido.jpg' } },
-            { id: 5, conversa_id: 'conv-1', remetente_id: 'user-123', conteudo: 'Perfeito, obrigado!', enviada_em: new Date(Date.now() - 60000 * 1).toISOString(), isEdited: false, replyingTo: { author: 'Suporte Cajuia', content: 'Encontrei seu pedido. Ele já foi enviado!' } },
-            { id: 6, conversa_id: 'conv-1', remetente_id: 'user-123', conteudo: 'Ah, e aqui está o comprovante que faltava.', enviada_em: new Date(Date.now() - 30000).toISOString(), isEdited: true, replyingTo: null, attachment: { type: 'file', name: 'comprovante.pdf', size: '1.2 MB' } },
-        ];
-        this.$nextTick(() => this.scrollToBottom());
+          // --- MÉTODOS DO CHAT (VERSÃO FUNCIONAL) ---
+    async startChat(type) {
+        this.supportView = 'chat';
+        if (!this.supabaseUser) {
+            alert("Você precisa estar logado para iniciar o suporte.");
+            this.supportView = 'selection';
+            return;
+        }
+
+        try {
+            let { data: conversa, error } = await supabase
+                .from('conversas')
+                .select('*')
+                .eq('user_id', this.supabaseUser.id)
+                .in('status', ['aberto', 'atendido'])
+                .single();
+
+            if (error || !conversa) {
+                const { data: novaConversa, error: insertError } = await supabase
+                    .from('conversas')
+                    .insert({ user_id: this.supabaseUser.id, status: 'aberto' })
+                    .select()
+                    .single();
+                
+                if (insertError) throw insertError;
+                conversa = novaConversa;
+            }
+            
+            this.currentConversation = conversa;
+            await this.fetchMessages();
+            this.subscribeToMessages();
+
+        } catch (err) {
+            console.error("Erro ao iniciar o chat:", err);
+            alert("Não foi possível iniciar o chat. Tente novamente.");
+            this.supportView = 'selection';
+        }
     },
-    async initializeChat() {
-        console.log("Iniciando o chat...");
-        // Simula o ID do usuário para teste visual
-        if(!this.supabaseUser) this.supabaseUser = { id: 'user-123' };
-        this.loadChatExamples(); // Carrega exemplos para visualização
-        // Futuramente, aqui virá a lógica de criar/carregar conversa do Supabase
+
+    async fetchMessages() {
+        if (!this.currentConversation) return;
+        const { data, error } = await supabase
+            .from('mensagens')
+            .select('*')
+            .eq('conversa_id', this.currentConversation.id)
+            .order('enviada_em', { ascending: true });
+
+        if (error) {
+            console.error("Erro ao buscar mensagens:", error);
+            return;
+        }
+        this.chatMessages = data;
+        this.scrollToBottom();
     },
+
     async sendMessage() {
-        if (this.newMessageText.trim() === '') return;
-        console.log('Enviando mensagem:', this.newMessageText);
-        // Futuramente, aqui virá a lógica para inserir no Supabase
+        if (this.newMessageText.trim() === '' || !this.currentConversation) return;
+
+        const messageToSend = {
+            conversa_id: this.currentConversation.id,
+            remetente_id: this.supabaseUser.id,
+            conteudo: this.newMessageText,
+        };
+
+        const textToProcess = this.newMessageText;
         this.newMessageText = '';
         this.adjustTextareaHeight();
+
+        const { error } = await supabase.from('mensagens').insert(messageToSend);
+        
+        if (error) {
+            console.error("Erro ao enviar mensagem:", error);
+            this.newMessageText = textToProcess;
+            alert("Sua mensagem não pôde ser enviada. Tente novamente.");
+        }
     },
-    async requestHumanSupport() {
-        console.log('Solicitando atendimento humano...');
+
+    subscribeToMessages() {
+        if (this.messageSubscription) {
+            supabase.removeChannel(this.messageSubscription);
+        }
+        this.messageSubscription = supabase
+            .channel(`chat:${this.currentConversation.id}`)
+            .on('postgres_changes', 
+                { event: 'INSERT', schema: 'public', table: 'mensagens', filter: `conversa_id=eq.${this.currentConversation.id}` }, 
+                (payload) => {
+                    if (!this.chatMessages.some(msg => msg.id === payload.new.id)) {
+                        this.chatMessages.push(payload.new);
+                    }
+                    this.scrollToBottom();
+                }
+            )
+            .subscribe();
     },
-    openMessageMenu(message) {
-        console.log('Abrindo menu para a mensagem:', message.id);
+
+    openWhatsAppChat() {
+        const defaultMessage = "Olá! Preciso de ajuda com um pedido.";
+        window.location.href = `https://wa.me/${this.phoneNumber}?text=${encodeURIComponent(defaultMessage)}`;
     },
-    startReply(message) {
-        console.log('Respondendo à mensagem:', message.id);
-    },
-    startEdit(message) {
-        console.log('Editando a mensagem:', message.id);
-    },
-    deleteMessage(messageId) {
-        console.log('Apagando a mensagem:', messageId);
-    },
-    openAttachmentMenu() {
-        console.log('Abrindo menu de anexos...');
-    },
+
     formatMessageTime(timestamp) {
         return new Date(timestamp).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
     },
     scrollToBottom() {
         this.$nextTick(() => {
             const container = this.$refs.messagesContainer;
-            if (container) {
-                container.scrollTop = container.scrollHeight;
-            }
+            if (container) container.scrollTop = container.scrollHeight;
         });
     },
     adjustTextareaHeight() {
@@ -2240,581 +2288,511 @@ openWhatsAppChat() {
             }
         });
     },
-            selectShippingOption(option) {
+
+    // --- SEUS MÉTODOS ANTIGOS (COLE O BLOCO ACIMA ANTES DELES) ---
+    selectShippingOption(option) {
         this.selectedShipping = option;
         this.valorFrete = parseFloat(option.price);
         this.showShippingModal = false;
         this.showProfileNotification(`Frete selecionado: ${option.company.name} (${option.name}) - ${this.formatCurrency(this.valorFrete)}`);
     },
-            openSearchOverlay() {
+    openSearchOverlay() {
         this.isSearchOverlayVisible = true;
     },
     closeSearchOverlay() {
         this.isSearchOverlayVisible = false;
     },
-            getActiveProductImage(product) {
-        if (!product) {
-            return ''; // Retorna uma string vazia se o produto for inválido
-        }
-        // Prioriza a primeira imagem de variação, se ela existir e não for uma string vazia
+    getActiveProductImage(product) {
+        if (!product) return '';
         if (product.imagensVariacoes && product.imagensVariacoes.length > 0 && product.imagensVariacoes[0]) {
             return product.imagensVariacoes[0];
         }
-        // Caso contrário, retorna a imagem principal
         return product.imagem;
     },
-            // Lógica do Carrossel movida para os methods
-            startAutoPlay() {
-                const bannerCount = this.personalizacao.heroBanners.length;
-                if (bannerCount <= 1) return;
-                this.stopAutoPlay();
-                this.autoPlayInterval = setInterval(() => {
-                    this.currentSlide = (this.currentSlide + 1) % bannerCount;
-                }, 5000);
-            },
-            stopAutoPlay() {
-                clearInterval(this.autoPlayInterval);
-                this.autoPlayInterval = null;
-            },
-            goToSlide(index) {
-                this.currentSlide = index;
-                this.stopAutoPlay();
-                this.startAutoPlay();
-            },
-            async fetchUserData() {
-    if (!this.supabaseUser) return;
-    try {
-        const { data: cartData, error: cartError } = await supabase
-            .from('user_cart')
-            .select('*')
-            .eq('user_id', this.supabaseUser.id);
-        if (cartError) throw cartError;
-        
-        // CORREÇÃO: Removemos a tradução para 'productId'.
-        // Agora a função simplesmente carrega os dados como estão no banco.
-        this.cart = cartData.map(item => ({
-            ...item,
-            cartItemId: item.id,
-            selected: true 
-        }));
-
-        const { data: wishlistData, error: wishlistError } = await supabase
-            .from('user_wishlist')
-            .select('product_id')
-            .eq('user_id', this.supabaseUser.id);
-        if (wishlistError) throw wishlistError;
-        this.wishlist = wishlistData.map(item => item.product_id);
-
-    } catch (error) {
-        console.error('Erro ao buscar dados do usuário:', error.message);
-    }
-},
-
+    startAutoPlay() {
+        const bannerCount = this.personalizacao.heroBanners.length;
+        if (bannerCount <= 1) return;
+        this.stopAutoPlay();
+        this.autoPlayInterval = setInterval(() => {
+            this.currentSlide = (this.currentSlide + 1) % bannerCount;
+        }, 5000);
+    },
+    stopAutoPlay() {
+        clearInterval(this.autoPlayInterval);
+        this.autoPlayInterval = null;
+    },
+    goToSlide(index) {
+        this.currentSlide = index;
+        this.stopAutoPlay();
+        this.startAutoPlay();
+    },
+    async fetchUserData() {
+        if (!this.supabaseUser) return;
+        try {
+            const { data: cartData, error: cartError } = await supabase
+                .from('user_cart')
+                .select('*')
+                .eq('user_id', this.supabaseUser.id);
+            if (cartError) throw cartError;
             
-            async calcularFrete() {
-    if (!this.userProfile.cep) {
-        alert("Informe o CEP no perfil.");
-        return;
-    }
-    const cepDestino = this.userProfile.cep;
-    const selectedItems = this.cart.filter(item => item.selected).map(item => {
-        const product = this.getProductById(item.product_id);
-        return {
-            ...item,
-            peso: product.peso,
-            comprimento: product.comprimento,
-            altura: product.altura,
-            largura: product.largura,
-            valor: product.valor
-        };
-    });
-    try {
-        const response = await fetch('https://cajuia.onrender.com/calcular-frete', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                cepDestino,
-                itens: selectedItems
-            })
-        });
-        const result = await response.json();
-        if (Array.isArray(result)) {
-            this.shippingOptions = result.filter(opt => !opt.error);
-            this.selectedShipping = null; // O cliente vai escolher!
-            this.showShippingModal = true;
-        } else {
-            alert('Erro ao calcular frete.');
+            this.cart = cartData.map(item => ({
+                ...item,
+                cartItemId: item.id,
+                selected: true 
+            }));
+
+            const { data: wishlistData, error: wishlistError } = await supabase
+                .from('user_wishlist')
+                .select('product_id')
+                .eq('user_id', this.supabaseUser.id);
+            if (wishlistError) throw wishlistError;
+            this.wishlist = wishlistData.map(item => item.product_id);
+
+        } catch (error) {
+            console.error('Erro ao buscar dados do usuário:', error.message);
         }
-    } catch (e) {
-        alert('Erro ao conectar ao servidor de frete.');
-    }
-},
-            // Demais métodos
-            formatCurrency(value) { return typeof value !== 'number' ? '' : value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }); },
-            changeView(view) {
-                this.currentView = view;
-                this.selectedProduct = null;
-                if (view === 'profile') {
-                    this.profileSubView = 'main';
-                }
-                window.scrollTo(0, 0);
-            },
-            showProductDetail(product) {
-                this.selectedProduct = product;
-                this.selection = { size: null, color: null, quantity: 1 };
-                this.activeImageIndex = 0;
-            },
-            closeProductDetail() { this.selectedProduct = null; },
-            getProductById(id) { return this.products.find(p => p.id === id) || { preco: 0, nome: 'Produto não encontrado', imagem: '', tipo: '' }; },
-            getCategoryNameById(id) {
-                const category = this.categories.find(c => c.id === id);
-                return category ? category.nome : '';
-            },
-            async updateCartQuantity(cartItemId, change) {
-    if (!this.supabaseUser) return;
-
-    const item = this.cart.find(i => i.cartItemId === cartItemId);
-    if (!item) return;
-
-    const newQuantity = item.quantity + change;
-
-    try {
-        if (newQuantity <= 0) {
-            // Se a quantidade for zero ou menos, remove o item
-            await this.removeFromCart(cartItemId);
-        } else {
-            // Se não, apenas atualiza a quantidade no banco
+    },
+    async calcularFrete() {
+        if (!this.userProfile.cep) {
+            alert("Informe o CEP no perfil.");
+            return;
+        }
+        const cepDestino = this.userProfile.cep;
+        const selectedItems = this.cart.filter(item => item.selected).map(item => {
+            const product = this.getProductById(item.product_id);
+            return {
+                ...item,
+                peso: product.peso,
+                comprimento: product.comprimento,
+                altura: product.altura,
+                largura: product.largura,
+                valor: product.valor
+            };
+        });
+        try {
+            const response = await fetch('https://cajuia.onrender.com/calcular-frete', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    cepDestino,
+                    itens: selectedItems
+                })
+            });
+            const result = await response.json();
+            if (Array.isArray(result)) {
+                this.shippingOptions = result.filter(opt => !opt.error);
+                this.selectedShipping = null;
+                this.showShippingModal = true;
+            } else {
+                alert('Erro ao calcular frete.');
+            }
+        } catch (e) {
+            alert('Erro ao conectar ao servidor de frete.');
+        }
+    },
+    formatCurrency(value) { return typeof value !== 'number' ? '' : value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }); },
+    changeView(view) {
+        this.currentView = view;
+        this.selectedProduct = null;
+        if (view === 'profile') {
+            this.profileSubView = 'main';
+        }
+        window.scrollTo(0, 0);
+    },
+    showProductDetail(product) {
+        this.selectedProduct = product;
+        this.selection = { size: null, color: null, quantity: 1 };
+        this.activeImageIndex = 0;
+    },
+    closeProductDetail() { this.selectedProduct = null; },
+    getProductById(id) { return this.products.find(p => p.id === id) || { preco: 0, nome: 'Produto não encontrado', imagem: '', tipo: '' }; },
+    getCategoryNameById(id) {
+        const category = this.categories.find(c => c.id === id);
+        return category ? category.nome : '';
+    },
+    async updateCartQuantity(cartItemId, change) {
+        if (!this.supabaseUser) return;
+        const item = this.cart.find(i => i.cartItemId === cartItemId);
+        if (!item) return;
+        const newQuantity = item.quantity + change;
+        try {
+            if (newQuantity <= 0) {
+                await this.removeFromCart(cartItemId);
+            } else {
+                const { error } = await supabase.from('user_cart')
+                    .update({ quantity: newQuantity })
+                    .eq('id', cartItemId);
+                if (error) throw error;
+                await this.fetchUserData();
+            }
+        } catch (error) {
+            console.error("Erro ao atualizar quantidade:", error.message);
+        }
+    },
+    async removeFromCart(cartItemId) {
+        if (!this.supabaseUser) return;
+        try {
             const { error } = await supabase.from('user_cart')
-                .update({ quantity: newQuantity })
+                .delete()
                 .eq('id', cartItemId);
             if (error) throw error;
-
-            // Atualiza o carrinho local para refletir na UI
             await this.fetchUserData();
+        } catch (error) {
+            console.error("Erro ao remover item do carrinho:", error.message);
         }
-    } catch (error) {
-        console.error("Erro ao atualizar quantidade:", error.message);
-    }
-},
-            async removeFromCart(cartItemId) {
-    if (!this.supabaseUser) return;
-    try {
-        // Deleta o item do banco de dados usando seu ID único
-        const { error } = await supabase.from('user_cart')
-            .delete()
-            .eq('id', cartItemId); // O cartItemId agora é o ID da linha na tabela
-        if (error) throw error;
-
-        // Atualiza o carrinho local para refletir na UI
-        await this.fetchUserData();
-    } catch (error) {
-        console.error("Erro ao remover item do carrinho:", error.message);
-    }
-},
-            async addToCart() {
-    if (!this.isSelectionValid || !this.supabaseUser) return;
-
-    try {
-        // Insere o novo item no banco de dados
-        const { error } = await supabase.from('user_cart').insert({
-            user_id: this.supabaseUser.id,
-            product_id: this.selectedProduct.id,
-            quantity: this.selection.quantity,
-            size: this.selection.size,
-            color: this.selection.color
-        });
-        if (error) throw error;
-
-        // Atualiza os dados locais para refletir a mudança na UI
-        await this.fetchUserData();
-        this.closeProductDetail();
-        this.changeView('cart');
-
-    } catch (error) {
-        // Nota: O ideal seria tratar o caso de item duplicado, mas para simplificar,
-        // vamos apenas inserir. Você pode adicionar essa lógica depois.
-        console.error('Erro ao adicionar ao carrinho:', error.message);
-    }
-},
-            
-     async finalizePurchase() {
-    // 1. Validações de perfil e frete (continuam as mesmas)
-    if (!this.userProfile.cep || !this.valorFrete || this.valorFrete <= 0) {
-        alert("Por favor, calcule e selecione uma opção de frete antes de finalizar a compra.");
-        return;
-    }
-    if (!this.userProfile.logradouro || !this.userProfile.numero || !this.userProfile.bairro || !this.userProfile.cidade || !this.userProfile.uf) {
-        alert("Endereço incompleto! Por favor, vá ao seu perfil e preencha todos os campos do seu endereço.");
-        this.changeView('profile');
-        return;
-    }
-    if (!this.userProfile.telefone || this.userProfile.telefone.replace(/\D/g, '').length < 10) {
-        alert("Telefone inválido! Por favor, vá ao seu perfil e preencha seu número de telefone com DDD.");
-        this.changeView('profile');
-        return;
-    }
-    if (!this.userProfile.cnpj) {
-        alert("CPF/CNPJ inválido! Por favor, vá ao seu perfil e preencha seu documento.");
-        this.changeView('profile');
-        return;
-    }
-
-    // 2. Validação e montagem dos itens (continua o mesmo)
-    const selectedItems = this.cart.filter(item => item.selected);
-    if (selectedItems.length === 0) {
-        alert("Por favor, selecione ao menos um item para finalizar a compra.");
-        return;
-    }
-    const validItemsToSend = selectedItems.map(item => {
-        const product = this.getProductById(item.product_id);
-        if (!product || !product.id) return null;
-        return { nome: product.nome, quantidade: item.quantity, preco: this.getActiveProductPrice(product) };
-    }).filter(item => item !== null);
-
-    if (validItemsToSend.length === 0) {
-        alert("Não foi possível processar os itens do carrinho.");
-        return;
-    }
-
-    // 3. Envio dos dados para o backend (continua o mesmo)
-    try {
-        const response = await fetch('https://cajuia.onrender.com/criar-link-pagarme', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                cliente: this.userProfile,
-                itens: validItemsToSend,
-                valor_frete: this.valorFrete
-            })
-        });
-        
-        const result = await response.json();
-
-        // 4. Ação com base na resposta
-        if (result.url) {
-            // Salva o pedido no Supabase
-            await supabase.from('pedidos').insert([{
+    },
+    async addToCart() {
+        if (!this.isSelectionValid || !this.supabaseUser) return;
+        try {
+            const { error } = await supabase.from('user_cart').insert({
                 user_id: this.supabaseUser.id,
-                valor_total: this.cartTotalPrice + this.valorFrete,
-                itens: validItemsToSend,
-                dados_entrega: this.userProfile,
-                status: 'pendente'
-            }]);
-
-            // ===== ALTERAÇÃO IMPORTANTE AQUI =====
-            // Em vez de redirecionar, mostramos o modal com a URL do checkout
-            this.checkoutUrl = result.url;
-            this.showCheckoutModal = true;
-            // =====================================
-
-        } else {
-            const errorMessage = result.error?.message || 'Erro ao gerar link de pagamento.';
-            alert(errorMessage);
-            console.error('Erro retornado pelo backend:', result);
-        }
-    } catch (e) {
-        console.error('Erro de conexão:', e);
-        alert('Erro ao conectar ao servidor de pagamento.');
-    }
-},
-getActiveProductPrice(product) {
-    if (!product) {
-        return 0; // Retorna 0 se o produto não for encontrado
-    }
-    // Verifica se a promoção está ativa e se há um preço promocional válido
-    if (product.precoPromocionalAtivo && typeof product.precoPromocional === 'number') {
-        return product.precoPromocional;
-    }
-    // Caso contrário, retorna o preço base
-    return product.preco;
-},
-sendOrderToWhatsApp() {
-    const selectedItems = this.cart.filter(item => item.selected);
-    if (selectedItems.length === 0) {
-        alert("Por favor, selecione ao menos um item para finalizar a compra.");
-        return;
-    }
-
-    let clientDataMessage = "👤 *DADOS DO CLIENTE*\n";
-    clientDataMessage += `*Nome:* ${this.userProfile.nome || 'Não informado'}\n`;
-    clientDataMessage += `*E-mail:* ${this.userProfile.email || 'Não informado'}\n`;
-    clientDataMessage += `*Telefone:* ${this.userProfile.telefone || 'Não informado'}\n`;
-    if(this.userProfile.empresa) clientDataMessage += `*Empresa:* ${this.userProfile.empresa}\n`;
-    if(this.userProfile.cnpj) clientDataMessage += `*CNPJ:* ${this.userProfile.cnpj}\n`;
-    if(this.userProfile.atuacao) clientDataMessage += `*Área de Atuação:* ${this.userProfile.atuacao}\n`;
-    if(this.userProfile.endereco) clientDataMessage += `*Endereço:* ${this.userProfile.endereco}\n`;
-    clientDataMessage += "-----------------------------------\n\n";
-
-    let orderMessage = "🛍️ *RESUMO DO PEDIDO*\nOlá! ✨ Gostaria de fazer um pedido com os seguintes itens:\n\n";
-    selectedItems.forEach(item => {
-        const product = this.getProductById(item.product_id);
-        if (product) {
-            const subtotal = product.preco * item.quantity;
-            orderMessage += `▪️ *${product.nome}*\n`;
-            if (item.size) orderMessage += `   Tamanho: ${item.size}\n`;
-            if (item.color) orderMessage += `   Cor: ${item.color}\n`;
-            orderMessage += `   Qtd: ${item.quantity}\n`;
-            orderMessage += `   Subtotal: ${this.formatCurrency(subtotal)}\n\n`;
-        }
-    });
-    orderMessage += "-----------------------------------\n";
-    orderMessage += `*Valor Total: ${this.formatCurrency(this.cartTotalPrice)}*\n\n`;
-    orderMessage += "Aguardo seu contato para finalizar. Obrigada!";
-    const finalMessage = clientDataMessage + orderMessage;
-    window.location.href = `https://wa.me/${this.phoneNumber}?text=${encodeURIComponent(finalMessage)}`;
-},
-            isInWishlist(product_id) { return this.wishlist.includes(product_id); },
-            async toggleWishlist(product) {
-    if (!this.supabaseUser) return;
-
-    const isAlreadyInWishlist = this.wishlist.includes(product.id);
-
-    try {
-        if (isAlreadyInWishlist) {
-            // Se já está na lista, remove do banco de dados
-            const { error } = await supabase.from('user_wishlist')
-                .delete()
-                .eq('user_id', this.supabaseUser.id)
-                .eq('product_id', product.id);
-            if (error) throw error;
-        } else {
-            // Se não está, insere no banco de dados
-            const { error } = await supabase.from('user_wishlist').insert({
-                user_id: this.supabaseUser.id,
-                product_id: product.id
+                product_id: this.selectedProduct.id,
+                quantity: this.selection.quantity,
+                size: this.selection.size,
+                color: this.selection.color
             });
             if (error) throw error;
+            await this.fetchUserData();
+            this.closeProductDetail();
+            this.changeView('cart');
+        } catch (error) {
+            console.error('Erro ao adicionar ao carrinho:', error.message);
         }
-        // Atualiza a lista local para refletir na UI
-        await this.fetchUserData();
-    } catch (error) {
-        console.error("Erro ao atualizar favoritos:", error.message);
-    }
-},
-    async addWishlistToCart(product) {
-    if (!this.supabaseUser) return;
+    },
+    async finalizePurchase() {
+        if (!this.userProfile.cep || !this.valorFrete || this.valorFrete <= 0) {
+            alert("Por favor, calcule e selecione uma opção de frete antes de finalizar a compra.");
+            return;
+        }
+        if (!this.userProfile.logradouro || !this.userProfile.numero || !this.userProfile.bairro || !this.userProfile.cidade || !this.userProfile.uf) {
+            alert("Endereço incompleto! Por favor, vá ao seu perfil e preencha todos os campos do seu endereço.");
+            this.changeView('profile');
+            return;
+        }
+        if (!this.userProfile.telefone || this.userProfile.telefone.replace(/\D/g, '').length < 10) {
+            alert("Telefone inválido! Por favor, vá ao seu perfil e preencha seu número de telefone com DDD.");
+            this.changeView('profile');
+            return;
+        }
+        if (!this.userProfile.cnpj) {
+            alert("CPF/CNPJ inválido! Por favor, vá ao seu perfil e preencha seu documento.");
+            this.changeView('profile');
+            return;
+        }
+        const selectedItems = this.cart.filter(item => item.selected);
+        if (selectedItems.length === 0) {
+            alert("Por favor, selecione ao menos um item para finalizar a compra.");
+            return;
+        }
+        const validItemsToSend = selectedItems.map(item => {
+            const product = this.getProductById(item.product_id);
+            if (!product || !product.id) return null;
+            return { nome: product.nome, quantidade: item.quantity, preco: this.getActiveProductPrice(product) };
+        }).filter(item => item !== null);
 
-    try {
-        // Passo 1: Adiciona o produto à tabela 'user_cart'
-        const { error: cartError } = await supabase.from('user_cart').insert({
-            user_id: this.supabaseUser.id,
-            product_id: product.id,
-            quantity: 1, // Sempre adiciona 1 unidade
-            // Adicione size/color se o produto tiver variações padrão, caso contrário null
-            size: null, 
-            color: null
-        });
-
-        if (cartError) {
-            // Trata o caso de o item já existir no carrinho, se houver essa restrição no banco
-            if (cartError.code === '23505') { // Código para violação de chave única (item duplicado)
-                 this.showProfileNotification('Este item já está no seu carrinho.', 'error');
+        if (validItemsToSend.length === 0) {
+            alert("Não foi possível processar os itens do carrinho.");
+            return;
+        }
+        try {
+            const response = await fetch('https://cajuia.onrender.com/criar-link-pagarme', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    cliente: this.userProfile,
+                    itens: validItemsToSend,
+                    valor_frete: this.valorFrete
+                })
+            });
+            
+            const result = await response.json();
+            if (result.url) {
+                await supabase.from('pedidos').insert([{
+                    user_id: this.supabaseUser.id,
+                    valor_total: this.cartTotalPrice + this.valorFrete,
+                    itens: validItemsToSend,
+                    dados_entrega: this.userProfile,
+                    status: 'pendente'
+                }]);
+                this.checkoutUrl = result.url;
+                this.showCheckoutModal = true;
             } else {
-                throw cartError; // Lança outros erros do carrinho
+                const errorMessage = result.error?.message || 'Erro ao gerar link de pagamento.';
+                alert(errorMessage);
+                console.error('Erro retornado pelo backend:', result);
             }
-            return; // Para a execução se o item já está no carrinho ou deu erro
+        } catch (e) {
+            console.error('Erro de conexão:', e);
+            alert('Erro ao conectar ao servidor de pagamento.');
         }
-
-        // Passo 2: Remove o produto da tabela 'user_wishlist'
-        const { error: wishlistError } = await supabase.from('user_wishlist')
-            .delete()
-            .match({ user_id: this.supabaseUser.id, product_id: product.id });
-
-        if (wishlistError) throw wishlistError;
-
-        // Passo 3: Atualiza os dados locais (carrinho e wishlist) de uma só vez
-        await this.fetchUserData();
-
-        // Passo 4: Fornece feedback ao usuário e navega para o carrinho
-        this.showProfileNotification(`'${product.nome}' foi adicionado ao carrinho!`, 'success');
-        this.changeView('cart');
-
-    } catch (error) {
-        console.error('Erro ao mover item da wishlist para o carrinho:', error.message);
-        this.showProfileNotification('Ocorreu um erro. Tente novamente.', 'error');
-    }
-},
-            toggleCartItemSelection(cartItemId) {
-                const item = this.cart.find(i => i.cartItemId === cartItemId);
-                if (item) item.selected = !item.selected;
-            },
-            handleTouchStart(cartItemId, event) {
-                Object.keys(this.swipeState).forEach(id => {
-                    if (id != cartItemId) {
-                         this.swipeState[id].translateX = 0;
-                         this.swipeState[id].isSwiped = false;
-                    }
+    },
+    getActiveProductPrice(product) {
+        if (!product) return 0;
+        if (product.precoPromocionalAtivo && typeof product.precoPromocional === 'number') {
+            return product.precoPromocional;
+        }
+        return product.preco;
+    },
+    sendOrderToWhatsApp() {
+        const selectedItems = this.cart.filter(item => item.selected);
+        if (selectedItems.length === 0) {
+            alert("Por favor, selecione ao menos um item para finalizar a compra.");
+            return;
+        }
+        let clientDataMessage = "👤 *DADOS DO CLIENTE*\n";
+        clientDataMessage += `*Nome:* ${this.userProfile.nome || 'Não informado'}\n`;
+        clientDataMessage += `*E-mail:* ${this.userProfile.email || 'Não informado'}\n`;
+        clientDataMessage += `*Telefone:* ${this.userProfile.telefone || 'Não informado'}\n`;
+        if(this.userProfile.empresa) clientDataMessage += `*Empresa:* ${this.userProfile.empresa}\n`;
+        if(this.userProfile.cnpj) clientDataMessage += `*CNPJ:* ${this.userProfile.cnpj}\n`;
+        if(this.userProfile.atuacao) clientDataMessage += `*Área de Atuação:* ${this.userProfile.atuacao}\n`;
+        if(this.userProfile.endereco) clientDataMessage += `*Endereço:* ${this.userProfile.endereco}\n`;
+        clientDataMessage += "-----------------------------------\n\n";
+        let orderMessage = "🛍️ *RESUMO DO PEDIDO*\nOlá! ✨ Gostaria de fazer um pedido com os seguintes itens:\n\n";
+        selectedItems.forEach(item => {
+            const product = this.getProductById(item.product_id);
+            if (product) {
+                const subtotal = product.preco * item.quantity;
+                orderMessage += `▪️ *${product.nome}*\n`;
+                if (item.size) orderMessage += `    Tamanho: ${item.size}\n`;
+                if (item.color) orderMessage += `    Cor: ${item.color}\n`;
+                orderMessage += `    Qtd: ${item.quantity}\n`;
+                orderMessage += `    Subtotal: ${this.formatCurrency(subtotal)}\n\n`;
+            }
+        });
+        orderMessage += "-----------------------------------\n";
+        orderMessage += `*Valor Total: ${this.formatCurrency(this.cartTotalPrice)}*\n\n`;
+        orderMessage += "Aguardo seu contato para finalizar. Obrigada!";
+        const finalMessage = clientDataMessage + orderMessage;
+        window.location.href = `https://wa.me/${this.phoneNumber}?text=${encodeURIComponent(finalMessage)}`;
+    },
+    isInWishlist(product_id) { return this.wishlist.includes(product_id); },
+    async toggleWishlist(product) {
+        if (!this.supabaseUser) return;
+        const isAlreadyInWishlist = this.wishlist.includes(product.id);
+        try {
+            if (isAlreadyInWishlist) {
+                const { error } = await supabase.from('user_wishlist')
+                    .delete()
+                    .eq('user_id', this.supabaseUser.id)
+                    .eq('product_id', product.id);
+                if (error) throw error;
+            } else {
+                const { error } = await supabase.from('user_wishlist').insert({
+                    user_id: this.supabaseUser.id,
+                    product_id: product.id
                 });
-                this.swipeState[cartItemId] = { startX: event.touches[0].clientX, currentX: event.touches[0].clientX, translateX: 0, isSwiping: false, isSwiped: false };
-            },
-            handleTouchMove(cartItemId, event) {
-                if (!this.swipeState[cartItemId]) return;
-                const state = this.swipeState[cartItemId];
-                state.currentX = event.touches[0].clientX;
-                let deltaX = state.currentX - state.startX;
-                if (deltaX > 0) deltaX = 0;
-                if (deltaX < -95) deltaX = -95;
-                state.translateX = deltaX;
-                state.isSwiping = true;
-            },
-            handleTouchEnd(cartItemId) {
-                 if (!this.swipeState[cartItemId]) return;
-                 const state = this.swipeState[cartItemId];
-                 const threshold = -50;
-                 if (state.translateX < threshold) {
-                     state.translateX = -90;
-                     state.isSwiped = true;
-                 } else {
-                     state.translateX = 0;
-                     state.isSwiped = false;
-                 }
-                 state.isSwiping = false;
-            },
-            getSwipeStyle(cartItemId) {
-                const state = this.swipeState[cartItemId];
-                if (state) {
-                    const transition = state.isSwiping ? 'none' : 'transform 0.3s ease';
-                    return { transform: `translateX(${state.translateX}px)`, transition: transition, };
+                if (error) throw error;
+            }
+            await this.fetchUserData();
+        } catch (error) {
+            console.error("Erro ao atualizar favoritos:", error.message);
+        }
+    },
+    async addWishlistToCart(product) {
+        if (!this.supabaseUser) return;
+        try {
+            const { error: cartError } = await supabase.from('user_cart').insert({
+                user_id: this.supabaseUser.id,
+                product_id: product.id,
+                quantity: 1,
+                size: null, 
+                color: null
+            });
+            if (cartError) {
+                if (cartError.code === '23505') {
+                    this.showProfileNotification('Este item já está no seu carrinho.', 'error');
+                } else {
+                    throw cartError;
                 }
-                return {};
-            },
-            async login() {
-                this.authLoading = true;
-                this.authError = '';
-                const { email, password } = this.loginForm;
-                const { error } = await supabase.auth.signInWithPassword({ email, password });
-                if (error) {
-                    this.authError = error.message;
-                }
-                this.authLoading = false;
-            },
-            async register() {
-                this.authLoading = true;
-                this.authError = '';
-                const { nome, email, password } = this.registerForm;
-                const { data, error } = await supabase.auth.signUp({ email, password });
-                if (error) {
-                    this.authError = error.message;
-                    this.authLoading = false;
-                    return;
-                }
-                // Cria perfil na tabela profiles
-                await supabase.from('profiles').upsert({
-                    id: data.user.id,
-                    email,
-                    nome
-                });
-                this.authView = 'login';
-                this.authLoading = false;
-                this.showProfileNotification('Cadastro realizado! Faça login.');
-            },
-            async fetchProfile() {
-                if (!this.supabaseUser) return;
-    const { data, error } = await supabase.from('profiles').select('*').eq('id', this.supabaseUser.id).single();
-    if (data) {
-        this.userProfile = {
-            fotoUrl: data.foto_url || '',
-            nome: data.nome || '',
-            email: data.email || '',
-            telefone: data.telefone || '',
-            empresa: data.empresa || '',
-            cnpj: data.cnpj || '',
-            atuacao: data.atuacao || '',
-            // ATUALIZADO:
-            logradouro: data.logradouro || '',
-            numero: data.numero || '',
-            bairro: data.bairro || '',
-            cidade: data.cidade || '',
-            uf: data.uf || '',
-            cep: data.cep || ''
+                return;
+            }
+            const { error: wishlistError } = await supabase.from('user_wishlist')
+                .delete()
+                .match({ user_id: this.supabaseUser.id, product_id: product.id });
+            if (wishlistError) throw wishlistError;
+            await this.fetchUserData();
+            this.showProfileNotification(`'${product.nome}' foi adicionado ao carrinho!`, 'success');
+            this.changeView('cart');
+        } catch (error) {
+            console.error('Erro ao mover item da wishlist para o carrinho:', error.message);
+            this.showProfileNotification('Ocorreu um erro. Tente novamente.', 'error');
+        }
+    },
+    toggleCartItemSelection(cartItemId) {
+        const item = this.cart.find(i => i.cartItemId === cartItemId);
+        if (item) item.selected = !item.selected;
+    },
+    handleTouchStart(cartItemId, event) {
+        Object.keys(this.swipeState).forEach(id => {
+            if (id != cartItemId) {
+                this.swipeState[id].translateX = 0;
+                this.swipeState[id].isSwiped = false;
+            }
+        });
+        this.swipeState[cartItemId] = { startX: event.touches[0].clientX, currentX: event.touches[0].clientX, translateX: 0, isSwiping: false, isSwiped: false };
+    },
+    handleTouchMove(cartItemId, event) {
+        if (!this.swipeState[cartItemId]) return;
+        const state = this.swipeState[cartItemId];
+        state.currentX = event.touches[0].clientX;
+        let deltaX = state.currentX - state.startX;
+        if (deltaX > 0) deltaX = 0;
+        if (deltaX < -95) deltaX = -95;
+        state.translateX = deltaX;
+        state.isSwiping = true;
+    },
+    handleTouchEnd(cartItemId) {
+        if (!this.swipeState[cartItemId]) return;
+        const state = this.swipeState[cartItemId];
+        const threshold = -50;
+        if (state.translateX < threshold) {
+            state.translateX = -90;
+            state.isSwiped = true;
+        } else {
+            state.translateX = 0;
+            state.isSwiped = false;
+        }
+        state.isSwiping = false;
+    },
+    getSwipeStyle(cartItemId) {
+        const state = this.swipeState[cartItemId];
+        if (state) {
+            const transition = state.isSwiping ? 'none' : 'transform 0.3s ease';
+            return { transform: `translateX(${state.translateX}px)`, transition: transition, };
+        }
+        return {};
+    },
+    async login() {
+        this.authLoading = true;
+        this.authError = '';
+        const { email, password } = this.loginForm;
+        const { error } = await supabase.auth.signInWithPassword({ email, password });
+        if (error) {
+            this.authError = error.message;
+        }
+        this.authLoading = false;
+    },
+    async register() {
+        this.authLoading = true;
+        this.authError = '';
+        const { nome, email, password } = this.registerForm;
+        const { data, error } = await supabase.auth.signUp({ email, password });
+        if (error) {
+            this.authError = error.message;
+            this.authLoading = false;
+            return;
+        }
+        await supabase.from('profiles').upsert({
+            id: data.user.id,
+            email,
+            nome
+        });
+        this.authView = 'login';
+        this.authLoading = false;
+        this.showProfileNotification('Cadastro realizado! Faça login.');
+    },
+    async fetchProfile() {
+        if (!this.supabaseUser) return;
+        const { data, error } = await supabase.from('profiles').select('*').eq('id', this.supabaseUser.id).single();
+        if (data) {
+            this.userProfile = {
+                fotoUrl: data.foto_url || '',
+                nome: data.nome || '',
+                email: data.email || '',
+                telefone: data.telefone || '',
+                empresa: data.empresa || '',
+                cnpj: data.cnpj || '',
+                atuacao: data.atuacao || '',
+                logradouro: data.logradouro || '',
+                numero: data.numero || '',
+                bairro: data.bairro || '',
+                cidade: data.cidade || '',
+                uf: data.uf || '',
+                cep: data.cep || ''
+            };
+        } else {
+            await supabase.from('profiles').upsert({
+                id: this.supabaseUser.id,
+                email: this.supabaseUser.email,
+                nome: '',
+                foto_url: '',
+                telefone: '',
+                empresa: '',
+                cnpj: '',
+                atuacao: '',
+                endereco: '',
+                cep: ''
+            });
+            await this.fetchProfile();
+        }
+    },
+    async saveProfile() {
+        if (!this.supabaseUser) return;
+        await supabase.from('profiles').upsert({
+            id: this.supabaseUser.id,
+            foto_url: this.userProfile.fotoUrl,
+            nome: this.userProfile.nome,
+            email: this.userProfile.email,
+            telefone: this.userProfile.telefone,
+            empresa: this.userProfile.empresa,
+            cnpj: this.userProfile.cnpj,
+            atuacao: this.userProfile.atuacao,
+            cep: this.userProfile.cep,
+            logradouro: this.userProfile.logradouro,
+            numero: this.userProfile.numero,
+            bairro: this.userProfile.bairro,
+            cidade: this.userProfile.cidade,
+            uf: this.userProfile.uf
+        });
+        this.showProfileNotification('Perfil salvo com sucesso!');
+        this.profileSubView = 'main';
+    },
+    async logout() {
+        await supabase.auth.signOut();
+        localStorage.removeItem('cajuia-user-profile');
+        localStorage.removeItem('cajuia-cart');
+        localStorage.removeItem('cajuia-wishlist');
+        window.location.reload();
+    },
+    showProfileNotification(message, type = 'success', duration = 3000) {
+        this.profileNotification.message = message;
+        this.profileNotification.type = type;
+        this.profileNotification.show = true;
+        setTimeout(() => {
+            this.profileNotification.show = false;
+        }, duration);
+    },
+    triggerFileUpload() {
+        this.$refs.fileInput.click();
+    },
+    handlePictureUpload(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            this.userProfile.fotoUrl = e.target.result;
         };
-    }  else {
-                    // Se não existe perfil, cria um novo registro mínimo
-                    await supabase.from('profiles').upsert({
-                        id: this.supabaseUser.id,
-                        email: this.supabaseUser.email,
-                        nome: '',
-                        foto_url: '',
-                        telefone: '',
-                        empresa: '',
-                        cnpj: '',
-                        atuacao: '',
-                        endereco: '',
-                        cep: ''
-                    });
-                    // Busca novamente para garantir que userProfile seja preenchido
-                    await this.fetchProfile();
-                }
-            },
-            async saveProfile() {
-    if (!this.supabaseUser) return;
-    await supabase.from('profiles').upsert({
-        id: this.supabaseUser.id,
-        foto_url: this.userProfile.fotoUrl,
-        nome: this.userProfile.nome,
-        email: this.userProfile.email,
-        telefone: this.userProfile.telefone,
-        empresa: this.userProfile.empresa,
-        cnpj: this.userProfile.cnpj,
-        atuacao: this.userProfile.atuacao,
-        cep: this.userProfile.cep,
-        // ATUALIZADO:
-        logradouro: this.userProfile.logradouro,
-        numero: this.userProfile.numero,
-        bairro: this.userProfile.bairro,
-        cidade: this.userProfile.cidade,
-        uf: this.userProfile.uf
-    });
-    this.showProfileNotification('Perfil salvo com sucesso!');
-    this.profileSubView = 'main';
-},
-            async logout() {
-                await supabase.auth.signOut();
-                localStorage.removeItem('cajuia-user-profile');
-                localStorage.removeItem('cajuia-cart');
-                localStorage.removeItem('cajuia-wishlist');
-                window.location.reload();
-            },
-            showProfileNotification(message, type = 'success', duration = 3000) {
-                this.profileNotification.message = message;
-                this.profileNotification.type = type;
-                this.profileNotification.show = true;
-                setTimeout(() => {
-                    this.profileNotification.show = false;
-                }, duration);
-            },
-            triggerFileUpload() {
-                this.$refs.fileInput.click();
-            },
-            handlePictureUpload(event) {
-                const file = event.target.files[0];
-                if (!file) return;
-                const reader = new FileReader();
-                reader.onload = (e) => {
-                    this.userProfile.fotoUrl = e.target.result;
-                };
-                reader.readAsDataURL(file);
-            },
-            showWipAlert() {
-                alert('Funcionalidade em desenvolvimento.');
-            },
-            // Métodos adicionados para a funcionalidade de Pesquisa
-            clearSearchFilters() {
-                this.searchQuery = '';
-                this.searchFilters.category = null;
-                this.searchFilters.minPrice = null;
-                this.searchFilters.maxPrice = null;
-            },
-            updatePriceFilter() {
-                // Garante que minPrice não seja maior que maxPrice, e vice-versa
-                if (this.searchFilters.minPrice !== null && this.searchFilters.maxPrice !== null && this.searchFilters.minPrice > this.searchFilters.maxPrice) {
-                    this.searchFilters.maxPrice = this.searchFilters.minPrice;
-                }
-                if (this.searchFilters.maxPrice !== null && this.searchFilters.minPrice !== null && this.searchFilters.maxPrice < this.searchFilters.minPrice) {
-                    this.searchFilters.minPrice = this.searchFilters.maxPrice;
-                }
-            },
+        reader.readAsDataURL(file);
+    },
+    showWipAlert() {
+        alert('Funcionalidade em desenvolvimento.');
+    },
+    clearSearchFilters() {
+        this.searchQuery = '';
+        this.searchFilters.category = null;
+        this.searchFilters.minPrice = null;
+        this.searchFilters.maxPrice = null;
+    },
+    updatePriceFilter() {
+        if (this.searchFilters.minPrice !== null && this.searchFilters.maxPrice !== null && this.searchFilters.minPrice > this.searchFilters.maxPrice) {
+            this.searchFilters.maxPrice = this.searchFilters.minPrice;
         }
+        if (this.searchFilters.maxPrice !== null && this.searchFilters.minPrice !== null && this.searchFilters.maxPrice < this.searchFilters.minPrice) {
+            this.searchFilters.minPrice = this.searchFilters.minPrice;
+        }
+    },
+}
     }).mount('#app');
 </script>
 </body>
