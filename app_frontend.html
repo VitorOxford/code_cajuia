@@ -2262,7 +2262,7 @@ async sendMessage() {
             });
         }
     }
-}
+},
     subscribeToMessages() {
         if (this.messageSubscription) { supabase.removeChannel(this.messageSubscription); }
         this.messageSubscription = supabase.channel(`chat:${this.currentConversation.id}`)
