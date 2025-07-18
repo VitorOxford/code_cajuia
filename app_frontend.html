@@ -28,8 +28,8 @@
             --header-height: 60px;
             --footer-height: 70px;
             --white-color: #FFFFFF;
-            --chat-bg-color: #EAE6DF; /* Cor de fundo que combina com o wallpaper */
-            --chat-bubble-sent-bg: #7A4E2D; /* Seu marrom primário */
+            --chat-bg-color: #EAE6DF;
+            --chat-bubble-sent-bg: #7A4E2D;
             --chat-bubble-received-bg: #FFFFFF;
             --chat-reply-border-color: #83C57A;
             --chat-info-text-color: #667781;
@@ -216,8 +216,8 @@
 
     /* --- ADICIONE ESTAS 3 LINHAS --- */
     transform: rotate(-90deg); /* Gira o emoticon 90 graus para a esquerda */
-    display: inline-block;     /* Garante que a transformação seja aplicada corretamente */
-    margin-bottom: 1rem;       /* Adiciona um pequeno espaço abaixo do emoticon girado */
+    display: inline-block;      /* Garante que a transformação seja aplicada corretamente */
+    margin-bottom: 1rem;        /* Adiciona um pequeno espaço abaixo do emoticon girado */
 }
 .empty-results-textured p {
     font-size: 1.2rem;
@@ -1130,8 +1130,7 @@
 
         <transition name="fade" mode="out-in">
             <div v-if="currentView === 'home'" class="home-page">
-               <!-- NOVO CABEÇALHO DA HOME -->
-                    <header class="home-top-bar">
+               <header class="home-top-bar">
                         <div class="top-search-bar" @click="openSearchOverlay">
                             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
                             <span>O que você procura?</span>
@@ -1277,7 +1276,7 @@
                     <p>Seu carrinho está vazio.</p>
                 </div>
                 <button class="checkout-button" style="background:#2d7a4e; margin-bottom: 1rem; display:flex;align-items:center;gap:8px;"
-        @click="calcularFrete">
+                @click="calcularFrete">
     <svg style="width:22px;height:22px;" fill="currentColor" viewBox="0 0 24 24"><path d="M18,18A2,2 0 0,0 20,20A2,2 0 0,0 22,18A2,2 0 0,0 20,16A2,2 0 0,0 18,18M6,18A2,2 0 0,0 8,20A2,2 0 0,0 10,18A2,2 0 0,0 8,16A2,2 0 0,0 6,18M18,8V6A2,2 0 0,0 16,4H5A2,2 0 0,0 3,6V16A2,2 0 0,0 5,18H6A4,4 0 0,1 14,18H16A4,4 0 0,1 20,14V10A2,2 0 0,0 18,8M16,6V8H5V6H16M20,10V14A2,2 0 0,1 18,16H14A2,2 0 0,1 12,14V10H20Z" /></svg>
     Transportadoras disponíveis
 </button>
@@ -1304,32 +1303,32 @@
             </div>
 
   <div v-else-if="currentView === 'wishlist'" class="page wishlist-page">
-                    <h2 style="margin: 1.5rem 0 1rem 0;">Favoritos</h2>
-                    <div v-if="wishlistProducts.length > 0" class="wishlist-list">
-                        <div v-for="product in wishlistProducts" :key="product.id" class="product-card">
-                            <div class="wishlist-icon active" @click.stop="toggleWishlist(product)">
-                                <svg viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41 0.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
-                            </div>
-                            <div class="product-card-image-wrapper">
-                                <img :src="product.imagem" :alt="product.nome" loading="lazy">
-                            </div>
-                            <div class="product-info">
-                                <h3>{{ product.nome }}</h3>
-                                <p>{{ formatCurrency(product.preco) }}</p>
-                                <button class="save-button" style="margin-top: 0.5rem; padding: 0.5rem 1rem; font-size: 0.9rem;"
-                                    @click.stop="addWishlistToCart(product)">
-                                    Adicionar ao Carrinho
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                    <div v-else class="wishlist-empty">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="48" height="48" style="color: #ccc; margin-bottom: 1rem;"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41 0.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
-                        <p>Você ainda não adicionou nenhum favorito.</p>
-                    </div>
-                </div>
+                     <h2 style="margin: 1.5rem 0 1rem 0;">Favoritos</h2>
+                     <div v-if="wishlistProducts.length > 0" class="wishlist-list">
+                         <div v-for="product in wishlistProducts" :key="product.id" class="product-card">
+                             <div class="wishlist-icon active" @click.stop="toggleWishlist(product)">
+                                 <svg viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41 0.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+                             </div>
+                             <div class="product-card-image-wrapper">
+                                 <img :src="product.imagem" :alt="product.nome" loading="lazy">
+                             </div>
+                             <div class="product-info">
+                                 <h3>{{ product.nome }}</h3>
+                                 <p>{{ formatCurrency(product.preco) }}</p>
+                                 <button class="save-button" style="margin-top: 0.5rem; padding: 0.5rem 1rem; font-size: 0.9rem;"
+                                     @click.stop="addWishlistToCart(product)">
+                                     Adicionar ao Carrinho
+                                 </button>
+                             </div>
+                         </div>
+                     </div>
+                     <div v-else class="wishlist-empty">
+                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="48" height="48" style="color: #ccc; margin-bottom: 1rem;"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41 0.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+                         <p>Você ainda não adicionou nenhum favorito.</p>
+                     </div>
+                 </div>
 
-                <div v-else-if="currentView === 'collections'" class="page collections-page" style="background-color: #F7F3ED;">
+                 <div v-else-if="currentView === 'collections'" class="page collections-page" style="background-color: #F7F3ED;">
     <div class="search-header" style="background-color: #F7F3ED;">
         <button @click="changeView('home')" class="back-button">
             <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="currentColor"><path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12l4.58-4.59z"></path></svg>
@@ -1570,104 +1569,73 @@
                 </div>
             </div>
 
-              <!-- NOVO: Tela de Suporte (Placeholder) -->
- 
-<!-- TELA DE SUPORTE COMPLETA - SUBSTITUA O BLOCO v-else-if="currentView === 'suporte'" INTEIRO POR ISTO -->
-<div v-if="currentView === 'suporte'" class="page chat-page">
-    
-    <!-- TELA DE SELEÇÃO DE SUPORTE -->
-    <div v-if="supportView === 'selection'" style="display: flex; flex-direction: column; justify-content: center; align-items: center; height: 100%; padding: 2rem 1rem; text-align: center;">
-        <img src="https://cdn.shopify.com/s/files/1/0927/1286/1998/files/Design_sem_nome_-_2025-06-13T102227.591.png?v=1750256134" alt="Logo Suporte" style="width: 120px; margin-bottom: 2rem;">
-        <h2 style="font-size: 1.5rem; margin-bottom: 0.5rem;">Como podemos ajudar?</h2>
-        <p style="color: var(--text-color-secondary); margin-bottom: 2.5rem;">Escolha uma das opções abaixo para iniciar.</p>
-
-        <div style="display: flex; flex-direction: column; gap: 1rem; width: 100%; max-width: 400px;">
-            <!-- Botão Falar com IA -->
-            <button @click="startChat('ia')" class="profile-menu-item">
-                <div class="menu-item-icon"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-12h2v2h-2zm0 4h2v6h-2z"/></svg></div>
-                <span class="menu-item-label">Falar com a IA (Rápido)</span>
-                <div class="menu-item-chevron"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M9.29 15.88L13.17 12 9.29 8.12a.996.996 0 111.41-1.41l4.59 4.59c.39.39.39 1.02 0 1.41L10.7 17.3a.996.996 0 01-1.41 0c-.38-.39-.39-1.03 0-1.42z"></path></svg></div>
-            </button>
-            <!-- Botão Falar com Especialista -->
-            <button @click="startChat('humano')" class="profile-menu-item">
-                <div class="menu-item-icon"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M21 11.01L3 11v2h18zM3 16h12v2H3zM21 6H3v2.01L21 8z"/></svg></div>
-                <span class="menu-item-label">Falar com um Especialista</span>
-                <div class="menu-item-chevron"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M9.29 15.88L13.17 12 9.29 8.12a.996.996 0 111.41-1.41l4.59 4.59c.39.39.39 1.02 0 1.41L10.7 17.3a.996.996 0 01-1.41 0c-.38-.39-.39-1.03 0-1.42z"></path></svg></div>
-            </button>
-            <!-- Botão WhatsApp -->
-            <button @click="openWhatsAppChat" class="profile-menu-item">
-                <div class="menu-item-icon" style="color: #25D366;"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M12.04 2c-5.46 0-9.91 4.45-9.91 9.91 0 1.75.46 3.45 1.32 4.95L2 22l5.25-1.38c1.45.79 3.08 1.21 4.79 1.21 5.46 0 9.91-4.45 9.91-9.91S17.5 2 12.04 2zM12.04 20.1c-1.53 0-3.03-.39-4.36-1.12l-.31-.18-3.24.85.87-3.17-.2-.33c-.8-1.37-1.22-2.94-1.22-4.57 0-4.54 3.69-8.23 8.24-8.23 4.54 0 8.23 3.69 8.23 8.23s-3.69 8.23-8.23 8.23zm4.49-5.49c-.25-.12-1.47-.72-1.7-.82s-.39-.12-.56.12c-.17.25-.64.82-.79.98s-.29.17-.54.06c-.25-.12-1.06-.39-2.02-1.25s-1.45-1.95-1.62-2.29c-.17-.34-.02-.53.11-.65.11-.11.25-.29.37-.43s.17-.25.25-.42c.08-.17.04-.31-.02-.43s-.56-1.34-.76-1.84c-.2-.48-.41-.42-.56-.42h-.48c-.17 0-.43.06-.66.31s-.87.85-1.07 2.07c-.2 1.22.89 2.4 1.01 2.56s1.76 2.67 4.27 3.77c.59.26 1.05.41 1.41.52.59.19 1.13.16 1.56.1.48-.06 1.47-.6 1.68-1.18s.21-1.09.15-1.18c-.06-.09-.17-.15-.25-.2z"/></svg></div>
-                <span class="menu-item-label">Falar no WhatsApp</span>
-                <div class="menu-item-chevron"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M9.29 15.88L13.17 12 9.29 8.12a.996.996 0 111.41-1.41l4.59 4.59c.39.39.39 1.02 0 1.41L10.7 17.3a.996.996 0 01-1.41 0c-.38-.39-.39-1.03 0-1.42z"></path></svg></div>
-            </button>
-        </div>
-    </div>
-
-    <!-- TELA DE CHAT (VISÍVEL APÓS SELEÇÃO) -->
-    <div v-else-if="supportView === 'chat'" style="display: flex; flex-direction: column; height: 100%;">
-        <header class="chat-header">
-            <img src="https://cdn.shopify.com/s/files/1/0927/1286/1998/files/Design_sem_nome_-_2025-06-13T102227.591.png?v=1750256134" alt="Logo Suporte">
-            <div class="chat-header-info">
-                <h3>Suporte Cajuia</h3>
-                <p>Normalmente responde em poucos minutos</p>
-            </div>
-        </header>
-
-        <div class="chat-messages-container" ref="messagesContainer">
-            <div v-for="message in chatMessages" :key="message.id" 
-                 class="message-bubble" 
-                 :class="message.remetente_id === supabaseUser?.id ? 'sent' : 'received'">
-
-                <div class="message-content-wrapper">
-                    <!-- Contexto de Resposta -->
-                    <div v-if="message.replyingTo" class="reply-context">
-                        <strong>{{ message.replyingTo.author }}</strong>
-                        <p>{{ message.replyingTo.content }}</p>
-                    </div>
-
-                    <!-- Anexo de Imagem -->
-                    <img v-if="message.attachment?.type === 'image'" :src="message.attachment.url" class="message-image-attachment" alt="Anexo de imagem">
-                    
-                    <!-- Anexo de Arquivo -->
-                    <div v-if="message.attachment?.type === 'file'" class="message-file-attachment">
-                        <div class="file-icon">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zM6 20V4h7v5h5v11H6z"></path></svg>
-                        </div>
-                        <div class="file-info">
-                            <p>{{ message.attachment.name }}</p>
-                            <span>{{ message.attachment.size }}</span>
-                        </div>
-                    </div>
-
-                    <!-- Conteúdo de Texto -->
-                    <p class="message-content">{{ message.conteudo }}</p>
-                </div>
+            <div v-else-if="currentView === 'suporte'" class="page chat-page">
                 
-                <div class="message-meta">
-                    <span v-if="message.isEdited" class="edited-indicator">editado</span>
-                    <span>{{ formatMessageTime(message.enviada_em) }}</span>
-                    <span v-if="message.remetente_id === supabaseUser?.id" class="read-receipts">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M18 7l-1.41-1.41-6.34 6.34 1.41 1.41L18 7zm4.24-1.41L11.62 16.2a1 1 0 01-1.41 0L5.62 11.62a1 1 0 011.41-1.41L11 13.17l9.83-9.83a1 1 0 011.41 1.41zM.41 13.03l1.41-1.41L7 16.2l-1.41 1.41L.41 13.03z"></path></svg>
-                    </span>
+                <div v-if="supportView === 'selection'" style="display: flex; flex-direction: column; justify-content: center; align-items: center; height: 100%; padding: 2rem 1rem; text-align: center;">
+                    <img src="https://cdn.shopify.com/s/files/1/0927/1286/1998/files/Design_sem_nome_-_2025-06-13T102227.591.png?v=1750256134" alt="Logo Suporte" style="width: 120px; margin-bottom: 2rem;">
+                    <h2 style="font-size: 1.5rem; margin-bottom: 0.5rem;">Como podemos ajudar?</h2>
+                    <p style="color: var(--text-color-secondary); margin-bottom: 2.5rem;">Escolha uma das opções abaixo para iniciar.</p>
+            
+                    <div style="display: flex; flex-direction: column; gap: 1rem; width: 100%; max-width: 400px;">
+                        <button @click="startChat('ia')" class="profile-menu-item">
+                            <div class="menu-item-icon"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-12h2v2h-2zm0 4h2v6h-2z"/></svg></div>
+                            <span class="menu-item-label">Falar com a IA (Rápido)</span>
+                            <div class="menu-item-chevron"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M9.29 15.88L13.17 12 9.29 8.12a.996.996 0 111.41-1.41l4.59 4.59c.39.39.39 1.02 0 1.41L10.7 17.3a.996.996 0 01-1.41 0c-.38-.39-.39-1.03 0-1.42z"></path></svg></div>
+                        </button>
+                        <button @click="startChat('humano')" class="profile-menu-item">
+                            <div class="menu-item-icon"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M21 11.01L3 11v2h18zM3 16h12v2H3zM21 6H3v2.01L21 8z"/></svg></div>
+                            <span class="menu-item-label">Falar com um Especialista</span>
+                            <div class="menu-item-chevron"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M9.29 15.88L13.17 12 9.29 8.12a.996.996 0 111.41-1.41l4.59 4.59c.39.39.39 1.02 0 1.41L10.7 17.3a.996.996 0 01-1.41 0c-.38-.39-.39-1.03 0-1.42z"></path></svg></div>
+                        </button>
+                        <button @click="openWhatsAppChat" class="profile-menu-item">
+                            <div class="menu-item-icon" style="color: #25D366;"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M12.04 2c-5.46 0-9.91 4.45-9.91 9.91 0 1.75.46 3.45 1.32 4.95L2 22l5.25-1.38c1.45.79 3.08 1.21 4.79 1.21 5.46 0 9.91-4.45 9.91-9.91S17.5 2 12.04 2zM12.04 20.1c-1.53 0-3.03-.39-4.36-1.12l-.31-.18-3.24.85.87-3.17-.2-.33c-.8-1.37-1.22-2.94-1.22-4.57 0-4.54 3.69-8.23 8.24-8.23 4.54 0 8.23 3.69 8.23 8.23s-3.69 8.23-8.23 8.23zm4.49-5.49c-.25-.12-1.47-.72-1.7-.82s-.39-.12-.56.12c-.17.25-.64.82-.79.98s-.29.17-.54.06c-.25-.12-1.06-.39-2.02-1.25s-1.45-1.95-1.62-2.29c-.17-.34-.02-.53.11-.65.11-.11.25-.29.37-.43s.17-.25.25-.42c.08-.17.04-.31-.02-.43s-.56-1.34-.76-1.84c-.2-.48-.41-.42-.56-.42h-.48c-.17 0-.43.06-.66.31s-.87.85-1.07 2.07c-.2 1.22.89 2.4 1.01 2.56s1.76 2.67 4.27 3.77c.59.26 1.05.41 1.41.52.59.19 1.13.16 1.56.1.48-.06 1.47-.6 1.68-1.18s.21-1.09.15-1.18c-.06-.09-.17-.15-.25-.2z"/></svg></div>
+                            <span class="menu-item-label">Falar no WhatsApp</span>
+                            <div class="menu-item-chevron"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M9.29 15.88L13.17 12 9.29 8.12a.996.996 0 111.41-1.41l4.59 4.59c.39.39.39 1.02 0 1.41L10.7 17.3a.996.996 0 01-1.41 0c-.38-.39-.39-1.03 0-1.42z"></path></svg></div>
+                        </button>
+                    </div>
+                </div>
+            
+                <div v-else-if="supportView === 'chat'" style="display: flex; flex-direction: column; height: 100%;">
+                    <header class="chat-header">
+                        <img src="https://cdn.shopify.com/s/files/1/0927/1286/1998/files/Design_sem_nome_-_2025-06-13T102227.591.png?v=1750256134" alt="Logo Suporte">
+                        <div class="chat-header-info">
+                            <h3>Suporte Cajuia</h3>
+                            <p>Normalmente responde em poucos minutos</p>
+                        </div>
+                    </header>
+            
+                    <div class="chat-messages-container" ref="messagesContainer">
+                        <div v-for="message in chatMessages" :key="message.id" 
+                             class="message-bubble" 
+                             :class="message.remetente_id === supabaseUser?.id ? 'sent' : 'received'">
+            
+                            <div class="message-content-wrapper">
+                                <p class="message-content">{{ message.conteudo }}</p>
+                            </div>
+                            
+                            <div class="message-meta">
+                                <span v-if="message.isEdited" class="edited-indicator">editado</span>
+                                <span>{{ formatMessageTime(message.enviada_em) }}</span>
+                                <span v-if="message.remetente_id === supabaseUser?.id" class="read-receipts">
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M18 7l-1.41-1.41-6.34 6.34 1.41 1.41L18 7zm4.24-1.41L11.62 16.2a1 1 0 01-1.41 0L5.62 11.62a1 1 0 011.41-1.41L11 13.17l9.83-9.83a1 1 0 011.41 1.41zM.41 13.03l1.41-1.41L7 16.2l-1.41 1.41L.41 13.03z"></path></svg>
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+            
+                    <div class="chat-input-area">
+                        <button class="icon-button" @click="openAttachmentMenu">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path d="M16.5 6v11.5c0 2.21-1.79 4-4 4s-4-1.79-4-4V5a2.5 2.5 0 015 0v10.5c0 .83-.67 1.5-1.5 1.5s-1.5-.67-1.5-1.5V6H10v9.5a2.5 2.5 0 005 0V5c-2.21 0-4 1.79-4 4v11.5c0 2.76 2.24 5 5 5s5-2.24 5-5V6h-1.5z"></path></svg>
+                        </button>
+                        <textarea v-model="newMessageText" @input="adjustTextareaHeight" ref="messageInput" placeholder="Digite uma mensagem..." rows="1"></textarea>
+                        
+                        <button class="icon-button" @click="newMessageText ? sendMessage() : startRecordingAudio()">
+                            <svg v-if="newMessageText" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"></path></svg>
+                            <svg v-else xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm5.3-3c0 3-2.54 5.1-5.3 5.1S6.7 14 6.7 11H5c0 3.41 2.72 6.23 6 6.72V21h2v-3.28c3.28-.49 6-3.31 6-6.72h-1.7z"></path></svg>
+                        </button>
+                    </div>
                 </div>
             </div>
-        </div>
-
-        <div class="chat-input-area">
-            <button class="icon-button" @click="openAttachmentMenu">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M16.5 6v11.5c0 2.21-1.79 4-4 4s-4-1.79-4-4V5a2.5 2.5 0 015 0v10.5c0 .83-.67 1.5-1.5 1.5s-1.5-.67-1.5-1.5V6H10v9.5a2.5 2.5 0 005 0V5c-2.21 0-4 1.79-4 4v11.5c0 2.76 2.24 5 5 5s5-2.24 5-5V6h-1.5z"></path></svg>
-            </button>
-            <textarea v-model="newMessageText" @input="adjustTextareaHeight" ref="messageInput" placeholder="Digite uma mensagem..." rows="1"></textarea>
-            
-            <!-- Botão dinâmico: Enviar ou Gravar Áudio -->
-            <button class="icon-button" @click="newMessageText ? sendMessage() : startRecordingAudio()">
-                <svg v-if="newMessageText" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"></path></svg>
-                <svg v-else xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm5.3-3c0 3-2.54 5.1-5.3 5.1S6.7 14 6.7 11H5c0 3.41 2.72 6.23 6 6.72V21h2v-3.28c3.28-.49 6-3.31 6-6.72h-1.7z"></path></svg>
-            </button>
-        </div>
-    </div>
-</div>
-
             
             <div v-else class="page" style="text-align: center; padding-top: 100px;">
                 <h2 style="text-transform: capitalize;">{{ currentView }}</h2>
@@ -1683,8 +1651,7 @@
                          <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="currentColor"><path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12l4.58-4.59z"></path></svg>
                     </button>
             </div>
-                <!-- Bloco para galeria de imagens com thumbnails -->
-<div class="product-image-gallery">
+                <div class="product-image-gallery">
   <img
     :src="selectedProduct.imagensVariacoes && selectedProduct.imagensVariacoes[activeImageIndex] ? selectedProduct.imagensVariacoes[activeImageIndex] : selectedProduct.imagem"
     class="product-detail-image"
@@ -1724,8 +1691,7 @@
 </template>
                     <p class="description">{{ selectedProduct.descricao }}</p>
                     <div style="display: flex; gap: 2rem;">
-                        <!-- Bloco para variações respeitando as flags -->
-<div style="display: flex; gap: 2rem;">
+                        <div style="display: flex; gap: 2rem;">
   <div class="variation-group"
        v-if="selectedProduct.habilitarTamanhos && selectedProduct.variacoes.tamanhos && selectedProduct.variacoes.tamanhos.length">
     <h3>Tamanho</h3>
@@ -1785,7 +1751,7 @@
 
         <transition name="fade">
              <div v-if="isZoomModalVisible" class="zoom-modal" @click="isZoomModalVisible = false">
-                <img :src="zoomImage" alt="Zoomed product image">
+                 <img :src="zoomImage" alt="Zoomed product image">
             </div>
         </transition>
         
@@ -1810,7 +1776,7 @@
                 <span>Início</span>
             </div>
             <div class="nav-item" :class="{ active: currentView === 'wishlist' }" @click="changeView('wishlist')">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41 .81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41 0.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
                 <span>Favoritos</span>
             </div>
             <div class="nav-item" :class="{ active: currentView === 'suporte' }" @click="changeView('suporte')">
@@ -1825,8 +1791,7 @@
 
     </main>
 
-     <!-- NOVO: Overlay de Pesquisa -->
-    <transition name="fade">
+     <transition name="fade">
         <div v-if="isSearchOverlayVisible" class="search-overlay">
             <div class="search-overlay-header">
                 <input type="text" v-model="searchQuery" placeholder="Pesquisar produtos..." class="search-input-overlay" autofocus>
@@ -1875,7 +1840,7 @@
         </div>
     </transition>
 
-  
+ 
     
 </div>
 
@@ -1950,18 +1915,18 @@
         },
         computed: {
             showVideoBackground() {
-        // Mostra o vídeo se estiver carregando OU se a tela for de login/registro
-        return this.isLoading || this.authView !== null;
-    },
+    // Mostra o vídeo se estiver carregando OU se a tela for de login/registro
+    return this.isLoading || this.authView !== null;
+},
             hasActiveFilters() {
-        return this.searchQuery.length > 0 ||
-               this.searchFilters.category !== null ||
-               this.searchFilters.minPrice !== null ||
-               this.searchFilters.maxPrice > 0;
-    },
+    return this.searchQuery.length > 0 ||
+           this.searchFilters.category !== null ||
+           this.searchFilters.minPrice !== null ||
+           this.searchFilters.maxPrice > 0;
+},
             shippingOptionsSorted() {
-        return [...this.shippingOptions].sort((a, b) => parseFloat(a.price) - parseFloat(b.price));
-    },
+    return [...this.shippingOptions].sort((a, b) => parseFloat(a.price) - parseFloat(b.price));
+},
             filteredProducts() {
                 if (!this.selectedCategoryId) return this.products;
                 return this.products.filter(p => p.categoriaId === this.selectedCategoryId);
@@ -2089,37 +2054,37 @@
             
 
             tsParticles.load({
-        id: "particles-container", // ID do contêiner que colocamos no HTML
-        options: {
-            background: { color: { value: "transparent" } },
-            fpsLimit: 60,
-            interactivity: {
-                events: {
-                    onHover: { enable: true, mode: "repulse" },
-                },
-                modes: {
-                    repulse: { distance: 100, duration: 0.4 },
-                },
+    id: "particles-container", // ID do contêiner que colocamos no HTML
+    options: {
+        background: { color: { value: "transparent" } },
+        fpsLimit: 60,
+        interactivity: {
+            events: {
+                onHover: { enable: true, mode: "repulse" },
             },
-            particles: {
-                color: { value: "#ffffff" },
-                links: { color: "#ffffff", distance: 150, enable: true, opacity: 0.1, width: 1 },
-                move: {
-                    direction: "none",
-                    enable: true,
-                    outModes: { default: "bounce" },
-                    random: false,
-                    speed: 0.5,
-                    straight: false,
-                },
-                number: { density: { enable: true }, value: 80 },
-                opacity: { value: 0.2 },
-                shape: { type: "circle" },
-                size: { value: { min: 1, max: 3 } },
+            modes: {
+                repulse: { distance: 100, duration: 0.4 },
             },
-            detectRetina: true,
         },
-    });
+        particles: {
+            color: { value: "#ffffff" },
+            links: { color: "#ffffff", distance: 150, enable: true, opacity: 0.1, width: 1 },
+            move: {
+                direction: "none",
+                enable: true,
+                outModes: { default: "bounce" },
+                random: false,
+                speed: 0.5,
+                straight: false,
+            },
+            number: { density: { enable: true }, value: 80 },
+            opacity: { value: 0.2 },
+            shape: { type: "circle" },
+            size: { value: { min: 1, max: 3 } },
+        },
+        detectRetina: true,
+    },
+});
             
             const savedProfile = localStorage.getItem('cajuia-user-profile');
             if (savedProfile) { this.userProfile = JSON.parse(savedProfile); }
@@ -2552,10 +2517,10 @@
             if (product) {
                 const subtotal = product.preco * item.quantity;
                 orderMessage += `▪️ *${product.nome}*\n`;
-                if (item.size) orderMessage += `    Tamanho: ${item.size}\n`;
-                if (item.color) orderMessage += `    Cor: ${item.color}\n`;
-                orderMessage += `    Qtd: ${item.quantity}\n`;
-                orderMessage += `    Subtotal: ${this.formatCurrency(subtotal)}\n\n`;
+                if (item.size) orderMessage += `   Tamanho: ${item.size}\n`;
+                if (item.color) orderMessage += `   Cor: ${item.color}\n`;
+                orderMessage += `   Qtd: ${item.quantity}\n`;
+                orderMessage += `   Subtotal: ${this.formatCurrency(subtotal)}\n\n`;
             }
         });
         orderMessage += "-----------------------------------\n";
