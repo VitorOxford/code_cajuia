@@ -2059,10 +2059,14 @@
         }));
     }
         },
-        watch: {
+       watch: {
     currentView(newView) {
-        if (newView === 'suporte') {
-            this.initializeChat();
+        if (newView !== 'suporte') {
+            this.supportView = 'selection';
+            if (this.messageSubscription) {
+                supabase.removeChannel(this.messageSubscription);
+                this.messageSubscription = null;
+            }
         }
         if (newView === 'profile' && this.supabaseUser) {
             this.fetchProfile();
@@ -2170,7 +2174,7 @@
             this.stopAutoPlay();
         },
         methods: {
-          // --- MÉTODOS DO CHAT (VERSÃO FUNCIONAL) ---
+    // --- MÉTODOS DO CHAT (VERSÃO FUNCIONAL) ---
     async startChat(type) {
         this.supportView = 'chat';
         if (!this.supabaseUser) {
@@ -2178,118 +2182,70 @@
             this.supportView = 'selection';
             return;
         }
-
         try {
-            let { data: conversa, error } = await supabase
-                .from('conversas')
-                .select('*')
-                .eq('user_id', this.supabaseUser.id)
-                .in('status', ['aberto', 'atendido'])
-                .single();
-
+            let { data: conversa, error } = await supabase.from('conversas').select('*').eq('user_id', this.supabaseUser.id).in('status', ['aberto', 'atendido']).single();
             if (error || !conversa) {
-                const { data: novaConversa, error: insertError } = await supabase
-                    .from('conversas')
-                    .insert({ user_id: this.supabaseUser.id, status: 'aberto' })
-                    .select()
-                    .single();
-                
+                const { data: novaConversa, error: insertError } = await supabase.from('conversas').insert({ user_id: this.supabaseUser.id, status: 'aberto' }).select().single();
                 if (insertError) throw insertError;
                 conversa = novaConversa;
             }
-            
+            if (type === 'humano' && conversa.status === 'aberto') {
+                const { data: updatedConversa, error: updateError } = await supabase.from('conversas').update({ status: 'atendido' }).eq('id', conversa.id).select().single();
+                if (updateError) throw updateError;
+                conversa = updatedConversa;
+            }
             this.currentConversation = conversa;
             await this.fetchMessages();
             this.subscribeToMessages();
-
         } catch (err) {
             console.error("Erro ao iniciar o chat:", err);
             alert("Não foi possível iniciar o chat. Tente novamente.");
             this.supportView = 'selection';
         }
     },
-
     async fetchMessages() {
         if (!this.currentConversation) return;
-        const { data, error } = await supabase
-            .from('mensagens')
-            .select('*')
-            .eq('conversa_id', this.currentConversation.id)
-            .order('enviada_em', { ascending: true });
-
-        if (error) {
-            console.error("Erro ao buscar mensagens:", error);
-            return;
-        }
+        const { data, error } = await supabase.from('mensagens').select('*').eq('conversa_id', this.currentConversation.id).order('enviada_em', { ascending: true });
+        if (error) { console.error("Erro ao buscar mensagens:", error); return; }
         this.chatMessages = data;
         this.scrollToBottom();
     },
-
     async sendMessage() {
         if (this.newMessageText.trim() === '' || !this.currentConversation) return;
-
-        const messageToSend = {
-            conversa_id: this.currentConversation.id,
-            remetente_id: this.supabaseUser.id,
-            conteudo: this.newMessageText,
-        };
-
+        const messageToSend = { conversa_id: this.currentConversation.id, remetente_id: this.supabaseUser.id, conteudo: this.newMessageText };
         const textToProcess = this.newMessageText;
         this.newMessageText = '';
         this.adjustTextareaHeight();
-
         const { error } = await supabase.from('mensagens').insert(messageToSend);
-        
         if (error) {
             console.error("Erro ao enviar mensagem:", error);
             this.newMessageText = textToProcess;
             alert("Sua mensagem não pôde ser enviada. Tente novamente.");
         }
     },
-
     subscribeToMessages() {
-        if (this.messageSubscription) {
-            supabase.removeChannel(this.messageSubscription);
-        }
-        this.messageSubscription = supabase
-            .channel(`chat:${this.currentConversation.id}`)
-            .on('postgres_changes', 
-                { event: 'INSERT', schema: 'public', table: 'mensagens', filter: `conversa_id=eq.${this.currentConversation.id}` }, 
-                (payload) => {
-                    if (!this.chatMessages.some(msg => msg.id === payload.new.id)) {
-                        this.chatMessages.push(payload.new);
-                    }
-                    this.scrollToBottom();
+        if (this.messageSubscription) { supabase.removeChannel(this.messageSubscription); }
+        this.messageSubscription = supabase.channel(`chat:${this.currentConversation.id}`)
+            .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'mensagens', filter: `conversa_id=eq.${this.currentConversation.id}` }, 
+            (payload) => {
+                if (!this.chatMessages.some(msg => msg.id === payload.new.id)) {
+                    this.chatMessages.push(payload.new);
                 }
-            )
+                this.scrollToBottom();
+            })
             .subscribe();
     },
-
     openWhatsAppChat() {
         const defaultMessage = "Olá! Preciso de ajuda com um pedido.";
         window.location.href = `https://wa.me/${this.phoneNumber}?text=${encodeURIComponent(defaultMessage)}`;
     },
+    formatMessageTime(timestamp) { return new Date(timestamp).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }); },
+    scrollToBottom() { this.$nextTick(() => { const c = this.$refs.messagesContainer; if (c) c.scrollTop = c.scrollHeight; }); },
+    adjustTextareaHeight() { this.$nextTick(() => { const t = this.$refs.messageInput; if (t) { t.style.height = 'auto'; t.style.height = (t.scrollHeight) + 'px'; } }); },
+    openAttachmentMenu() { console.log('Abrindo menu de anexos...'); },
+    startRecordingAudio() { console.log('Iniciando gravação de áudio...'); },
 
-    formatMessageTime(timestamp) {
-        return new Date(timestamp).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-    },
-    scrollToBottom() {
-        this.$nextTick(() => {
-            const container = this.$refs.messagesContainer;
-            if (container) container.scrollTop = container.scrollHeight;
-        });
-    },
-    adjustTextareaHeight() {
-        this.$nextTick(() => {
-            const textarea = this.$refs.messageInput;
-            if (textarea) {
-                textarea.style.height = 'auto';
-                textarea.style.height = (textarea.scrollHeight) + 'px';
-            }
-        });
-    },
-
-    // --- SEUS MÉTODOS ANTIGOS (COLE O BLOCO ACIMA ANTES DELES) ---
+    // --- SEUS MÉTODOS EXISTENTES ---
     selectShippingOption(option) {
         this.selectedShipping = option;
         this.valorFrete = parseFloat(option.price);
@@ -2303,7 +2259,9 @@
         this.isSearchOverlayVisible = false;
     },
     getActiveProductImage(product) {
-        if (!product) return '';
+        if (!product) {
+            return '';
+        }
         if (product.imagensVariacoes && product.imagensVariacoes.length > 0 && product.imagensVariacoes[0]) {
             return product.imagensVariacoes[0];
         }
@@ -2572,16 +2530,10 @@
         const isAlreadyInWishlist = this.wishlist.includes(product.id);
         try {
             if (isAlreadyInWishlist) {
-                const { error } = await supabase.from('user_wishlist')
-                    .delete()
-                    .eq('user_id', this.supabaseUser.id)
-                    .eq('product_id', product.id);
+                const { error } = await supabase.from('user_wishlist').delete().eq('user_id', this.supabaseUser.id).eq('product_id', product.id);
                 if (error) throw error;
             } else {
-                const { error } = await supabase.from('user_wishlist').insert({
-                    user_id: this.supabaseUser.id,
-                    product_id: product.id
-                });
+                const { error } = await supabase.from('user_wishlist').insert({ user_id: this.supabaseUser.id, product_id: product.id });
                 if (error) throw error;
             }
             await this.fetchUserData();
@@ -2592,24 +2544,13 @@
     async addWishlistToCart(product) {
         if (!this.supabaseUser) return;
         try {
-            const { error: cartError } = await supabase.from('user_cart').insert({
-                user_id: this.supabaseUser.id,
-                product_id: product.id,
-                quantity: 1,
-                size: null, 
-                color: null
-            });
+            const { error: cartError } = await supabase.from('user_cart').insert({ user_id: this.supabaseUser.id, product_id: product.id, quantity: 1, size: null, color: null });
             if (cartError) {
-                if (cartError.code === '23505') {
-                    this.showProfileNotification('Este item já está no seu carrinho.', 'error');
-                } else {
-                    throw cartError;
-                }
+                if (cartError.code === '23505') { this.showProfileNotification('Este item já está no seu carrinho.', 'error'); } 
+                else { throw cartError; }
                 return;
             }
-            const { error: wishlistError } = await supabase.from('user_wishlist')
-                .delete()
-                .match({ user_id: this.supabaseUser.id, product_id: product.id });
+            const { error: wishlistError } = await supabase.from('user_wishlist').delete().match({ user_id: this.supabaseUser.id, product_id: product.id });
             if (wishlistError) throw wishlistError;
             await this.fetchUserData();
             this.showProfileNotification(`'${product.nome}' foi adicionado ao carrinho!`, 'success');
@@ -2624,12 +2565,7 @@
         if (item) item.selected = !item.selected;
     },
     handleTouchStart(cartItemId, event) {
-        Object.keys(this.swipeState).forEach(id => {
-            if (id != cartItemId) {
-                this.swipeState[id].translateX = 0;
-                this.swipeState[id].isSwiped = false;
-            }
-        });
+        Object.keys(this.swipeState).forEach(id => { if (id != cartItemId) { this.swipeState[id].translateX = 0; this.swipeState[id].isSwiped = false; } });
         this.swipeState[cartItemId] = { startX: event.touches[0].clientX, currentX: event.touches[0].clientX, translateX: 0, isSwiping: false, isSwiped: false };
     },
     handleTouchMove(cartItemId, event) {
@@ -2646,13 +2582,8 @@
         if (!this.swipeState[cartItemId]) return;
         const state = this.swipeState[cartItemId];
         const threshold = -50;
-        if (state.translateX < threshold) {
-            state.translateX = -90;
-            state.isSwiped = true;
-        } else {
-            state.translateX = 0;
-            state.isSwiped = false;
-        }
+        if (state.translateX < threshold) { state.translateX = -90; state.isSwiped = true; } 
+        else { state.translateX = 0; state.isSwiped = false; }
         state.isSwiping = false;
     },
     getSwipeStyle(cartItemId) {
@@ -2664,30 +2595,18 @@
         return {};
     },
     async login() {
-        this.authLoading = true;
-        this.authError = '';
+        this.authLoading = true; this.authError = '';
         const { email, password } = this.loginForm;
         const { error } = await supabase.auth.signInWithPassword({ email, password });
-        if (error) {
-            this.authError = error.message;
-        }
+        if (error) { this.authError = error.message; }
         this.authLoading = false;
     },
     async register() {
-        this.authLoading = true;
-        this.authError = '';
+        this.authLoading = true; this.authError = '';
         const { nome, email, password } = this.registerForm;
         const { data, error } = await supabase.auth.signUp({ email, password });
-        if (error) {
-            this.authError = error.message;
-            this.authLoading = false;
-            return;
-        }
-        await supabase.from('profiles').upsert({
-            id: data.user.id,
-            email,
-            nome
-        });
+        if (error) { this.authError = error.message; this.authLoading = false; return; }
+        await supabase.from('profiles').upsert({ id: data.user.id, email, nome });
         this.authView = 'login';
         this.authLoading = false;
         this.showProfileNotification('Cadastro realizado! Faça login.');
@@ -2697,54 +2616,16 @@
         const { data, error } = await supabase.from('profiles').select('*').eq('id', this.supabaseUser.id).single();
         if (data) {
             this.userProfile = {
-                fotoUrl: data.foto_url || '',
-                nome: data.nome || '',
-                email: data.email || '',
-                telefone: data.telefone || '',
-                empresa: data.empresa || '',
-                cnpj: data.cnpj || '',
-                atuacao: data.atuacao || '',
-                logradouro: data.logradouro || '',
-                numero: data.numero || '',
-                bairro: data.bairro || '',
-                cidade: data.cidade || '',
-                uf: data.uf || '',
-                cep: data.cep || ''
+                fotoUrl: data.foto_url || '', nome: data.nome || '', email: data.email || '', telefone: data.telefone || '', empresa: data.empresa || '', cnpj: data.cnpj || '', atuacao: data.atuacao || '', logradouro: data.logradouro || '', numero: data.numero || '', bairro: data.bairro || '', cidade: data.cidade || '', uf: data.uf || '', cep: data.cep || ''
             };
         } else {
-            await supabase.from('profiles').upsert({
-                id: this.supabaseUser.id,
-                email: this.supabaseUser.email,
-                nome: '',
-                foto_url: '',
-                telefone: '',
-                empresa: '',
-                cnpj: '',
-                atuacao: '',
-                endereco: '',
-                cep: ''
-            });
+            await supabase.from('profiles').upsert({ id: this.supabaseUser.id, email: this.supabaseUser.email, nome: '', foto_url: '', telefone: '', empresa: '', cnpj: '', atuacao: '', endereco: '', cep: '' });
             await this.fetchProfile();
         }
     },
     async saveProfile() {
         if (!this.supabaseUser) return;
-        await supabase.from('profiles').upsert({
-            id: this.supabaseUser.id,
-            foto_url: this.userProfile.fotoUrl,
-            nome: this.userProfile.nome,
-            email: this.userProfile.email,
-            telefone: this.userProfile.telefone,
-            empresa: this.userProfile.empresa,
-            cnpj: this.userProfile.cnpj,
-            atuacao: this.userProfile.atuacao,
-            cep: this.userProfile.cep,
-            logradouro: this.userProfile.logradouro,
-            numero: this.userProfile.numero,
-            bairro: this.userProfile.bairro,
-            cidade: this.userProfile.cidade,
-            uf: this.userProfile.uf
-        });
+        await supabase.from('profiles').upsert({ id: this.supabaseUser.id, foto_url: this.userProfile.fotoUrl, nome: this.userProfile.nome, email: this.userProfile.email, telefone: this.userProfile.telefone, empresa: this.userProfile.empresa, cnpj: this.userProfile.cnpj, atuacao: this.userProfile.atuacao, cep: this.userProfile.cep, logradouro: this.userProfile.logradouro, numero: this.userProfile.numero, bairro: this.userProfile.bairro, cidade: this.userProfile.cidade, uf: this.userProfile.uf });
         this.showProfileNotification('Perfil salvo com sucesso!');
         this.profileSubView = 'main';
     },
@@ -2759,39 +2640,19 @@
         this.profileNotification.message = message;
         this.profileNotification.type = type;
         this.profileNotification.show = true;
-        setTimeout(() => {
-            this.profileNotification.show = false;
-        }, duration);
+        setTimeout(() => { this.profileNotification.show = false; }, duration);
     },
-    triggerFileUpload() {
-        this.$refs.fileInput.click();
-    },
+    triggerFileUpload() { this.$refs.fileInput.click(); },
     handlePictureUpload(event) {
         const file = event.target.files[0];
         if (!file) return;
         const reader = new FileReader();
-        reader.onload = (e) => {
-            this.userProfile.fotoUrl = e.target.result;
-        };
+        reader.onload = (e) => { this.userProfile.fotoUrl = e.target.result; };
         reader.readAsDataURL(file);
     },
-    showWipAlert() {
-        alert('Funcionalidade em desenvolvimento.');
-    },
-    clearSearchFilters() {
-        this.searchQuery = '';
-        this.searchFilters.category = null;
-        this.searchFilters.minPrice = null;
-        this.searchFilters.maxPrice = null;
-    },
-    updatePriceFilter() {
-        if (this.searchFilters.minPrice !== null && this.searchFilters.maxPrice !== null && this.searchFilters.minPrice > this.searchFilters.maxPrice) {
-            this.searchFilters.maxPrice = this.searchFilters.minPrice;
-        }
-        if (this.searchFilters.maxPrice !== null && this.searchFilters.minPrice !== null && this.searchFilters.maxPrice < this.searchFilters.minPrice) {
-            this.searchFilters.minPrice = this.searchFilters.minPrice;
-        }
-    },
+    showWipAlert() { alert('Funcionalidade em desenvolvimento.'); },
+    clearSearchFilters() { this.searchQuery = ''; this.searchFilters.category = null; this.searchFilters.minPrice = null; this.searchFilters.maxPrice = null; },
+    updatePriceFilter() { if (this.searchFilters.minPrice !== null && this.searchFilters.maxPrice !== null && this.searchFilters.minPrice > this.searchFilters.maxPrice) { this.searchFilters.maxPrice = this.searchFilters.minPrice; } if (this.searchFilters.maxPrice !== null && this.searchFilters.minPrice !== null && this.searchFilters.maxPrice < this.searchFilters.minPrice) { this.searchFilters.minPrice = this.searchFilters.maxPrice; } },
 }
     }).mount('#app');
 </script>
