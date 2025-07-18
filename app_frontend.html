@@ -1571,7 +1571,7 @@
             </div>
 
               <!-- NOVO: Tela de Suporte (Placeholder) -->
-    <transition name="fade">
+ 
 <!-- TELA DE SUPORTE COMPLETA - SUBSTITUA O BLOCO v-else-if="currentView === 'suporte'" INTEIRO POR ISTO -->
 <div v-if="currentView === 'suporte'" class="page chat-page">
     
@@ -1667,12 +1667,13 @@
         </div>
     </div>
 </div>
-</transition>
+
             
             <div v-else class="page" style="text-align: center; padding-top: 100px;">
                 <h2 style="text-transform: capitalize;">{{ currentView }}</h2>
                 <p>Funcionalidade em desenvolvimento.</p>
             </div>
+            </transition>
 
         
         <transition name="slide-up">
